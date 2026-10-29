@@ -152,16 +152,24 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
     for (const call of calls) {
       const actions = call.actions ?? (call.action ? [call.action] : []);
       const acknowledged = [];
+      // Muse Wonder flags steps it wants a human to see (checkout pages, forms). OfferTest runs a fresh browser
+      // with a test identity and the payment guard stays on, so checks are acknowledged and shown in the report.
+      // --confirm-safety-checks asks instead.
       for (const check of call.pending_safety_checks ?? []) {
-        const ok = (await opts.approve?.({ kind: "safety_check", title: "Muse Wonder safety check", detail: `${check.code ?? ""} ${check.message ?? ""}`.trim() })) ?? false;
+        const detail = `${check.code ?? "check"}: ${check.message ?? ""}`.trim();
+        const ok = opts.confirmSafetyChecks ? ((await opts.approve?.({ kind: "safety_check", title: "Muse Wonder safety check", detail })) ?? false) : true;
         await log.event({ type: "safety_check", check, approved: ok });
+        await log.step({ kind: "note", summary: `Safety check ${ok ? "acknowledged" : "declined"}: ${detail}` });
         if (!ok) {
           stop = true;
           break;
         }
         acknowledged.push(check);
       }
-      if (stop) break;
+      if (stop) {
+        out.notes = "Stopped: a Muse Wonder safety check was declined.";
+        break;
+      }
 
       const done: ComputerAction[] = [];
       const urlBefore = driver.url();

@@ -12,6 +12,8 @@ test("quote match respects number and word boundaries", () => {
   assert.equal(containsQuote("Get 10% off", "10% off"), true);
   assert.equal(containsQuote("Get 110% off", "10% off"), false);
   assert.equal(containsQuote("Use code “SAVE20” now", 'code "SAVE20"'), true);
+  assert.equal(containsQuote("Discount  -$ 24.00\nTotal $ 96.00", "-$24.00"), true);
+  assert.equal(containsQuote("Get 20 % off", "20% off"), true);
 });
 
 const ad: Ad = {
@@ -49,4 +51,19 @@ test("overall verdict", () => {
   assert.equal(overallOf([v({ status: "supported" }), v({ status: "outside_scope" })]), "pass");
   assert.equal(overallOf([v({ status: "supported" }), v({ status: "contradicted" })]), "fail");
   assert.equal(overallOf([v({ status: "unresolved" })]), "unresolved");
+});
+
+test("a promise printed only in the ad image can be quoted", () => {
+  const withImage: Ad = { ...ad, imageText: "ALDER TRAIL CO. 20% OFF Code SAVE20" };
+  const out = gateVerdict(v({ adQuote: "20% OFF Code SAVE20" }), withImage, [{ step: 2, url: "/cart", text: "This code has expired." }]);
+  assert.equal(out.status, "contradicted");
+});
+
+test("judge excerpt keeps offer lines from the bottom of a long page", async () => {
+  const { excerpt } = await import("../src/core/judge.ts");
+  const page = "Nav\n".repeat(3000) + "Discount code\nThis code has expired.\nTotal $120.00\n";
+  const e = excerpt(page);
+  assert.ok(e.length < 8000);
+  assert.match(e, /This code has expired\./);
+  assert.match(e, /Total \$120\.00/);
 });

@@ -14,13 +14,15 @@ const Schema = z.object({
     }),
   ),
   subject: z.string(), // short noun phrase for the thing advertised: "shoe", "jacket", "course"
+  imageText: z.string(), // every word printed in the ad image, verbatim ("" if none)
 });
 
 const SYSTEM = `You turn an ad into typed, testable promises that a customer could check by following the ad's funnel.
 - One assertion per concrete promise a customer could act on: a price, a discount or code and its amount, free shipping and its threshold, a free trial and its terms ("no credit card"), a free download or guide, a booking or consultation, an event date, availability of sizes or variants, a guarantee, a response time, a bonus or gift.
 - kind: one of price, discount, free_shipping, free_trial, availability, lead_magnet, booking, event, guarantee, response_time, other.
 - claim: a plain test statement, e.g. "Code SAVE20 gives 20% off the Ridge trail shoe".
-- adQuote: copied verbatim from the ad text, headline, description, or a card (exact characters). The shortest span that states the promise.
+- adQuote: copied verbatim from the ad text, headline, description, a card, or the words printed in the ad image (exact characters). The shortest span that states the promise.
+- imageText: every word printed in the ad image, verbatim, in reading order ("" if there is no image or no text).
 - card: the index of the carousel card the promise belongs to, or null if it is the main ad.
 - conditions: key/value facts the test needs (code, percent, amount, product, variant, threshold, date). Money as written in the ad.
 - Mood words ("best", "you'll love it") are not promises. A time limit belongs in conditions of the promise it limits.
@@ -40,7 +42,7 @@ export async function adContent(ad: Ad): Promise<OpenAI.Chat.Completions.ChatCom
   return parts;
 }
 
-export async function extractAssertions(r: RunResult): Promise<{ assertions: Assertion[]; subject: string }> {
+export async function extractAssertions(r: RunResult): Promise<{ assertions: Assertion[]; subject: string; imageText: string }> {
   const out = await structured(r, {
     model: MODELS.spark,
     fallbackModel: MODELS.wonder,
@@ -51,6 +53,7 @@ export async function extractAssertions(r: RunResult): Promise<{ assertions: Ass
   });
   return {
     subject: out.subject,
+    imageText: out.imageText,
     assertions: out.assertions.map((a, i) => ({
       id: `a${i + 1}`,
       kind: a.kind,

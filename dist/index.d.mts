@@ -15,6 +15,7 @@ type LeadForm = {
     url?: string;
   };
   privacyUrl?: string;
+  readError?: string;
 };
 type Destination = {
   type: "website";
@@ -53,6 +54,7 @@ type Ad = {
   description?: string;
   cta: string;
   imageUrl?: string;
+  imageText?: string;
   destination: Destination;
   cards?: AdCard[];
 };
@@ -188,6 +190,7 @@ type RunOptions = {
   pay?: boolean;
   submit?: boolean;
   headful?: boolean;
+  confirmSafetyChecks?: boolean;
   mobile?: boolean;
   maxTurns?: number;
   maxUsd?: number;

@@ -23,7 +23,7 @@ function fakeMeta(): Promise<{ url: string; close: () => void }> {
       const name = json.response_format?.json_schema?.name;
       const content =
         name === "offer_assertions"
-          ? { subject: "shoe", assertions: [{ kind: "discount", claim: "Code SAVE20 gives 20% off the Ridge trail shoe", adQuote: "Use code SAVE20 at checkout.", card: null, conditions: [{ key: "code", value: "SAVE20" }] }] }
+          ? { subject: "shoe", imageText: "", assertions: [{ kind: "discount", claim: "Code SAVE20 gives 20% off the Ridge trail shoe", adQuote: "Use code SAVE20 at checkout.", card: null, conditions: [{ key: "code", value: "SAVE20" }] }] }
           : name === "offer_verdicts"
             ? { verdicts: [{ assertionId: "a1", status: "contradicted", adQuote: "Use code SAVE20 at checkout.", pageQuote: "This code has expired.", evidenceStep: 99, reason: "The cart rejects SAVE20." }] }
             : { target: "funnel", summary: "Extend SAVE20 to Nov 9, 11:59 PM.", rationale: "The ad runs until Nov 9.", steps: ["Admin > Coupons > SAVE20 > end date"], adHeadline: null, adText: null };

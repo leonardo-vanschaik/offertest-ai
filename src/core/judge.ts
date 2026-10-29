@@ -28,15 +28,34 @@ Rules:
 - A different code or a workaround does not count. If the advertised code fails, the promise is contradicted.
 - Check the arithmetic (20% of $120.00 is $24.00).`;
 
+// Long pages put the nav first and the price or code message far down. Send the top of the page plus every
+// line that carries offer evidence; the quote check still searches the full text.
+const SIGNAL = /[$€£]\s?\d|\d\s?%|\b(total|subtotal|discount|code|coupon|promo|applied|expired|invalid|not valid|shipping|delivery|free|trial|card|sold out|out of stock|in stock|price|save|off\b|download|thank|confirm|error|minimum|spend|per month|\/mo|cancel)/i;
+
+export function excerpt(text: string, max = 7000): string {
+  if (text.length <= max) return text;
+  const head = text.slice(0, 1200);
+  const lines = text.slice(1200).split("\n").map((l) => l.trim()).filter(Boolean);
+  const keep: string[] = [];
+  let size = head.length;
+  for (const l of lines) {
+    if (!SIGNAL.test(l) || keep.includes(l)) continue;
+    if (size + l.length > max) break;
+    keep.push(l);
+    size += l.length + 1;
+  }
+  return `${head}\n[...lines with prices, codes, shipping, totals, and messages:]\n${keep.join("\n")}`;
+}
+
 export async function judge(r: RunResult, evidence: Evidence[]): Promise<Verdict[]> {
-  const pages = evidence.map((e) => `--- step ${e.step} · ${e.url}\n${e.text.slice(0, 6000)}`).join("\n\n");
+  const pages = evidence.map((e) => `--- step ${e.step} · ${e.url}\n${excerpt(e.text)}`).join("\n\n");
   const out = await structured(r, {
     model: MODELS.wonder,
     fallbackModel: MODELS.spark,
     name: "offer_verdicts",
     schema: Schema,
     system: SYSTEM,
-    user: `AD\nHeadline: ${r.ad.headline}\nText: ${r.ad.text}\nButton: ${r.ad.cta}${(r.ad.cards ?? []).map((c, i) => `\nCard ${i}: ${c.headline} ${c.text ?? ""}`).join("")}\n\nPROMISES\n${JSON.stringify(r.assertions, null, 1)}\n\nPAGES\n${pages || "(none)"}`,
+    user: `AD\nHeadline: ${r.ad.headline}\nText: ${r.ad.text}\nButton: ${r.ad.cta}${r.ad.imageText ? `\nWords in the ad image: ${r.ad.imageText}` : ""}${(r.ad.cards ?? []).map((c, i) => `\nCard ${i}: ${c.headline} ${c.text ?? ""}`).join("")}\n\nPROMISES\n${JSON.stringify(r.assertions, null, 1)}\n\nPAGES\n${pages || "(none)"}`,
   });
   return r.assertions.map((a) => {
     const v = out.verdicts.find((x) => x.assertionId === a.id);

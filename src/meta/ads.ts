@@ -41,7 +41,7 @@ async function graph<T>(path: string, params: Record<string, string> = {}, metho
 }
 
 const CREATIVE_FIELDS =
-  "creative{id,name,title,body,image_url,thumbnail_url,call_to_action_type,object_type,url_tags,link_url,object_story_spec,asset_feed_spec}";
+  "creative{id,name,title,body,image_url,thumbnail_url,call_to_action_type,object_type,object_story_id,url_tags,link_url,object_story_spec,asset_feed_spec}";
 const AD_FIELDS = `id,name,account_id,effective_status,adset_id,campaign_id,${CREATIVE_FIELDS}`;
 
 type CTA = { type?: string; value?: { link?: string; lead_gen_form_id?: string; app_link?: string; application?: string; link_caption?: string } };
@@ -72,6 +72,7 @@ type GraphAd = {
     call_to_action_type?: string;
     url_tags?: string;
     link_url?: string;
+    object_story_id?: string;
     object_story_spec?: {
       link_data?: LinkData;
       template_data?: LinkData;
@@ -92,25 +93,29 @@ export async function getAd(adId: string): Promise<Ad> {
   return await toAd(await graph<GraphAd>(adId, { fields: AD_FIELDS }));
 }
 
-// Ads about to launch by default: paused or still in review.
-export async function listAds(account?: string, statuses = ["PAUSED", "PENDING_REVIEW", "IN_PROCESS", "WITH_ISSUES"]): Promise<Ad[]> {
-  let page = await graph<{ data: GraphAd[]; paging?: { next?: string; cursors?: { after?: string } } }>(`${accountId(account)}/ads`, {
-    fields: AD_FIELDS,
-    effective_status: JSON.stringify(statuses),
-    limit: "50",
-  });
+// Ads about to launch by default: paused, held by a paused campaign or ad set, or still in review.
+export const PRELAUNCH = ["PAUSED", "CAMPAIGN_PAUSED", "ADSET_PAUSED", "PENDING_REVIEW", "IN_PROCESS", "WITH_ISSUES"];
+
+export type AdSummary = { id: string; name?: string; status?: string };
+
+// Lists ad ids only (cheap; Meta rejects big creative payloads for 50 ads at once). Follows every page.
+export async function listAdIds(account?: string, statuses = PRELAUNCH): Promise<AdSummary[]> {
+  const params = { fields: "id,name,effective_status", effective_status: JSON.stringify(statuses), limit: "100" };
+  type Page = { data: { id: string; name?: string; effective_status?: string }[]; paging?: { next?: string; cursors?: { after?: string } } };
+  let page = await graph<Page>(`${accountId(account)}/ads`, params);
   const all = [...page.data];
-  // Follow every page: an account scan must not stop silently after the first 50 ads.
   while (page.paging?.next && page.paging.cursors?.after) {
-    page = await graph(`${accountId(account)}/ads`, {
-      fields: AD_FIELDS,
-      effective_status: JSON.stringify(statuses),
-      limit: "50",
-      after: page.paging.cursors.after,
-    });
+    page = await graph<Page>(`${accountId(account)}/ads`, { ...params, after: page.paging.cursors.after });
     all.push(...page.data);
   }
-  return Promise.all(all.map(toAd));
+  return all.map((a) => ({ id: a.id, name: a.name, status: a.effective_status }));
+}
+
+export async function listAds(account?: string, statuses = PRELAUNCH): Promise<Ad[]> {
+  const ids = await listAdIds(account, statuses);
+  const out: Ad[] = [];
+  for (const a of ids) out.push(await getAd(a.id));
+  return out;
 }
 
 export async function pauseAd(adId: string): Promise<void> {
@@ -119,6 +124,13 @@ export async function pauseAd(adId: string): Promise<void> {
 
 export async function getLeadForm(formId: string): Promise<LeadForm | undefined> {
   try {
+    return await readLeadForm(formId);
+  } catch (e) {
+    return { id: formId, questions: [], readError: (e as Error).message };
+  }
+}
+
+async function readLeadForm(formId: string): Promise<LeadForm> {
     const f = await graph<{
       id: string;
       name?: string;
@@ -140,19 +152,23 @@ export async function getLeadForm(formId: string): Promise<LeadForm | undefined>
           : undefined,
       privacyUrl: f.privacy_policy?.url,
     };
-  } catch {
-    return undefined;
-  }
 }
 
 // Meta adds url_tags to the landing URL and fills dynamic parameters like {{ad.id}}.
 export function landingUrl(link: string, urlTags: string | undefined, ad: GraphAd): string {
   if (!urlTags) return link;
-  const filled = urlTags.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k: string) =>
-    ({ "ad.id": ad.id, "ad.name": ad.name ?? "", "adset.id": ad.adset_id ?? "", "campaign.id": ad.campaign_id ?? "", site_source_name: "fb", placement: "Facebook_Mobile_Feed" })[k] ??
-    "offertest",
-  );
-  return link + (link.includes("?") ? "&" : "?") + filled;
+  const values: Record<string, string> = {
+    "ad.id": ad.id,
+    "ad.name": ad.name ?? "",
+    "adset.id": ad.adset_id ?? "",
+    "campaign.id": ad.campaign_id ?? "",
+    site_source_name: "fb",
+    placement: "Facebook_Mobile_Feed",
+  };
+  const filled = urlTags.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k: string) => encodeURIComponent(values[k] ?? "offertest"));
+  const url = new URL(link);
+  for (const [k, v] of new URLSearchParams(filled)) url.searchParams.set(k, v); // url_tags win over duplicates
+  return url.toString();
 }
 
 async function destinationOf(cta: CTA | undefined, link: string | undefined, ld: LinkData | undefined, g: GraphAd): Promise<Destination> {
@@ -191,7 +207,17 @@ export async function toAd(g: GraphAd): Promise<Ad> {
   const vd = oss.video_data;
   const afs = c.asset_feed_spec;
   const cta = ld?.call_to_action ?? vd?.call_to_action;
-  const destination = await destinationOf(cta, ld?.link ?? afs?.link_urls?.[0]?.website_url ?? c.link_url, ld, g);
+  let link = ld?.link ?? afs?.link_urls?.[0]?.website_url ?? oss.photo_data?.url ?? c.link_url;
+  let postText: string | undefined;
+  // "Use existing post" and boosted posts keep the link and text on the Page post, not in the creative.
+  if (!link && !cta?.value?.link && c.object_story_id) {
+    const post = await graph<{ message?: string; call_to_action?: CTA; attachments?: { data?: { unshimmed_url?: string; url?: string; title?: string }[] } }>(c.object_story_id, {
+      fields: "message,call_to_action,attachments{unshimmed_url,url,title}",
+    }).catch(() => undefined);
+    link = post?.call_to_action?.value?.link ?? post?.attachments?.data?.[0]?.unshimmed_url ?? post?.attachments?.data?.[0]?.url;
+    postText = post?.message;
+  }
+  const destination = await destinationOf(cta, link, ld, g);
 
   const cards: AdCard[] = [];
   // A card keeps its own link; it inherits only the parent's CTA type, never the parent's link.
@@ -214,7 +240,7 @@ export async function toAd(g: GraphAd): Promise<Ad> {
     accountId: g.account_id,
     status: g.effective_status,
     headline: ld?.name ?? vd?.title ?? c.title ?? afs?.titles?.[0]?.text ?? g.name ?? "",
-    text: ld?.message ?? vd?.message ?? oss.photo_data?.caption ?? c.body ?? afs?.bodies?.[0]?.text ?? "",
+    text: ld?.message ?? vd?.message ?? oss.photo_data?.caption ?? c.body ?? afs?.bodies?.[0]?.text ?? postText ?? "",
     description: ld?.description ?? vd?.link_description ?? afs?.descriptions?.[0]?.text,
     cta: humanCta(cta?.type ?? c.call_to_action_type ?? afs?.call_to_action_types?.[0]),
     imageUrl: c.image_url ?? ld?.picture ?? ld?.image_url ?? vd?.image_url ?? oss.photo_data?.image_url ?? c.thumbnail_url,

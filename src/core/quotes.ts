@@ -10,13 +10,15 @@ export function norm(s: string): string {
     .replace(/[‐-―−]/g, "-")
     .replace(/ /g, " ")
     .replace(/\s+/g, " ")
+    .replace(/([$€£])\s+(?=\d)/g, "$1") // "$ 24.00" and "$24.00" are the same price
+    .replace(/(\d)\s+%/g, "$1%")
     .trim()
     .toLowerCase();
 }
 
 export function adText(ad: Ad): string {
   const cards = (ad.cards ?? []).map((c) => `${c.headline}\n${c.text ?? ""}`).join("\n");
-  return [ad.headline, ad.text, ad.description ?? "", ad.cta, cards].join("\n");
+  return [ad.headline, ad.text, ad.description ?? "", ad.cta, cards, ad.imageText ?? ""].join("\n");
 }
 
 // Whole-token match: "24.00" must not match inside "124.00", and "$24" not inside "$24.50".

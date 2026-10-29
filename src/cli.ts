@@ -5,7 +5,7 @@ import readline from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { runTest, VERSION } from "./core/run.ts";
 import { loadEnv } from "./meta/client.ts";
-import { getAd, listAds, pauseAd } from "./meta/ads.ts";
+import { getAd, listAdIds, pauseAd } from "./meta/ads.ts";
 import { writeReport } from "./report/html.ts";
 import { serve } from "./server.ts";
 import { doctor, init } from "./onboarding.ts";
@@ -41,7 +41,9 @@ ${c.bold("Check options")}
   --no-submit           do not submit forms (sign-up, lead, booking)
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
-  --headful             show the browser
+  --headless            hide the browser (default when not in a terminal)
+  --limit <n>           with --account: test at most n ads (default 5)
+  --confirm-safety-checks  ask before acknowledging Muse Wonder safety checks
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop a run above this model cost
   --out <dir>           run folders go here (default ./offertest-runs)
@@ -70,6 +72,9 @@ async function main() {
       "pause-failing": { type: "boolean" },
       mobile: { type: "boolean" },
       headful: { type: "boolean" },
+      headless: { type: "boolean" },
+      limit: { type: "string" },
+      "confirm-safety-checks": { type: "boolean" },
       "max-turns": { type: "string" },
       "max-usd": { type: "string" },
       out: { type: "string", default: "offertest-runs" },
@@ -110,8 +115,19 @@ async function main() {
 
   let targets: Ad[];
   if (values.ad?.length) targets = await Promise.all(values.ad.map(getAd));
-  else if (values.account || (!values.url && process.env.META_AD_ACCOUNT_ID))
-    targets = await listAds(values.account, values.live ? ["ACTIVE"] : undefined);
+  else if (values.account || (!values.url && process.env.META_AD_ACCOUNT_ID)) {
+    // Cheap list first; read each creative only for the ads we will test.
+    const ids = await listAdIds(values.account, values.live ? ["ACTIVE"] : undefined);
+    const limit = Number(values.limit ?? 5);
+    if (ids.length > limit && !values.json) console.log(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));
+    const pick = ids.slice(0, limit);
+    if (pick.length > 1 && tty && !values.yes) {
+      for (const a of pick) console.log(c.dim(`  ${a.id}  ${(a.status ?? "").padEnd(16)} ${a.name ?? ""}`));
+      if (!(await ask(`Test these ${pick.length} ads? About $${(pick.length * 0.2).toFixed(2)}-$${pick.length}.00 in model usage and ${pick.length * 2}-${pick.length * 5} minutes.`))) return;
+    }
+    targets = [];
+    for (const a of pick) targets.push(await getAd(a.id));
+  }
   else if (values.url && values.headline)
     targets = [{ source: "manual", headline: values.headline, text: values.text ?? "", cta: values.cta ?? "Shop now", imageUrl: values.image, destination: { type: "website", url: values.url } }];
   else {
@@ -127,7 +143,9 @@ async function main() {
     outDir: values.out!,
     pay: values.pay,
     submit: !values["no-submit"],
-    headful: values.headful,
+    // A visible browser by default in a terminal: it passes more bot checks and you can watch the agent.
+    headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
+    confirmSafetyChecks: values["confirm-safety-checks"],
     mobile: values.mobile,
     maxTurns: values["max-turns"] ? Number(values["max-turns"]) : undefined,
     maxUsd: values["max-usd"] ? Number(values["max-usd"]) : undefined,
@@ -192,9 +210,13 @@ function printResult(r: RunResult, report: string) {
 }
 
 async function ads(account?: string, live?: boolean) {
-  const list = await listAds(account, live ? ["ACTIVE"] : undefined);
-  if (!list.length) return void console.log("No ads matched.");
-  for (const a of list) console.log(`${a.id}  ${c.dim((a.status ?? "").padEnd(14))} ${a.headline.slice(0, 50).padEnd(50)}  -> ${dest(a)}`);
+  const ids = await listAdIds(account, live ? ["ACTIVE"] : undefined);
+  if (!ids.length) return void console.log(`No ${live ? "live" : "paused or in-review"} ads found.${live ? "" : " Use --live for active ads."}`);
+  for (const s of ids.slice(0, 25)) {
+    const a = await getAd(s.id);
+    console.log(`${a.id}  ${c.dim((a.status ?? "").padEnd(16))} ${a.headline.slice(0, 46).padEnd(46)}  -> ${dest(a)}`);
+  }
+  if (ids.length > 25) console.log(c.dim(`...and ${ids.length - 25} more.`));
 }
 
 function installBrowser() {

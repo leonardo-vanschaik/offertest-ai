@@ -25,6 +25,8 @@ test("payment guard stops 'Place order' but not shopping clicks", async () => {
     const g = await d.guard({ type: "click", ...place });
     assert.equal(g?.kind, "payment");
     assert.ok(await d.onPaymentPage());
+    // Enter in a checkout field submits the form, whose default button is "Place order".
+    await d.page.locator("input[type=email], input[name=email]").first().focus();
     assert.equal((await d.guard({ type: "keypress", keys: ["Enter"] }))?.kind, "payment");
     assert.equal((await d.guard({ type: "type", text: "4242\n" }))?.kind, "payment");
     assert.equal(await d.guard({ type: "type", text: "Test Shopper" }), null);
@@ -69,5 +71,25 @@ test("Space on a focused pay button needs approval", async () => {
     assert.equal(await d.guard({ type: "type", text: "Test Shopper" }), null);
   } finally {
     await d.close();
+  }
+});
+
+test("Enter in the discount-code field is not payment", async () => {
+  await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"code_expired"}' });
+  const d = new Driver();
+  await d.start(`${STORE}/store/products/ridge-trail-shoe`);
+  try {
+    await d.page.getByRole("button", { name: /10/ }).first().click();
+    await d.page.locator("button:has-text('Add to cart')").first().click();
+    await d.page.waitForURL(/cart/);
+    const code = d.page.getByPlaceholder(/code/i).or(d.page.locator("input[name*=code i]")).first();
+    await code.click();
+    await d.execute({ type: "type", text: "SAVE20" });
+    assert.equal(await d.guard({ type: "keypress", keys: ["Enter"] }), null);
+    await d.execute({ type: "keypress", keys: ["Enter"] });
+    assert.match(await d.text(), /This code has expired\./);
+  } finally {
+    await d.close();
+    await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
   }
 });

@@ -156,7 +156,12 @@ export class Driver {
     const submits =
       (action.type === "keypress" && action.keys.some((k) => /^(enter|return)$/i.test(k))) ||
       (action.type === "type" && /[\r\n]/.test(action.text));
-    if (submits && (await this.onPaymentPage())) return { kind: "payment", label: "Enter on a payment page" };
+    if (submits) {
+      // Enter in the discount-code field must work. It only counts as payment when it would press a pay
+      // button: the focused button itself, or the default (first) submit button of the focused field's form.
+      const label = await this.enterSubmitsPay();
+      if (label) return { kind: "payment", label };
+    }
     // Space (or typing a space) activates a focused button: check what has focus.
     const activates =
       (action.type === "keypress" && action.keys.some((k) => /^(space| )$/i.test(k))) || (action.type === "type" && action.text.includes(" "));
@@ -165,6 +170,22 @@ export class Driver {
       if (focused) return { kind: "payment", label: focused };
     }
     return null;
+  }
+
+  private async enterSubmitsPay(): Promise<string | null> {
+    const focused = await this.focusedPayButton();
+    if (focused) return focused;
+    return await this.page
+      .evaluate(([src, ids]) => {
+        const a = document.activeElement as HTMLInputElement | null;
+        const form = a?.form ?? a?.closest("form");
+        if (!form || /^(textarea|button)$/i.test(a!.tagName)) return null;
+        const def = form.querySelector<HTMLElement>('button:not([type]), button[type=submit], input[type=submit]');
+        if (!def) return null;
+        const text = (def.innerText || (def as HTMLInputElement).value || def.getAttribute("aria-label") || "").trim();
+        return ids.some((sel: string) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
+      }, [PAY_TEXT.source, PAY_IDS] as [string, string[]])
+      .catch(() => null);
   }
 
   private async focusedPayButton(): Promise<string | null> {

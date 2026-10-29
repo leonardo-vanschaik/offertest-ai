@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as pauseAd, c as CONFIG_DIR, i as listAds, l as CONFIG_ENV, n as getAd, o as VERSION, s as runTest, t as writeReport, u as loadEnv } from "./html-DjBHBAP8.mjs";
+import { c as runTest, d as loadEnv, i as listAdIds, l as CONFIG_DIR, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_ENV } from "./html-CgcDnzWb.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -341,20 +341,29 @@ async function checkAdsToken(token) {
 		if (me.error) return {
 			valid: false,
 			scopes: [],
+			scopesKnown: false,
 			error: me.error.message
 		};
 		const dbg = await (await fetch(`${GRAPH()}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`)).json();
+		if (dbg.error || !dbg.data) return {
+			valid: true,
+			userName: me.name,
+			scopes: [],
+			scopesKnown: false
+		};
 		return {
 			valid: true,
 			userName: me.name,
-			appId: dbg.data?.app_id,
-			expiresAt: dbg.data?.expires_at,
-			scopes: dbg.data?.scopes ?? []
+			appId: dbg.data.app_id,
+			expiresAt: dbg.data.expires_at || void 0,
+			scopes: dbg.data.scopes ?? [],
+			scopesKnown: true
 		};
 	} catch (e) {
 		return {
 			valid: false,
 			scopes: [],
+			scopesKnown: false,
 			error: e.message
 		};
 	}
@@ -504,7 +513,7 @@ async function init() {
 			token = void 0;
 		} else {
 			ok(`Connected as ${t.userName}. Token expires: ${fmtDate(t.expiresAt)}.`);
-			const noRead = !t.scopes.includes("ads_read") && !t.scopes.includes("ads_management");
+			const noRead = t.scopesKnown && !t.scopes.includes("ads_read") && !t.scopes.includes("ads_management");
 			if (noRead) warn("The saved token cannot read ads (no ads_read). Get a new one below.");
 			if (noRead || !await yes("Keep this token?")) token = void 0;
 			else if (expiresSoon(t)) {
@@ -527,7 +536,8 @@ async function init() {
     ${c$1.bold("B. Get a token")}
       1. Open ${LINKS.explorer}
       2. In "Meta App", pick your OfferTest app.
-      3. Under "Permissions", add ${c$1.bold("ads_read")} and ${c$1.bold("ads_management")} (to pause broken ads).
+      3. Under "Permissions", add ${c$1.bold("ads_read")}, ${c$1.bold("ads_management")} (to pause broken ads),
+         and ${c$1.bold("pages_manage_ads")} (to read Instant Forms for lead ads).
       4. Click "Generate Access Token", approve, and copy the token.
 `);
 		if (await yes("Open the app page and the Graph API Explorer now?")) {
@@ -543,8 +553,15 @@ async function init() {
 				continue;
 			}
 			ok(`Connected as ${t.userName}.`);
-			if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) warn("This token has no ads_read permission. Add it in the Explorer and generate a new token.");
-			if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
+			if (!t.scopesKnown) warn("Could not read this token's permissions. If ads fail to load, make sure it has ads_read.");
+			else {
+				if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) {
+					bad("This token has no ads_read permission. Add it in the Explorer, generate a new token, and paste that one.");
+					continue;
+				}
+				if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
+				if (!t.scopes.includes("pages_manage_ads")) info("For lead ads (Instant Forms), also add pages_manage_ads so OfferTest can read the form.");
+			}
 			token = pasted;
 			if (expiresSoon(t)) token = await offerExtend(pasted, t) ?? pasted;
 			saveEnv({ META_ACCESS_TOKEN: token });
@@ -607,7 +624,8 @@ async function doctor() {
 	if (!key) fail("No Meta Model API key", "run `offertest init` (step 1)");
 	else {
 		const r = await checkModelKey(key);
-		if (r.ok) ok(`Meta Model API key: ${r.detail}`);
+		if (r.ok && /not listed/.test(r.detail)) fail(`Meta Model API key works, but ${r.detail}`, "check that your Meta account has access to muse-wonder-1.0 on dev.meta.ai");
+		else if (r.ok) ok(`Meta Model API key: ${r.detail}`);
 		else if (r.inconclusive) fail(`Meta Model API key not checked: ${r.detail}`, "run `offertest doctor` again in a minute");
 		else fail(`Meta Model API key: ${r.detail}`, "run `offertest init` and paste a new key");
 	}
@@ -620,8 +638,12 @@ async function doctor() {
 			const days = t.expiresAt ? Math.round((t.expiresAt * 1e3 - Date.now()) / 864e5) : null;
 			ok(`Ads Manager: connected as ${t.userName}${days === null ? ", token never expires" : `, token expires in ${days} day(s)`}`);
 			if (days !== null && days < 7) warn("The token expires soon. Run `offertest init` to extend it.");
-			if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) fail("The token lacks ads_read", `add ads_read in ${LINKS.explorer} and generate a new token`);
-			if (!t.scopes.includes("ads_management")) info("No ads_management: OfferTest cannot pause ads (reading works).");
+			if (!t.scopesKnown) warn("Could not read the token's permissions (debug_token failed).");
+			else {
+				if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) fail("The token lacks ads_read", `add ads_read in ${LINKS.explorer} and generate a new token`);
+				if (!t.scopes.includes("ads_management")) info("No ads_management: OfferTest cannot pause ads (reading works).");
+				if (!t.scopes.includes("pages_manage_ads")) info("No pages_manage_ads: lead ad forms cannot be read (other ads work).");
+			}
 			const acct = process.env.META_AD_ACCOUNT_ID;
 			const accounts = await adAccounts(token);
 			if (acct && !accounts.some((a) => a.id === acct || a.id === `act_${acct}`)) fail(`This token cannot see ad account ${acct}`, "run `offertest init` and pick an account from the list");
@@ -674,7 +696,9 @@ ${c.bold("Check options")}
   --no-submit           do not submit forms (sign-up, lead, booking)
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
-  --headful             show the browser
+  --headless            hide the browser (default when not in a terminal)
+  --limit <n>           with --account: test at most n ads (default 5)
+  --confirm-safety-checks  ask before acknowledging Muse Wonder safety checks
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop a run above this model cost
   --out <dir>           run folders go here (default ./offertest-runs)
@@ -711,6 +735,9 @@ async function main() {
 			"pause-failing": { type: "boolean" },
 			mobile: { type: "boolean" },
 			headful: { type: "boolean" },
+			headless: { type: "boolean" },
+			limit: { type: "string" },
+			"confirm-safety-checks": { type: "boolean" },
 			"max-turns": { type: "string" },
 			"max-usd": { type: "string" },
 			out: {
@@ -757,8 +784,18 @@ async function main() {
 	};
 	let targets;
 	if (values.ad?.length) targets = await Promise.all(values.ad.map(getAd));
-	else if (values.account || !values.url && process.env.META_AD_ACCOUNT_ID) targets = await listAds(values.account, values.live ? ["ACTIVE"] : void 0);
-	else if (values.url && values.headline) targets = [{
+	else if (values.account || !values.url && process.env.META_AD_ACCOUNT_ID) {
+		const ids = await listAdIds(values.account, values.live ? ["ACTIVE"] : void 0);
+		const limit = Number(values.limit ?? 5);
+		if (ids.length > limit && !values.json) console.log(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));
+		const pick = ids.slice(0, limit);
+		if (pick.length > 1 && tty && !values.yes) {
+			for (const a of pick) console.log(c.dim(`  ${a.id}  ${(a.status ?? "").padEnd(16)} ${a.name ?? ""}`));
+			if (!await ask(`Test these ${pick.length} ads? About $${(pick.length * .2).toFixed(2)}-$${pick.length}.00 in model usage and ${pick.length * 2}-${pick.length * 5} minutes.`)) return;
+		}
+		targets = [];
+		for (const a of pick) targets.push(await getAd(a.id));
+	} else if (values.url && values.headline) targets = [{
 		source: "manual",
 		headline: values.headline,
 		text: values.text ?? "",
@@ -781,7 +818,8 @@ async function main() {
 		outDir: values.out,
 		pay: values.pay,
 		submit: !values["no-submit"],
-		headful: values.headful,
+		headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
+		confirmSafetyChecks: values["confirm-safety-checks"],
 		mobile: values.mobile,
 		maxTurns: values["max-turns"] ? Number(values["max-turns"]) : void 0,
 		maxUsd: values["max-usd"] ? Number(values["max-usd"]) : void 0,
@@ -851,9 +889,13 @@ function printResult(r, report) {
 	console.log(`\n  Report: ${report}`);
 }
 async function ads(account, live) {
-	const list = await listAds(account, live ? ["ACTIVE"] : void 0);
-	if (!list.length) return void console.log("No ads matched.");
-	for (const a of list) console.log(`${a.id}  ${c.dim((a.status ?? "").padEnd(14))} ${a.headline.slice(0, 50).padEnd(50)}  -> ${dest(a)}`);
+	const ids = await listAdIds(account, live ? ["ACTIVE"] : void 0);
+	if (!ids.length) return void console.log(`No ${live ? "live" : "paused or in-review"} ads found.${live ? "" : " Use --live for active ads."}`);
+	for (const s of ids.slice(0, 25)) {
+		const a = await getAd(s.id);
+		console.log(`${a.id}  ${c.dim((a.status ?? "").padEnd(16))} ${a.headline.slice(0, 46).padEnd(46)}  -> ${dest(a)}`);
+	}
+	if (ids.length > 25) console.log(c.dim(`...and ${ids.length - 25} more.`));
 }
 function installBrowser() {
 	const cli = createRequire(import.meta.url).resolve("playwright-core/cli.js");

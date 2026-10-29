@@ -7,6 +7,7 @@ export type LeadForm = {
   questions: { key: string; label: string; type: string }[];
   thankYou?: { title?: string; body?: string; buttonText?: string; url?: string };
   privacyUrl?: string;
+  readError?: string; // Meta would not return the form (often a missing Page permission)
 };
 
 // Where the ad sends people. Read from the ad creative when the ad comes from Meta.
@@ -32,6 +33,7 @@ export type Ad = {
   description?: string;
   cta: string;
   imageUrl?: string; // http(s) URL, data URL, or local file path
+  imageText?: string; // words printed in the ad image, read by Muse Spark (quotable like ad text)
   destination: Destination;
   cards?: AdCard[];
 };
@@ -120,6 +122,7 @@ export type RunOptions = {
   pay?: boolean; // allow a test-mode payment (asks first)
   submit?: boolean; // allow non-payment form submits with the test identity (default true)
   headful?: boolean;
+  confirmSafetyChecks?: boolean; // ask a human for Muse Wonder safety checks (default: acknowledge and log)
   mobile?: boolean;
   maxTurns?: number;
   maxUsd?: number;

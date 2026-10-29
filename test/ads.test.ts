@@ -96,7 +96,7 @@ test("carousel card keeps its own link when it inherits the parent CTA", async (
 });
 
 test("account scan follows every page", async () => {
-  const { listAds } = await import("../src/meta/ads.ts");
+  const { listAdIds } = await import("../src/meta/ads.ts");
   process.env.META_ACCESS_TOKEN = "t";
   const calls: string[] = [];
   const real = globalThis.fetch;
@@ -107,10 +107,17 @@ test("account scan follows every page", async () => {
     return new Response(JSON.stringify(second ? { data: [ad("3")] } : { data: [ad("1"), ad("2")], paging: { next: "https://graph.facebook.com/next", cursors: { after: "CUR1" } } }));
   }) as typeof fetch;
   try {
-    const ads = await listAds("act_1");
-    assert.equal(ads.length, 3);
+    const ads = await listAdIds("act_1");
+    assert.deepEqual(ads.map((a) => a.id), ["1", "2", "3"]);
     assert.equal(calls.length, 2);
   } finally {
     globalThis.fetch = real;
   }
+});
+
+test("url_tags values are URL-encoded (ad names have spaces)", () => {
+  const u = landingUrl("https://x.example/p", "utm_campaign={{ad.name}}&utm_term={{adset.name}}", { id: "9", name: "Ridge 20% & more" });
+  const q = new URL(u).searchParams;
+  assert.equal(q.get("utm_campaign"), "Ridge 20% & more");
+  assert.equal(q.get("utm_term"), "offertest");
 });

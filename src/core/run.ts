@@ -46,8 +46,9 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
       await log.step({ kind: "source", summary: `Pulled ad ${ad.id} "${ad.name ?? ad.headline}" from Meta Ads Manager (${ad.status ?? "status unknown"})` });
 
     await phase("Reading the ad's promises (Muse Spark)");
-    const { assertions, subject } = await extractAssertions(r);
+    const { assertions, subject, imageText } = await extractAssertions(r);
     r.assertions = assertions;
+    if (imageText.trim()) r.ad.imageText = imageText.trim();
     await log.event({ type: "assertions", assertions });
     log.save();
 
@@ -56,18 +57,25 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     const funnels: FunnelResult[] = [];
     let lastUrl = "";
 
-    const follow = async (url: string, cardIndex?: number) => {
+    const follow = async (url: string, cardIndex?: number, headful = opts.headful): Promise<void> => {
       const driver = new Driver();
       try {
-        await driver.start(url, { headful: opts.headful, mobile: opts.mobile, allowPayment: opts.pay });
+        await driver.start(url, { headful, mobile: opts.mobile, allowPayment: opts.pay });
         const f = opts.baseline ? await landingOnly(driver, log) : await runFunnel(r, driver, log, opts, url, cardIndex);
+        if (f.blocked && !headful && !opts.baseline) {
+          // Bot walls often stop headless browsers only: try once more in a visible browser.
+          await log.step({ kind: "note", summary: `Blocked (${f.blocked}): retrying once in a visible browser` });
+          await driver.close();
+          return await follow(url, cardIndex, true);
+        }
         funnels.push(f);
         evidence.push(...f.evidence);
         lastUrl = driver.url();
-        if (f.blocked) r.blocked = f.blocked;
         if (driver.blockedRequests.length) await log.event({ type: "order_submit_blocked", urls: driver.blockedRequests });
         const last = f.evidence[f.evidence.length - 1];
-        if (last && CONFIRMED.test(last.text.slice(0, 3000)) && (f.paid || opts.submit !== false))
+        // A confirmation page says so near the top, or its URL does. Footers ("thank you for visiting") do not count.
+        const top = last?.text.split("\n").filter(Boolean).slice(0, 25).join("\n") ?? "";
+        if (last && last.step > 1 && (CONFIRMED.test(top) || /thank|confirm|success|welcome|order\/|complete/i.test(new URL(last.url).pathname)) && (f.paid || opts.submit !== false))
           r.confirmation = { url: last.url, text: last.text.split("\n").find((l) => CONFIRMED.test(l))?.trim() ?? "" };
       } finally {
         await driver.close();
@@ -109,6 +117,7 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     await log.event({ type: "verdicts", verdicts, overall: r.overall });
 
     const paid = funnels.some((f) => f.paid);
+    if (funnels.length && funnels.every((f) => f.blocked)) r.blocked = funnels[0].blocked;
     r.boundary = r.blocked
       ? `Blocked: ${r.blocked}`
       : paid && r.confirmation
@@ -163,6 +172,8 @@ function key(d: Destination): string {
 
 export function leadFormText(formId: string, form?: LeadForm): string {
   if (!form) return `Instant Form ${formId} (details not readable)`;
+  if (form.readError)
+    return `Instant Form ${formId}: Meta did not return the form (${form.readError}). Reading lead forms needs a Page permission: add pages_manage_ads in the Graph API Explorer and run offertest init.`;
   return [
     `Instant Form: ${form.name ?? formId}`,
     form.intro ? `Intro: ${form.intro}` : "",

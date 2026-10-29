@@ -100,18 +100,20 @@ export async function checkModelKey(key: string): Promise<KeyCheck> {
   }
 }
 
-type TokenInfo = { valid: boolean; appId?: string; expiresAt?: number; scopes: string[]; userName?: string; error?: string };
+type TokenInfo = { valid: boolean; appId?: string; expiresAt?: number; scopes: string[]; scopesKnown: boolean; userName?: string; error?: string };
 
 export async function checkAdsToken(token: string): Promise<TokenInfo> {
   try {
     const me = (await (await fetch(`${GRAPH()}/me?fields=id,name&access_token=${encodeURIComponent(token)}`)).json()) as { name?: string; error?: { message: string } };
-    if (me.error) return { valid: false, scopes: [], error: me.error.message };
+    if (me.error) return { valid: false, scopes: [], scopesKnown: false, error: me.error.message };
     const dbg = (await (
       await fetch(`${GRAPH()}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`)
-    ).json()) as { data?: { app_id?: string; expires_at?: number; scopes?: string[] } };
-    return { valid: true, userName: me.name, appId: dbg.data?.app_id, expiresAt: dbg.data?.expires_at, scopes: dbg.data?.scopes ?? [] };
+    ).json()) as { data?: { app_id?: string; expires_at?: number; scopes?: string[] }; error?: { message: string } };
+    if (dbg.error || !dbg.data) return { valid: true, userName: me.name, scopes: [], scopesKnown: false };
+    // expires_at 0 means the token never expires (system user tokens).
+    return { valid: true, userName: me.name, appId: dbg.data.app_id, expiresAt: dbg.data.expires_at || undefined, scopes: dbg.data.scopes ?? [], scopesKnown: true };
   } catch (e) {
-    return { valid: false, scopes: [], error: (e as Error).message };
+    return { valid: false, scopes: [], scopesKnown: false, error: (e as Error).message };
   }
 }
 
@@ -253,7 +255,7 @@ export async function init() {
       token = undefined;
     } else {
       ok(`Connected as ${t.userName}. Token expires: ${fmtDate(t.expiresAt)}.`);
-      const noRead = !t.scopes.includes("ads_read") && !t.scopes.includes("ads_management");
+      const noRead = t.scopesKnown && !t.scopes.includes("ads_read") && !t.scopes.includes("ads_management");
       if (noRead) warn("The saved token cannot read ads (no ads_read). Get a new one below.");
       if (noRead || !(await yes("Keep this token?"))) token = undefined;
       else if (expiresSoon(t)) {
@@ -276,7 +278,8 @@ export async function init() {
     ${c.bold("B. Get a token")}
       1. Open ${LINKS.explorer}
       2. In "Meta App", pick your OfferTest app.
-      3. Under "Permissions", add ${c.bold("ads_read")} and ${c.bold("ads_management")} (to pause broken ads).
+      3. Under "Permissions", add ${c.bold("ads_read")}, ${c.bold("ads_management")} (to pause broken ads),
+         and ${c.bold("pages_manage_ads")} (to read Instant Forms for lead ads).
       4. Click "Generate Access Token", approve, and copy the token.
 `);
     if (await yes("Open the app page and the Graph API Explorer now?")) {
@@ -292,9 +295,15 @@ export async function init() {
         continue;
       }
       ok(`Connected as ${t.userName}.`);
-      if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management"))
-        warn("This token has no ads_read permission. Add it in the Explorer and generate a new token.");
-      if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
+      if (!t.scopesKnown) warn("Could not read this token's permissions. If ads fail to load, make sure it has ads_read.");
+      else {
+        if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) {
+          bad("This token has no ads_read permission. Add it in the Explorer, generate a new token, and paste that one.");
+          continue;
+        }
+        if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
+        if (!t.scopes.includes("pages_manage_ads")) info("For lead ads (Instant Forms), also add pages_manage_ads so OfferTest can read the form.");
+      }
       token = pasted;
       // Explorer tokens last about an hour. Swap for a 60-day token with the app's ID and secret.
       if (expiresSoon(t)) token = (await offerExtend(pasted, t)) ?? pasted;
@@ -372,7 +381,8 @@ export async function doctor(): Promise<number> {
   if (!key) fail("No Meta Model API key", "run `offertest init` (step 1)");
   else {
     const r = await checkModelKey(key);
-    if (r.ok) ok(`Meta Model API key: ${r.detail}`);
+    if (r.ok && /not listed/.test(r.detail)) fail(`Meta Model API key works, but ${r.detail}`, "check that your Meta account has access to muse-wonder-1.0 on dev.meta.ai");
+    else if (r.ok) ok(`Meta Model API key: ${r.detail}`);
     else if (r.inconclusive) fail(`Meta Model API key not checked: ${r.detail}`, "run `offertest doctor` again in a minute");
     else fail(`Meta Model API key: ${r.detail}`, "run `offertest init` and paste a new key");
   }
@@ -386,8 +396,12 @@ export async function doctor(): Promise<number> {
       const days = t.expiresAt ? Math.round((t.expiresAt * 1000 - Date.now()) / 86400_000) : null;
       ok(`Ads Manager: connected as ${t.userName}${days === null ? ", token never expires" : `, token expires in ${days} day(s)`}`);
       if (days !== null && days < 7) warn("The token expires soon. Run `offertest init` to extend it.");
-      if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) fail("The token lacks ads_read", `add ads_read in ${LINKS.explorer} and generate a new token`);
-      if (!t.scopes.includes("ads_management")) info("No ads_management: OfferTest cannot pause ads (reading works).");
+      if (!t.scopesKnown) warn("Could not read the token's permissions (debug_token failed).");
+      else {
+        if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) fail("The token lacks ads_read", `add ads_read in ${LINKS.explorer} and generate a new token`);
+        if (!t.scopes.includes("ads_management")) info("No ads_management: OfferTest cannot pause ads (reading works).");
+        if (!t.scopes.includes("pages_manage_ads")) info("No pages_manage_ads: lead ad forms cannot be read (other ads work).");
+      }
       const acct = process.env.META_AD_ACCOUNT_ID;
       const accounts = await adAccounts(token);
       if (acct && !accounts.some((a) => a.id === acct || a.id === `act_${acct}`)) fail(`This token cannot see ad account ${acct}`, "run `offertest init` and pick an account from the list");
