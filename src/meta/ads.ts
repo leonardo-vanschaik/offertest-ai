@@ -85,12 +85,23 @@ export async function getAd(adId: string): Promise<Ad> {
 
 // Ads about to launch by default: paused or still in review.
 export async function listAds(account?: string, statuses = ["PAUSED", "PENDING_REVIEW", "IN_PROCESS", "WITH_ISSUES"]): Promise<Ad[]> {
-  const res = await graph<{ data: GraphAd[] }>(`${accountId(account)}/ads`, {
+  let page = await graph<{ data: GraphAd[]; paging?: { next?: string; cursors?: { after?: string } } }>(`${accountId(account)}/ads`, {
     fields: AD_FIELDS,
     effective_status: JSON.stringify(statuses),
     limit: "50",
   });
-  return Promise.all(res.data.map(toAd));
+  const all = [...page.data];
+  // Follow every page: an account scan must not stop silently after the first 50 ads.
+  while (page.paging?.next && page.paging.cursors?.after) {
+    page = await graph(`${accountId(account)}/ads`, {
+      fields: AD_FIELDS,
+      effective_status: JSON.stringify(statuses),
+      limit: "50",
+      after: page.paging.cursors.after,
+    });
+    all.push(...page.data);
+  }
+  return Promise.all(all.map(toAd));
 }
 
 export async function pauseAd(adId: string): Promise<void> {
@@ -174,8 +185,13 @@ export async function toAd(g: GraphAd): Promise<Ad> {
   const destination = await destinationOf(cta, ld?.link ?? afs?.link_urls?.[0]?.website_url ?? c.link_url, ld, g);
 
   const cards: AdCard[] = [];
+  // A card keeps its own link; it inherits only the parent's CTA type, never the parent's link.
   for (const ch of ld?.child_attachments ?? [])
-    cards.push({ headline: ch.name ?? "", text: ch.description, destination: await destinationOf(ch.call_to_action ?? cta, ch.link, ld, g) });
+    cards.push({
+      headline: ch.name ?? "",
+      text: ch.description,
+      destination: await destinationOf(ch.call_to_action ?? (cta?.type ? { type: cta.type } : undefined), ch.link ?? ld?.link, ld, g),
+    });
   // Dynamic creative: every extra title/body combination is a variant the customer may see.
   for (const u of afs?.link_urls?.slice(1) ?? [])
     if (u.website_url) cards.push({ headline: "", destination: { type: "website", url: landingUrl(u.website_url, c.url_tags, g) } });

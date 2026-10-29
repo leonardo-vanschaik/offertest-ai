@@ -12,7 +12,9 @@ import type { Ad, RunResult } from "./types.ts";
 // Payments are never allowed here and safety checks are declined automatically.
 
 const OUT_DIR = "offertest-runs";
-const ALLOWED_ORIGINS = ["https://adsmanager.facebook.com", "https://business.facebook.com"];
+// The extension's ID is fixed by the "key" in extension/manifest.json. Only it may call the server,
+// so another extension or web page cannot start tests or pause ads with the owner's Meta token.
+const EXTENSION_ORIGIN = `chrome-extension://${process.env.OFFERTEST_EXTENSION_ID ?? "hfjeehndnoioofnabimflagfndlmddme"}`;
 
 type TestState = {
   id: string;
@@ -47,7 +49,7 @@ export function serve(port = 7777): Promise<void> {
 }
 
 function allowedOrigin(origin?: string): boolean {
-  return !!origin && (origin.startsWith("chrome-extension://") || ALLOWED_ORIGINS.includes(origin));
+  return origin === EXTENSION_ORIGIN;
 }
 
 function cors(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -97,6 +99,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // Other web pages must not start tests or pause ads: refuse foreign origins, and require JSON
   // on POST so a cross-site form cannot send a "simple" request.
   if (req.headers.origin && !allowedOrigin(req.headers.origin)) return send(req, res, 403, { error: "Origin not allowed" });
+  // Requests that act (start a test, pause an ad) must come from the OfferTest extension.
+  if (method === "POST" && !allowedOrigin(req.headers.origin)) return send(req, res, 403, { error: "Only the OfferTest extension may do this" });
   if (method === "POST" && !String(req.headers["content-type"] ?? "").includes("application/json"))
     return send(req, res, 415, { error: "Send Content-Type: application/json" });
 

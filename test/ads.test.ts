@@ -74,3 +74,43 @@ test("click-to-WhatsApp ad reads the welcome message", async () => {
 test("url_tags append to a URL that already has a query", () => {
   assert.equal(landingUrl("https://x.example/p?a=1", "utm_id={{ad.id}}", { id: "7" }), "https://x.example/p?a=1&utm_id=7");
 });
+
+test("carousel card keeps its own link when it inherits the parent CTA", async () => {
+  const ad = await toAd({
+    id: "4",
+    creative: {
+      id: "c4",
+      object_story_spec: {
+        link_data: {
+          link: "https://shop.example",
+          call_to_action: { type: "SHOP_NOW", value: { link: "https://shop.example/parent" } },
+          child_attachments: [
+            { link: "https://shop.example/a", name: "A" },
+            { link: "https://shop.example/b", name: "B" },
+          ],
+        },
+      },
+    },
+  });
+  assert.deepEqual(ad.cards?.map((c) => (c.destination as { url: string }).url), ["https://shop.example/a", "https://shop.example/b"]);
+});
+
+test("account scan follows every page", async () => {
+  const { listAds } = await import("../src/meta/ads.ts");
+  process.env.META_ACCESS_TOKEN = "t";
+  const calls: string[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: string) => {
+    calls.push(String(url));
+    const second = String(url).includes("after=CUR1");
+    const ad = (id: string) => ({ id, creative: { id: `c${id}`, title: `Ad ${id}`, link_url: `https://x.example/${id}` } });
+    return new Response(JSON.stringify(second ? { data: [ad("3")] } : { data: [ad("1"), ad("2")], paging: { next: "https://graph.facebook.com/next", cursors: { after: "CUR1" } } }));
+  }) as typeof fetch;
+  try {
+    const ads = await listAds("act_1");
+    assert.equal(ads.length, 3);
+    assert.equal(calls.length, 2);
+  } finally {
+    globalThis.fetch = real;
+  }
+});

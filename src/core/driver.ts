@@ -157,7 +157,31 @@ export class Driver {
       (action.type === "keypress" && action.keys.some((k) => /^(enter|return)$/i.test(k))) ||
       (action.type === "type" && /[\r\n]/.test(action.text));
     if (submits && (await this.onPaymentPage())) return { kind: "payment", label: "Enter on a payment page" };
+    // Space (or typing a space) activates a focused button: check what has focus.
+    const activates =
+      (action.type === "keypress" && action.keys.some((k) => /^(space| )$/i.test(k))) || (action.type === "type" && action.text.includes(" "));
+    if (activates) {
+      const focused = await this.focusedPayButton();
+      if (focused) return { kind: "payment", label: focused };
+    }
     return null;
+  }
+
+  private async focusedPayButton(): Promise<string | null> {
+    const label = await this.page
+      .evaluate(([src, ids]) => {
+        const a = document.activeElement as HTMLElement | null;
+        if (!a || !/^(button|a|input)$/i.test(a.tagName) && a.getAttribute("role") !== "button") return null;
+        const text = (a.innerText || (a as HTMLInputElement).value || a.getAttribute("aria-label") || "").trim();
+        return ids.some((sel: string) => a.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
+      }, [PAY_TEXT.source, PAY_IDS] as [string, string[]])
+      .catch(() => null);
+    // Focus inside a payment iframe (wallet or card frame) also counts.
+    if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {
+      const inFrame = await this.page.evaluate(() => document.activeElement?.tagName === "IFRAME").catch(() => false);
+      if (inFrame) return "Express pay button";
+    }
+    return label;
   }
 
   private async payTargetAt(x: number, y: number): Promise<{ label: string; byId: boolean } | null> {

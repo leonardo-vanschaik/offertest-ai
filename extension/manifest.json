@@ -16,9 +16,16 @@
       "32": "icons/icon32.png"
     }
   },
-  "background": { "service_worker": "background.js" },
-  "side_panel": { "default_path": "sidepanel.html" },
-  "permissions": ["sidePanel", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": [
+    "sidePanel",
+    "storage"
+  ],
   "host_permissions": [
     "https://adsmanager.facebook.com/*",
     "https://business.facebook.com/*",
@@ -26,9 +33,15 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://adsmanager.facebook.com/*", "https://business.facebook.com/adsmanager/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://adsmanager.facebook.com/*",
+        "https://business.facebook.com/adsmanager/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnXzubzK4hm9vETvvoIRTFQyRq5VumBAHBBRKVu7Mtf6BSKjWmDsX5gE38eLlSUEId8AW+QzUCdVyuzyiyDAYa4um5FnVCu5U6Iq3P6uIuOFPvpJgdyX4gb8x+8Al5b3QuxVSBBt3wkKqLrvPVwGO6/HOyJyd5+2Qm2e+aL/RJmeNv9ADz3vErlRdPdQeRFueo6aELJfcdbbNWdBaJHAn06MV7KOGFpYHKGK8JkzM38CBSulIzvLrQmWB4m6EvN0xRwa19xGrB9y+GO3kJksstngzISgzi+aEm1RSYTpDrrWP18PBv+553Pwa/3CK70GMQQbQoELGN9mfxBMLYnp4uwIDAQAB"
 }

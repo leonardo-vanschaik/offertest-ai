@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as pauseAd, c as CONFIG_DIR, i as listAds, l as CONFIG_ENV, n as getAd, o as VERSION, s as runTest, t as writeReport, u as loadEnv } from "./html-BKzdMDyr.mjs";
+import { a as pauseAd, c as CONFIG_DIR, i as listAds, l as CONFIG_ENV, n as getAd, o as VERSION, s as runTest, t as writeReport, u as loadEnv } from "./html-9O6usmGv.mjs";
 import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -11,7 +11,7 @@ import http from "node:http";
 
 //#region src/server.ts
 const OUT_DIR = "offertest-runs";
-const ALLOWED_ORIGINS = ["https://adsmanager.facebook.com", "https://business.facebook.com"];
+const EXTENSION_ORIGIN = `chrome-extension://${process.env.OFFERTEST_EXTENSION_ID ?? "hfjeehndnoioofnabimflagfndlmddme"}`;
 const tests = /* @__PURE__ */ new Map();
 function serve(port = 7777) {
 	loadEnv();
@@ -27,7 +27,7 @@ function serve(port = 7777) {
 	});
 }
 function allowedOrigin(origin) {
-	return !!origin && (origin.startsWith("chrome-extension://") || ALLOWED_ORIGINS.includes(origin));
+	return origin === EXTENSION_ORIGIN;
 }
 function cors(req, res) {
 	const origin = req.headers.origin;
@@ -76,6 +76,7 @@ async function handle(req, res) {
 		return;
 	}
 	if (req.headers.origin && !allowedOrigin(req.headers.origin)) return send(req, res, 403, { error: "Origin not allowed" });
+	if (method === "POST" && !allowedOrigin(req.headers.origin)) return send(req, res, 403, { error: "Only the OfferTest extension may do this" });
 	if (method === "POST" && !String(req.headers["content-type"] ?? "").includes("application/json")) return send(req, res, 415, { error: "Send Content-Type: application/json" });
 	if (method === "GET" && url.pathname === "/health") return send(req, res, 200, {
 		ok: true,

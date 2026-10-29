@@ -25,3 +25,5 @@ npx offertest serve    # keep this terminal open; listens on http://127.0.0.1:77
 3. In the side panel, click **Run test**. If Ads Manager does not put the ad IDs in the URL (large selections), paste an ad ID into the panel instead.
 
 In the server mode, the agent never pays and declines safety checks. **Pause ad** always asks you to confirm first.
+
+The `key` in `manifest.json` fixes the extension ID (`hfjeehndnoioofnabimflagfndlmddme`). `offertest serve` accepts actions only from that ID. If you fork the extension with a new key, set `OFFERTEST_EXTENSION_ID` to your ID.

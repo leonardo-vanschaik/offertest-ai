@@ -352,7 +352,26 @@ var Driver = class {
 			kind: "payment",
 			label: "Enter on a payment page"
 		};
+		if (action.type === "keypress" && action.keys.some((k) => /^(space| )$/i.test(k)) || action.type === "type" && action.text.includes(" ")) {
+			const focused = await this.focusedPayButton();
+			if (focused) return {
+				kind: "payment",
+				label: focused
+			};
+		}
 		return null;
+	}
+	async focusedPayButton() {
+		const label = await this.page.evaluate(([src, ids]) => {
+			const a = document.activeElement;
+			if (!a || !/^(button|a|input)$/i.test(a.tagName) && a.getAttribute("role") !== "button") return null;
+			const text = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
+			return ids.some((sel) => a.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
+		}, [PAY_TEXT.source, PAY_IDS]).catch(() => null);
+		if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {
+			if (await this.page.evaluate(() => document.activeElement?.tagName === "IFRAME").catch(() => false)) return "Express pay button";
+		}
+		return label;
 	}
 	async payTargetAt(x, y) {
 		const probe = ([px, py, src, ids]) => {
@@ -1263,12 +1282,22 @@ async function listAds(account, statuses = [
 	"IN_PROCESS",
 	"WITH_ISSUES"
 ]) {
-	const res = await graph(`${accountId(account)}/ads`, {
+	let page = await graph(`${accountId(account)}/ads`, {
 		fields: AD_FIELDS,
 		effective_status: JSON.stringify(statuses),
 		limit: "50"
 	});
-	return Promise.all(res.data.map(toAd));
+	const all = [...page.data];
+	while (page.paging?.next && page.paging.cursors?.after) {
+		page = await graph(`${accountId(account)}/ads`, {
+			fields: AD_FIELDS,
+			effective_status: JSON.stringify(statuses),
+			limit: "50",
+			after: page.paging.cursors.after
+		});
+		all.push(...page.data);
+	}
+	return Promise.all(all.map(toAd));
 }
 async function pauseAd(adId) {
 	await graph(adId, { status: "PAUSED" }, "POST");
@@ -1375,7 +1404,7 @@ async function toAd(g) {
 	for (const ch of ld?.child_attachments ?? []) cards.push({
 		headline: ch.name ?? "",
 		text: ch.description,
-		destination: await destinationOf(ch.call_to_action ?? cta, ch.link, ld, g)
+		destination: await destinationOf(ch.call_to_action ?? (cta?.type ? { type: cta.type } : void 0), ch.link ?? ld?.link, ld, g)
 	});
 	for (const u of afs?.link_urls?.slice(1) ?? []) if (u.website_url) cards.push({
 		headline: "",

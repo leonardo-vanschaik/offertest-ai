@@ -53,3 +53,21 @@ test("a file download shows up in the page evidence", async () => {
     await d.close();
   }
 });
+
+test("Space on a focused pay button needs approval", async () => {
+  await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
+  const d = new Driver();
+  await d.start(`${STORE}/store/products/ridge-trail-shoe`);
+  try {
+    await d.page.getByRole("button", { name: /10/ }).first().click();
+    await d.page.locator("button:has-text('Add to cart')").first().click();
+    await d.page.waitForURL(/cart/);
+    await d.page.goto(`${STORE}/store/checkout`);
+    await d.page.locator("[data-requires-approval]").focus();
+    assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "payment");
+    await d.page.locator("input[type=email], input[name=email]").first().focus();
+    assert.equal(await d.guard({ type: "type", text: "Test Shopper" }), null);
+  } finally {
+    await d.close();
+  }
+});
