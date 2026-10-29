@@ -133,6 +133,7 @@ npm test                       # unit tests
 npm run typecheck
 npm run dev -- check --help    # run the CLI from source
 (cd examples/demo-store && npm install && npm run dev)   # demo store on :3000
+npm run test:e2e               # browser tests (needs the demo store on :3000)
 ```
 
 Layout: `src/core` (agent, browser, judge), `src/meta` (Meta APIs), `src/report` (HTML report), `skills/` (agent skill), `extension/` (Ads Manager button), `eval/`, `examples/demo-store/`.
