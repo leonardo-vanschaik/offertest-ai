@@ -40,7 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# OfferTest runtime data
-/runs/*
-!/runs/.gitkeep
-/data/store.json
+
+# OfferTest
+/offertest-runs
+/eval/results/runs
+.env
+.env.local

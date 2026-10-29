@@ -1,325 +1,134 @@
-// Eval harness. Usage:
-//   npx tsx eval/run.ts [--mode agent|one_call|both] [--only id1,id2] [--limit n] [--dry] [--resume]
-// Runs cases one at a time (one store, shared state). Saves results after every case.
+// Scored eval on the demo store. Start it first: (cd examples/demo-store && npm run dev)
+//   npx tsx eval/run.ts [--mode agent|baseline|both] [--only id1,id2] [--limit n] [--resume] [--store http://localhost:3000]
 import fs from "node:fs";
 import path from "node:path";
-import type { NewRunInput, Run, ScenarioName } from "@/lib/types";
-import { CASES, type EvalCase } from "./cases";
+import { parseArgs } from "node:util";
+import { runTest } from "../src/core/run.ts";
+import type { RunResult } from "../src/types.ts";
+import { CASES, type EvalCase } from "./cases.ts";
 
-type Mode = "agent" | "one_call";
+type Mode = "agent" | "baseline";
 type Got = "pass" | "fail" | "unresolved";
-
-type CaseRunResult = { got: Got; runId: string; usd: number; ms: number; error?: string };
-
-type CaseResult = {
-  id: string;
-  scenario: ScenarioName;
-  adHeadline: string;
-  expected: "pass" | "fail";
-  agent?: CaseRunResult;
-  oneCall?: CaseRunResult;
-};
-
-export type Summary = {
-  total: number;
-  hits: number;
-  misses: number; // expected fail, got pass or unresolved
-  falseAlarms: number; // expected pass, got fail
-  unresolved: number; // got unresolved (includes runs that errored)
-  completed: number; // runs that finished without error
-  usd: number;
-  ms: number;
-};
-
+type CaseRun = { got: Got; runId: string; usd: number; ms: number; error?: string };
+type Summary = { total: number; hits: number; misses: number; falseAlarms: number; unresolved: number; completed: number; usd: number; ms: number; accuracy95: [number, number] };
 type Results = {
   ranAt: string;
-  agent: Summary;
-  oneCall?: Summary;
-  cases: CaseResult[];
+  agent?: Summary;
+  baseline?: Summary;
+  cases: { id: string; scenario: string; adHeadline: string; expected: "pass" | "fail"; agent?: CaseRun; baseline?: CaseRun }[];
 };
 
-type ExecuteRun = (
-  input: NewRunInput,
-  opts?: { autoApprove?: { payment: boolean; fix: boolean } },
-) => Promise<Run>;
-
-const RESULTS_DIR = path.join(__dirname, "results");
+const RESULTS_DIR = path.join(import.meta.dirname, "results");
 const LATEST = path.join(RESULTS_DIR, "latest.json");
 
-// ---------- CLI ----------
+const { values } = parseArgs({
+  options: {
+    mode: { type: "string", default: "agent" },
+    only: { type: "string" },
+    limit: { type: "string" },
+    resume: { type: "boolean" },
+    store: { type: "string", default: "http://localhost:3000" },
+  },
+});
+const modes: Mode[] = values.mode === "both" ? ["agent", "baseline"] : [values.mode as Mode];
 
-function parseArgs(argv: string[]) {
-  const args = { modes: ["agent"] as Mode[], only: null as string[] | null, limit: null as number | null, dry: false, resume: false };
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    const next = () => {
-      const v = argv[++i];
-      if (v === undefined) throw new Error(`missing value for ${a}`);
-      return v;
-    };
-    if (a === "--mode") {
-      const m = next();
-      if (m === "both") args.modes = ["agent", "one_call"];
-      else if (m === "agent" || m === "one_call") args.modes = [m];
-      else throw new Error(`bad --mode ${m}`);
-    } else if (a === "--only") args.only = next().split(",").map((s) => s.trim()).filter(Boolean);
-    else if (a === "--limit") args.limit = Number(next());
-    else if (a === "--dry") args.dry = true;
-    else if (a === "--resume") args.resume = true;
-    else throw new Error(`unknown arg ${a}`);
-  }
-  return args;
+async function setScenario(scenario: string) {
+  const res = await fetch(`${values.store}/api/store/scenario`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ scenario }),
+  });
+  if (!res.ok) throw new Error(`demo store did not switch to ${scenario} (${res.status}). Is it running at ${values.store}?`);
 }
 
-// ---------- Run backends ----------
-
-// Variable specifiers keep tsc happy while the modules are still being written; tsx resolves "@/".
-const STORE_MODULE = "@/lib/store";
-const RUN_MODULE = "@/lib/agent/run";
-
-async function loadStore(dry: boolean): Promise<{ setScenario: (s: ScenarioName) => unknown } | null> {
-  try {
-    const mod = await import(STORE_MODULE);
-    if (typeof mod.setScenario !== "function") throw new Error("setScenario is not exported");
-    // resetStore is imported for parity with the contract; the eval does not delete orders.
-    void mod.resetStore;
-    return { setScenario: mod.setScenario };
-  } catch (e) {
-    if (dry) {
-      console.log(`[dry] store module not loaded (${(e as Error).message.split("\n")[0]}); skipping setScenario`);
-      return null;
-    }
-    throw e;
-  }
+// Wilson score interval: honest bounds for a small sample.
+function wilson(k: number, n: number): [number, number] {
+  if (!n) return [0, 0];
+  const z = 1.96;
+  const p = k / n;
+  const d = 1 + (z * z) / n;
+  const centre = (p + (z * z) / (2 * n)) / d;
+  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / d;
+  return [Math.max(0, centre - half), Math.min(1, centre + half)];
 }
 
-// If the Next server is up, confirm it sees the scenario. Its in-memory state may differ from ours.
-async function syncServerScenario(landingUrl: string, scenario: ScenarioName) {
-  const origin = new URL(landingUrl).origin;
-  try {
-    const res = await fetch(`${origin}/api/store/config`, { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return;
-    const cfg = (await res.json()) as { scenario?: ScenarioName };
-    if (cfg.scenario === scenario) return;
-    console.log(`  server scenario is ${cfg.scenario}, posting ${scenario}`);
-    await fetch(`${origin}/api/store/scenario`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ scenario }),
-      signal: AbortSignal.timeout(5000),
-    });
-  } catch {
-    // Server not reachable: the run itself will surface that.
+function summarize(rows: Results["cases"], mode: Mode): Summary | undefined {
+  const done = rows.filter((r) => r[mode]);
+  if (!done.length) return undefined;
+  const s: Summary = { total: done.length, hits: 0, misses: 0, falseAlarms: 0, unresolved: 0, completed: 0, usd: 0, ms: 0, accuracy95: [0, 0] };
+  for (const r of done) {
+    const x = r[mode]!;
+    if (!x.error) s.completed++;
+    if (x.got === r.expected) s.hits++;
+    else if (r.expected === "fail") s.misses++;
+    else if (x.got === "fail") s.falseAlarms++;
+    if (x.got === "unresolved") s.unresolved++;
+    s.usd += x.usd;
+    s.ms += x.ms;
   }
-}
-
-function fakeExecuteRun(): ExecuteRun {
-  let n = 0;
-  return async (input) => {
-    await new Promise((r) => setTimeout(r, 10));
-    const created = new Date();
-    const roll = Math.random();
-    const overall: Run["overall"] = roll < 0.45 ? "pass" : roll < 0.9 ? "fail" : "unresolved";
-    const errored = Math.random() < 0.05;
-    const finished = new Date(created.getTime() + 20000 + Math.floor(Math.random() * 60000));
-    return {
-      id: `dry-${Date.now()}-${++n}`,
-      createdAt: created.toISOString(),
-      finishedAt: finished.toISOString(),
-      mode: input.mode ?? "agent",
-      status: errored ? "error" : "done",
-      phase: "done",
-      ad: input.ad,
-      landingUrl: input.landingUrl,
-      allowPayment: input.allowPayment,
-      assertions: [],
-      steps: [],
-      approvals: [],
-      verdicts: [],
-      overall: errored ? undefined : overall,
-      boundary: "Tested up to payment, not paid",
-      usage: { inputTokens: 0, outputTokens: 0, images: 0, usd: Math.round(Math.random() * 40) / 100 },
-      error: errored ? "dry-run simulated error" : undefined,
-    };
-  };
-}
-
-// ---------- Scoring ----------
-
-function summarize(cases: CaseResult[], key: "agent" | "oneCall"): Summary {
-  const s: Summary = { total: 0, hits: 0, misses: 0, falseAlarms: 0, unresolved: 0, completed: 0, usd: 0, ms: 0 };
-  for (const c of cases) {
-    const r = c[key];
-    if (!r) continue;
-    s.total++;
-    if (!r.error) s.completed++;
-    if (r.got === c.expected) s.hits++;
-    if (c.expected === "fail" && r.got !== "fail") s.misses++;
-    if (c.expected === "pass" && r.got === "fail") s.falseAlarms++;
-    if (r.got === "unresolved") s.unresolved++;
-    s.usd += r.usd;
-    s.ms += r.ms;
-  }
-  s.usd = Math.round(s.usd * 10000) / 10000;
+  s.accuracy95 = wilson(s.hits, s.total);
   return s;
 }
 
-function toResult(run: Run, wallMs: number): CaseRunResult {
-  const errored = run.status === "error";
-  const got: Got = !errored && (run.overall === "pass" || run.overall === "fail") ? run.overall : "unresolved";
-  const ms = run.finishedAt ? Date.parse(run.finishedAt) - Date.parse(run.createdAt) : wallMs;
-  const out: CaseRunResult = { got, runId: run.id, usd: run.usage?.usd ?? 0, ms: Number.isFinite(ms) ? ms : wallMs };
-  if (errored) out.error = run.error ?? "run status error";
-  else if (run.status !== "done") out.error = `run ended in status ${run.status}`;
-  return out;
-}
-
-// ---------- Output ----------
-
-function save(results: Results, file: string) {
+function save(results: Results) {
+  results.agent = summarize(results.cases, "agent");
+  results.baseline = summarize(results.cases, "baseline");
   fs.mkdirSync(RESULTS_DIR, { recursive: true });
-  const body = JSON.stringify(results, null, 2);
-  for (const f of [file, LATEST]) {
-    const tmp = `${f}.${process.pid}.tmp`;
-    fs.writeFileSync(tmp, body);
-    fs.renameSync(tmp, f);
+  fs.writeFileSync(LATEST, JSON.stringify(results, null, 2));
+}
+
+async function runCase(c: EvalCase, mode: Mode): Promise<CaseRun> {
+  await setScenario(c.scenario);
+  const t0 = Date.now();
+  let result: RunResult;
+  try {
+    ({ result } = await runTest(
+      { source: "manual", ...c.ad, destination: { type: "website", url: c.landingUrl.replace("http://localhost:3000", values.store!) } },
+      { outDir: path.join(RESULTS_DIR, "runs"), pay: false, baseline: mode === "baseline", maxTurns: 25 },
+    ));
+  } catch (err) {
+    return { got: "unresolved", runId: "", usd: 0, ms: Date.now() - t0, error: String(err) };
   }
+  return { got: result.overall ?? "unresolved", runId: result.id, usd: result.usage.usd, ms: Date.now() - t0, ...(result.error ? { error: result.error } : {}) };
 }
-
-const pad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : s + " ".repeat(n - s.length));
-
-function cell(r: CaseRunResult | undefined, expected: string) {
-  if (!r) return "-";
-  const mark = r.error ? "ERR" : r.got === expected ? "ok" : "XX";
-  return `${r.got} ${mark}`;
-}
-
-function printTable(results: Results) {
-  const hasOne = results.cases.some((c) => c.oneCall);
-  const hasAgent = results.cases.some((c) => c.agent);
-  const head = [pad("id", 32), pad("scenario", 22), pad("exp", 5)];
-  if (hasAgent) head.push(pad("agent", 16));
-  if (hasOne) head.push(pad("one_call", 16));
-  console.log("\n" + head.join(" "));
-  console.log("-".repeat(head.join(" ").length));
-  for (const c of results.cases) {
-    const row = [pad(c.id, 32), pad(c.scenario, 22), pad(c.expected, 5)];
-    if (hasAgent) row.push(pad(cell(c.agent, c.expected), 16));
-    if (hasOne) row.push(pad(cell(c.oneCall, c.expected), 16));
-    console.log(row.join(" "));
-  }
-  const line = (name: string, s: Summary) =>
-    console.log(
-      `${pad(name, 9)} hits ${s.hits}/${s.total}  misses ${s.misses}  false alarms ${s.falseAlarms}  ` +
-        `unresolved ${s.unresolved}  completed ${s.completed}/${s.total}  $${s.usd.toFixed(2)}  ${(s.ms / 1000).toFixed(0)}s`,
-    );
-  console.log("");
-  if (hasAgent) line("agent", results.agent);
-  if (results.oneCall) line("one_call", results.oneCall);
-}
-
-// ---------- Main ----------
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const only = values.only?.split(",");
+  let selected = CASES.filter((c) => !only || only.includes(c.id));
+  if (values.limit) selected = selected.slice(0, Number(values.limit));
+  const prev: Results | null = values.resume && fs.existsSync(LATEST) ? JSON.parse(fs.readFileSync(LATEST, "utf8")) : null;
+  const results: Results = { ranAt: new Date().toISOString(), cases: prev?.cases ?? [] };
 
-  let selected: EvalCase[] = CASES;
-  if (args.only) {
-    const unknown = args.only.filter((id) => !CASES.some((c) => c.id === id));
-    if (unknown.length) throw new Error(`unknown case ids: ${unknown.join(", ")}`);
-    selected = CASES.filter((c) => args.only!.includes(c.id));
-  }
-  if (args.limit != null) selected = selected.slice(0, args.limit);
-
-  // Prior results (for --resume): keyed by case id.
-  const prior = new Map<string, CaseResult>();
-  if (args.resume && fs.existsSync(LATEST)) {
-    const old = JSON.parse(fs.readFileSync(LATEST, "utf8")) as Results;
-    for (const c of old.cases) prior.set(c.id, c);
-    console.log(`resume: loaded ${prior.size} cases from latest.json`);
-  }
-
-  const byId = new Map<string, CaseResult>();
-  for (const c of CASES) {
-    const p = prior.get(c.id);
-    // Keep prior results only if the label still matches (labels are frozen, but guard anyway).
-    if (p && p.expected === c.expected && p.scenario === c.scenario) byId.set(c.id, { ...p, adHeadline: c.ad.headline });
-  }
-
-  const store = await loadStore(args.dry);
-  const executeRun: ExecuteRun = args.dry
-    ? fakeExecuteRun()
-    : ((await import(RUN_MODULE)) as { executeRun: ExecuteRun }).executeRun;
-  if (typeof executeRun !== "function") throw new Error(`${RUN_MODULE} does not export executeRun`);
-
-  const ranAt = new Date().toISOString();
-  const file = path.join(RESULTS_DIR, `${ranAt.replace(/[:.]/g, "-")}${args.dry ? "-dry" : ""}.json`);
-
-  const build = (): Results => {
-    const cases = CASES.map((c) => byId.get(c.id)).filter((c): c is CaseResult => !!c);
-    const out: Results = { ranAt, agent: summarize(cases, "agent"), cases };
-    if (cases.some((c) => c.oneCall)) out.oneCall = summarize(cases, "oneCall");
-    return out;
-  };
-
-  console.log(`eval: ${selected.length} cases, modes ${args.modes.join("+")}${args.dry ? " (dry)" : ""}`);
-  let i = 0;
-  for (const c of selected) {
-    i++;
-    const entry: CaseResult = byId.get(c.id) ?? {
-      id: c.id,
-      scenario: c.scenario,
-      adHeadline: c.ad.headline,
-      expected: c.expected,
-    };
-    byId.set(c.id, entry);
-
-    for (const mode of args.modes) {
-      const key = mode === "agent" ? "agent" : "oneCall";
-      const done = entry[key];
-      if (args.resume && done && !done.error) {
-        console.log(`[${i}/${selected.length}] ${c.id} ${mode}: skip (resume, got ${done.got})`);
-        continue;
-      }
-
-      const t0 = Date.now();
-      try {
-        if (store) {
-          await store.setScenario(c.scenario);
-          if (!args.dry) await syncServerScenario(c.landingUrl, c.scenario);
-        }
-        const input: NewRunInput = { ad: c.ad, landingUrl: c.landingUrl, allowPayment: false, mode };
-        const run = await executeRun(input, { autoApprove: { payment: false, fix: false } });
-        entry[key] = toResult(run, Date.now() - t0);
-      } catch (e) {
-        entry[key] = { got: "unresolved", runId: "", usd: 0, ms: Date.now() - t0, error: (e as Error).message };
-      }
-      const r = entry[key]!;
-      console.log(
-        `[${i}/${selected.length}] ${c.id} ${mode}: expected ${c.expected}, got ${r.got}` +
-          `${r.error ? ` (error: ${r.error})` : ""}  $${r.usd.toFixed(2)} ${(r.ms / 1000).toFixed(0)}s`,
-      );
-      save(build(), file);
+  console.log(`eval: ${selected.length} cases, ${modes.join(" + ")}`);
+  for (const [i, c] of selected.entries()) {
+    let row = results.cases.find((r) => r.id === c.id);
+    if (!row) {
+      row = { id: c.id, scenario: c.scenario, adHeadline: c.ad.headline, expected: c.expected };
+      results.cases.push(row);
+    }
+    for (const mode of modes) {
+      if (row[mode]) continue; // --resume
+      const x = await runCase(c, mode);
+      row[mode] = x;
+      save(results);
+      const mark = x.got === c.expected ? "✓" : "✗";
+      console.log(`[${i + 1}/${selected.length}] ${mark} ${c.id} ${mode}: expected ${c.expected}, got ${x.got}  $${x.usd.toFixed(2)} ${(x.ms / 1000).toFixed(0)}s${x.error ? `  (${x.error.slice(0, 80)})` : ""}`);
     }
   }
-
-  // Leave the store in baseline without deleting orders.
-  if (store) {
-    try {
-      await store.setScenario("baseline");
-      if (!args.dry) await syncServerScenario(CASES[0].landingUrl, "baseline");
-    } catch {
-      // ignore
-    }
+  await setScenario("baseline").catch(() => {});
+  save(results);
+  for (const mode of modes) {
+    const s = results[mode];
+    if (!s) continue;
+    const [lo, hi] = s.accuracy95;
+    console.log(
+      `\n${mode}: ${s.hits}/${s.total} correct (95% CI ${(lo * 100).toFixed(0)}-${(hi * 100).toFixed(0)}%), ${s.misses} missed failures, ${s.falseAlarms} false alarms, ${s.unresolved} unresolved, $${s.usd.toFixed(2)}, ${(s.ms / 60000).toFixed(1)} min`,
+    );
   }
-
-  const results = build();
-  save(results, file);
-  printTable(results);
-  console.log(`\nwrote ${path.relative(process.cwd(), file)} and eval/results/latest.json`);
+  console.log(`\nSaved ${LATEST}`);
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((err) => {
+  console.error(err);
   process.exit(1);
 });

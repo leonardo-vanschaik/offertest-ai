@@ -1,6 +1,22 @@
 // Frozen eval set. Labels were fixed from the demo store scenario table (examples/demo-store/README.md) before any scored run.
 // Do not edit labels after a scored run. Add new cases with new ids instead.
-import type { Ad, ScenarioName } from "@/lib/types";
+export type ScenarioName =
+  | "baseline"
+  | "code_expired"
+  | "code_wrong_percent"
+  | "code_missing"
+  | "code_excludes_product"
+  | "code_min_spend"
+  | "price_raised"
+  | "shipping_charged"
+  | "size_sold_out"
+  | "shipping_threshold_ok"
+  | "trial_requires_card"
+  | "trial_14_days"
+  | "guide_link_broken"
+  | "guide_paywalled";
+
+export type Ad = { headline: string; text: string; cta: string };
 
 export type EvalCase = {
   id: string;
@@ -13,6 +29,8 @@ export type EvalCase = {
 
 const RIDGE = "http://localhost:3000/store/products/ridge-trail-shoe";
 const SUMMIT = "http://localhost:3000/store/products/summit-rain-jacket";
+const TRAIL_CLUB = "http://localhost:3000/store/trail-club";
+const GUIDE = "http://localhost:3000/store/guides/first-thru-hike";
 
 // ---------- Ad families (all Alder Trail Co.) ----------
 
@@ -74,6 +92,20 @@ const TRAIL10: Ad = {
   headline: "$10 off the Summit rain jacket with code TRAIL10.",
   text: "Stay dry on the trail. Enter TRAIL10 at checkout.",
   cta: "Shop now",
+};
+
+// Free trial (non-checkout funnel): Trail Club membership.
+const TRIAL: Ad = {
+  headline: "Try Trail Club free for 30 days.",
+  text: "Member prices and free returns on every order. No credit card required.",
+  cta: "Sign up",
+};
+
+// Lead magnet (non-checkout funnel): free PDF guide.
+const GUIDE_AD: Ad = {
+  headline: "Free: The First Thru-Hike Guide",
+  text: "Everything we wish we knew before our first long trail. Instant download.",
+  cta: "Download",
 };
 
 function c(
@@ -151,7 +183,25 @@ export const CASES: EvalCase[] = [
     "Ridge Slate size 10 shows \"Sold out\", so not every size 7 to 12 is in stock."),
   c("avail-b-size_sold_out", "size_sold_out", AVAIL_B, "fail",
     "Copy B, same promise. Size 10 is sold out."),
+
+  // ---------- Non-checkout funnels (8): free trial and lead magnet. 4 pass, 4 fail ----------
+  c("trial-baseline", "baseline", TRIAL, "pass",
+    "Baseline: the join form asks only name, email, and password. Welcome page says the free trial ends 30 days from today.", TRAIL_CLUB),
+  c("trial-trial_requires_card", "trial_requires_card", TRIAL, "fail",
+    "The join form requires card number, expiry, and CVC: \"A card is required to start your trial.\" The ad says no credit card required.", TRAIL_CLUB),
+  c("trial-trial_14_days", "trial_14_days", TRIAL, "fail",
+    "The trial is 14 days, not 30: landing and welcome pages say 14 days.", TRAIL_CLUB),
+  c("trial-code_expired", "code_expired", TRIAL, "pass",
+    "Only SAVE20 changes. Trail Club is still a 30-day free trial with no card.", TRAIL_CLUB),
+  c("guide-baseline", "baseline", GUIDE_AD, "pass",
+    "Baseline: after the email form, \"Download the guide (PDF)\" opens /guides/first-thru-hike.pdf.", GUIDE),
+  c("guide-guide_link_broken", "guide_link_broken", GUIDE_AD, "fail",
+    "The download link points to a missing file: 404, so there is no instant download.", GUIDE),
+  c("guide-guide_paywalled", "guide_paywalled", GUIDE_AD, "fail",
+    "Thanks page says \"Your guide is ready. Unlock it for $4.99\". The ad says free.", GUIDE),
+  c("guide-price_raised", "price_raised", GUIDE_AD, "pass",
+    "Only the Ridge price changes. The guide is still free and downloads right away.", GUIDE),
 ];
 
-if (CASES.length !== 30) throw new Error(`eval/cases.ts must have 30 cases, has ${CASES.length}`);
+if (CASES.length !== 38) throw new Error(`eval/cases.ts must have 38 cases, has ${CASES.length}`);
 if (new Set(CASES.map((x) => x.id)).size !== CASES.length) throw new Error("duplicate case id");

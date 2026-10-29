@@ -1,0 +1,27 @@
+{
+  "name": "offertest-demo-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Alder Trail Co.: a small store with switchable offer bugs, used for the OfferTest eval and demo.",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "css": "node src/app/store/_styles/build-css.mjs"
+  },
+  "dependencies": {
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/node": "^4",
+    "@tailwindcss/oxide": "^4",
+    "tailwindcss": "^4",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
