@@ -40,6 +40,7 @@ Reading your own ad account needs **no App Review, no business verification, and
 3. Under **Permissions**, add:
    - `ads_read`: read your ads (required)
    - `ads_management`: pause broken ads (optional)
+   - `pages_manage_ads`: read Instant Forms for lead ads (optional)
 4. Click **Generate Access Token**, approve, and copy it.
 5. Paste it when `offertest init` asks.
 
@@ -89,6 +90,8 @@ Adds a **Test offer** button inside Ads Manager. See [extension/README.md](../ex
 | Meta rejected this key | Copy the key again from dev.meta.ai |
 | Ads Manager token expired | `offertest init`, step 2 |
 | The token lacks ads_read | Add `ads_read` in the Graph API Explorer and generate a new token |
+| Instant Form: Meta did not return the form | Add `pages_manage_ads` to the token (`offertest init`, step 2) |
+| No ads found | `offertest check` tests ads that are paused, in a paused campaign or ad set, or in review. Add `--live` for active ads |
 | This token cannot see ad account act_... | Use the Facebook profile that has access to that ad account, or pick another account in `offertest init` |
 | No browser found | Install Google Chrome, or `npx offertest install-browser` |
 | Blocked: bot check | The site blocks automated browsers. Run with `--headful`, or test a staging copy |
