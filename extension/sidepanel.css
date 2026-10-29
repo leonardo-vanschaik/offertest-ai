@@ -47,10 +47,10 @@ button { font: inherit; }
   border-radius: 13px; font-size: 12px; font-weight: 600; background: #f0f2f5; color: var(--muted);
 }
 .status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
-.status.online { background: var(--pass-soft); color: var(--pass); }
-.status.online .dot { background: #18a35b; box-shadow: 0 0 0 3px rgba(24, 163, 91, 0.18); }
-.status.offline { background: #f0f2f5; color: var(--muted); }
-.status.offline .dot { background: #b6bdc4; }
+.status.is-online { background: var(--pass-soft); color: var(--pass); }
+.status.is-online .dot { background: #18a35b; box-shadow: 0 0 0 3px rgba(24, 163, 91, 0.18); }
+.status.is-offline { background: #f0f2f5; color: var(--muted); }
+.status.is-offline .dot { background: #b6bdc4; }
 
 main { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 

@@ -8,6 +8,7 @@ import { runTest, VERSION } from "./core/run.ts";
 import { CONFIG_DIR, CONFIG_ENV, loadEnv } from "./meta/client.ts";
 import { getAd, listAds, pauseAd } from "./meta/ads.ts";
 import { writeReport } from "./report/html.ts";
+import { serve } from "./server.ts";
 import type { Ad, Overall, RunOptions, RunResult } from "./types.ts";
 
 const c = {
@@ -28,6 +29,7 @@ ${c.bold("Usage")}
   offertest check --account <act_123>          test every ad about to launch (paused / in review)
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
   offertest ads [--account <act_123>] [--live] list ads and where they send people
+  offertest serve [--port 7777]                local server for the Ads Manager Chrome extension
   offertest init                               save your Meta keys to ~/.offertest/.env
   offertest install-browser                    download Chromium if you have no Chrome
 
@@ -72,6 +74,7 @@ async function main() {
       out: { type: "string", default: "offertest-runs" },
       json: { type: "boolean" },
       yes: { type: "boolean" },
+      port: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -81,6 +84,7 @@ async function main() {
   if (cmd === "init") return await init();
   if (cmd === "install-browser") return installBrowser();
   if (cmd === "ads") return await ads(values.account, values.live);
+  if (cmd === "serve") return await serve(values.port ? Number(values.port) : undefined);
   if (cmd !== "check") {
     console.error(`Unknown command "${cmd}".\n\n${HELP}`);
     process.exit(EXIT.usage);
