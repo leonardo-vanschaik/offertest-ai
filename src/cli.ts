@@ -145,6 +145,7 @@ async function main() {
     submit: !values["no-submit"],
     // A visible browser by default in a terminal: it passes more bot checks and you can watch the agent.
     headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
+    retryHeadful: !values.headless && !!process.stdout.isTTY,
     confirmSafetyChecks: values["confirm-safety-checks"],
     mobile: values.mobile,
     maxTurns: values["max-turns"] ? Number(values["max-turns"]) : undefined,

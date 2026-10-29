@@ -1,3 +1,5 @@
+import "playwright-core";
+
 //#region src/types.d.ts
 type LeadForm = {
   id: string;
@@ -190,6 +192,7 @@ type RunOptions = {
   pay?: boolean;
   submit?: boolean;
   headful?: boolean;
+  retryHeadful?: boolean;
   confirmSafetyChecks?: boolean;
   mobile?: boolean;
   maxTurns?: number;

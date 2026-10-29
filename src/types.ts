@@ -122,6 +122,7 @@ export type RunOptions = {
   pay?: boolean; // allow a test-mode payment (asks first)
   submit?: boolean; // allow non-payment form submits with the test identity (default true)
   headful?: boolean;
+  retryHeadful?: boolean; // a blocked headless run retries once in a visible browser
   confirmSafetyChecks?: boolean; // ask a human for Muse Wonder safety checks (default: acknowledge and log)
   mobile?: boolean;
   maxTurns?: number;

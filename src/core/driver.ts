@@ -175,17 +175,26 @@ export class Driver {
   private async enterSubmitsPay(): Promise<string | null> {
     const focused = await this.focusedPayButton();
     if (focused) return focused;
-    return await this.page
+    const r = await this.page
       .evaluate(([src, ids]) => {
         const a = document.activeElement as HTMLInputElement | null;
-        const form = a?.form ?? a?.closest("form");
-        if (!form || /^(textarea|button)$/i.test(a!.tagName)) return null;
-        const def = form.querySelector<HTMLElement>('button:not([type]), button[type=submit], input[type=submit]');
-        if (!def) return null;
+        if (!a || a === document.body || /^(textarea|button)$/i.test(a.tagName)) return { pay: null, known: true };
+        const form = a.form ?? a.closest("form");
+        // form.elements includes submit buttons outside the form that point at it with form="id".
+        const def = form && (Array.from(form.elements).find((el) => (el as HTMLButtonElement).type === "submit") as HTMLElement | undefined);
+        if (!def) {
+          // Unknown: a script may submit on Enter. A discount-code field is still safe to submit.
+          const field = [a.name, a.id, a.placeholder, a.getAttribute("aria-label"), a.labels?.[0]?.innerText].join(" ");
+          return { pay: null, known: /discount|coupon|promo|gift ?card|voucher/i.test(field) };
+        }
         const text = (def.innerText || (def as HTMLInputElement).value || def.getAttribute("aria-label") || "").trim();
-        return ids.some((sel: string) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
+        return { pay: ids.some((sel: string) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null, known: true };
       }, [PAY_TEXT.source, PAY_IDS] as [string, string[]])
-      .catch(() => null);
+      .catch(() => ({ pay: null, known: false }));
+    if (r.pay) return r.pay;
+    // No default button, or no form: a script may submit the order on Enter. On a payment page, ask.
+    if (!r.known && (await this.onPaymentPage())) return "Enter on the payment page";
+    return null;
   }
 
   private async focusedPayButton(): Promise<string | null> {

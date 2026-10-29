@@ -370,15 +370,39 @@ var Driver = class {
 	async enterSubmitsPay() {
 		const focused = await this.focusedPayButton();
 		if (focused) return focused;
-		return await this.page.evaluate(([src, ids]) => {
+		const r = await this.page.evaluate(([src, ids]) => {
 			const a = document.activeElement;
-			const form = a?.form ?? a?.closest("form");
-			if (!form || /^(textarea|button)$/i.test(a.tagName)) return null;
-			const def = form.querySelector("button:not([type]), button[type=submit], input[type=submit]");
-			if (!def) return null;
+			if (!a || a === document.body || /^(textarea|button)$/i.test(a.tagName)) return {
+				pay: null,
+				known: true
+			};
+			const form = a.form ?? a.closest("form");
+			const def = form && Array.from(form.elements).find((el) => el.type === "submit");
+			if (!def) {
+				const field = [
+					a.name,
+					a.id,
+					a.placeholder,
+					a.getAttribute("aria-label"),
+					a.labels?.[0]?.innerText
+				].join(" ");
+				return {
+					pay: null,
+					known: /discount|coupon|promo|gift ?card|voucher/i.test(field)
+				};
+			}
 			const text = (def.innerText || def.value || def.getAttribute("aria-label") || "").trim();
-			return ids.some((sel) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
-		}, [PAY_TEXT.source, PAY_IDS]).catch(() => null);
+			return {
+				pay: ids.some((sel) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null,
+				known: true
+			};
+		}, [PAY_TEXT.source, PAY_IDS]).catch(() => ({
+			pay: null,
+			known: false
+		}));
+		if (r.pay) return r.pay;
+		if (!r.known && await this.onPaymentPage()) return "Enter on the payment page";
+		return null;
 	}
 	async focusedPayButton() {
 		const label = await this.page.evaluate(([src, ids]) => {
@@ -1126,13 +1150,20 @@ async function runTest(ad, opts) {
 					allowPayment: opts.pay
 				});
 				const f = opts.baseline ? await landingOnly(driver, log) : await runFunnel(r, driver, log, opts, url, cardIndex);
-				if (f.blocked && !headful && !opts.baseline) {
+				if (shouldRetryVisible(f, !!headful, opts)) {
 					await log.step({
 						kind: "note",
 						summary: `Blocked (${f.blocked}): retrying once in a visible browser`
 					});
 					await driver.close();
-					return await follow(url, cardIndex, true);
+					try {
+						return await follow(url, cardIndex, true);
+					} catch (e) {
+						await log.step({
+							kind: "note",
+							summary: `Visible browser retry failed: ${e.message.split("\n")[0]}`
+						});
+					}
 				}
 				funnels.push(f);
 				evidence.push(...f.evidence);
@@ -1141,12 +1172,7 @@ async function runTest(ad, opts) {
 					type: "order_submit_blocked",
 					urls: driver.blockedRequests
 				});
-				const last = f.evidence[f.evidence.length - 1];
-				const top = last?.text.split("\n").filter(Boolean).slice(0, 25).join("\n") ?? "";
-				if (last && last.step > 1 && (CONFIRMED.test(top) || /thank|confirm|success|welcome|order\/|complete/i.test(new URL(last.url).pathname)) && (f.paid || opts.submit !== false)) r.confirmation = {
-					url: last.url,
-					text: last.text.split("\n").find((l) => CONFIRMED.test(l))?.trim() ?? ""
-				};
+				r.confirmation = confirmationOf(f, opts) ?? r.confirmation;
 			} finally {
 				await driver.close();
 			}
@@ -1228,6 +1254,19 @@ async function runTest(ad, opts) {
 	return {
 		result: r,
 		dir: log.dir
+	};
+}
+function shouldRetryVisible(f, headful, opts) {
+	return !!f.blocked && !headful && !!opts.retryHeadful && !opts.baseline && !/password/i.test(f.blocked);
+}
+function confirmationOf(f, opts) {
+	const last = f.evidence[f.evidence.length - 1];
+	if (!last || f.evidence.length < 2 || f.stoppedAtPayment || !(f.paid || opts.submit !== false)) return void 0;
+	const top = last.text.split("\n").filter(Boolean).slice(0, 25).join("\n");
+	if (!CONFIRMED.test(top)) return void 0;
+	return {
+		url: last.url,
+		text: last.text.split("\n").find((l) => CONFIRMED.test(l))?.trim() ?? ""
 	};
 }
 async function landingOnly(driver, log) {

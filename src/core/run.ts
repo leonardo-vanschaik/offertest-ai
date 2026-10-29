@@ -62,21 +62,21 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
       try {
         await driver.start(url, { headful, mobile: opts.mobile, allowPayment: opts.pay });
         const f = opts.baseline ? await landingOnly(driver, log) : await runFunnel(r, driver, log, opts, url, cardIndex);
-        if (f.blocked && !headful && !opts.baseline) {
+        if (shouldRetryVisible(f, !!headful, opts)) {
           // Bot walls often stop headless browsers only: try once more in a visible browser.
           await log.step({ kind: "note", summary: `Blocked (${f.blocked}): retrying once in a visible browser` });
           await driver.close();
-          return await follow(url, cardIndex, true);
+          try {
+            return await follow(url, cardIndex, true);
+          } catch (e) {
+            await log.step({ kind: "note", summary: `Visible browser retry failed: ${(e as Error).message.split("\n")[0]}` });
+          }
         }
         funnels.push(f);
         evidence.push(...f.evidence);
         lastUrl = driver.url();
         if (driver.blockedRequests.length) await log.event({ type: "order_submit_blocked", urls: driver.blockedRequests });
-        const last = f.evidence[f.evidence.length - 1];
-        // A confirmation page says so near the top, or its URL does. Footers ("thank you for visiting") do not count.
-        const top = last?.text.split("\n").filter(Boolean).slice(0, 25).join("\n") ?? "";
-        if (last && last.step > 1 && (CONFIRMED.test(top) || /thank|confirm|success|welcome|order\/|complete/i.test(new URL(last.url).pathname)) && (f.paid || opts.submit !== false))
-          r.confirmation = { url: last.url, text: last.text.split("\n").find((l) => CONFIRMED.test(l))?.trim() ?? "" };
+        r.confirmation = confirmationOf(f, opts) ?? r.confirmation;
       } finally {
         await driver.close();
       }
@@ -146,6 +146,21 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
 }
 
 // Baseline for the eval: what a single model call sees (the landing page), no clicking.
+// Bot walls often stop headless browsers only. A password page stays a password page.
+export function shouldRetryVisible(f: FunnelResult, headful: boolean, opts: Pick<RunOptions, "retryHeadful" | "baseline">): boolean {
+  return !!f.blocked && !headful && !!opts.retryHeadful && !opts.baseline && !/password/i.test(f.blocked);
+}
+
+// A confirmation page says so near the top. Footers ("thank you for visiting") do not count, a URL
+// alone ("/checkout/confirm") is not proof, and a funnel stopped at payment did not submit.
+export function confirmationOf(f: FunnelResult, opts: Pick<RunOptions, "submit">): RunResult["confirmation"] {
+  const last = f.evidence[f.evidence.length - 1];
+  if (!last || f.evidence.length < 2 || f.stoppedAtPayment || !(f.paid || opts.submit !== false)) return undefined;
+  const top = last.text.split("\n").filter(Boolean).slice(0, 25).join("\n");
+  if (!CONFIRMED.test(top)) return undefined;
+  return { url: last.url, text: last.text.split("\n").find((l) => CONFIRMED.test(l))?.trim() ?? "" };
+}
+
 async function landingOnly(driver: Driver, log: RunLog): Promise<FunnelResult> {
   const text = await driver.text();
   const step = await log.step({ kind: "action", summary: "Read the landing page only (baseline)", url: driver.url() }, await driver.screenshot(), text);

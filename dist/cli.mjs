@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as loadEnv, i as listAdIds, l as CONFIG_DIR, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_ENV } from "./html-DmEieQ5Q.mjs";
+import { c as runTest, d as loadEnv, i as listAdIds, l as CONFIG_DIR, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_ENV } from "./html-C8OkghPd.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -826,6 +826,7 @@ async function main() {
 		pay: values.pay,
 		submit: !values["no-submit"],
 		headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
+		retryHeadful: !values.headless && !!process.stdout.isTTY,
 		confirmSafetyChecks: values["confirm-safety-checks"],
 		mobile: values.mobile,
 		maxTurns: values["max-turns"] ? Number(values["max-turns"]) : void 0,
