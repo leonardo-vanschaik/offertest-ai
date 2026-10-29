@@ -173,7 +173,11 @@ function key(d: Destination): string {
 export function leadFormText(formId: string, form?: LeadForm): string {
   if (!form) return `Instant Form ${formId} (details not readable)`;
   if (form.readError)
-    return `Instant Form ${formId}: Meta did not return the form (${form.readError}). Reading lead forms needs a Page permission: add pages_manage_ads in the Graph API Explorer and run offertest init.`;
+    return `Instant Form ${formId}: Meta did not return the form (${form.readError})${
+      /permission|page access token|\(#(10|200)\)/i.test(form.readError)
+        ? " Reading lead forms needs Page permissions: get a new token with pages_show_list, pages_read_engagement, and pages_manage_ads (offertest init, step 2, answer n to keep the old token)."
+        : ""
+    }`;
   return [
     `Instant Form: ${form.name ?? formId}`,
     form.intro ? `Intro: ${form.intro}` : "",

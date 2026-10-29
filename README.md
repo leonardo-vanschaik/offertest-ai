@@ -68,7 +68,7 @@ Needs Node 22+. Each check writes `offertest-runs/<id>/` with a one-file `report
 | Pause a live ad whose offer is broken | `offertest check --account act_123 --live --pause-failing` |
 | Click "Test offer" inside Ads Manager | [Chrome extension](extension/) + `offertest serve` |
 
-OfferTest reads the ad itself from the Marketing API: headline, primary text, image, button, URL parameters, and the destination type. Reading your own ad account needs a token with `ads_read`, which you get on standard access with a development-mode app. Pausing needs `ads_management`.
+OfferTest reads the ad itself from the Marketing API: headline, primary text, image, button, URL parameters, and the destination type. Reading your own ad account needs a token with `ads_read`, which you get on standard access with a development-mode app. Pausing needs `ads_management`. Lead ads (Instant Forms) need Page permissions. [docs/SETUP.md](docs/SETUP.md) lists every permission and what it is for.
 
 ### Every funnel type
 

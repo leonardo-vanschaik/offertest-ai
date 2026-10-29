@@ -135,7 +135,7 @@ async function main() {
     process.exit(EXIT.usage);
   }
   if (!targets.length) {
-    console.log("No ads matched.");
+    console.log(values.account && !values.live ? "No paused or in-review ads found. Use --live for active ads." : "No ads matched.");
     return;
   }
 

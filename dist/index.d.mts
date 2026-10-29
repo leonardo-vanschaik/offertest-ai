@@ -217,7 +217,7 @@ declare function runTest(ad: Ad, opts: RunOptions): Promise<{
 declare function getAd(adId: string): Promise<Ad>;
 declare function listAds(account?: string, statuses?: string[]): Promise<Ad[]>;
 declare function pauseAd(adId: string): Promise<void>;
-declare function getLeadForm(formId: string): Promise<LeadForm | undefined>;
+declare function getLeadForm(formId: string, pageId?: string): Promise<LeadForm | undefined>;
 //#endregion
 //#region src/report/html.d.ts
 declare function writeReport(result: RunResult, dir: string): string;

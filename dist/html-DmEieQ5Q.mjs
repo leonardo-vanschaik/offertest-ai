@@ -1268,7 +1268,7 @@ function key(d) {
 }
 function leadFormText(formId, form) {
 	if (!form) return `Instant Form ${formId} (details not readable)`;
-	if (form.readError) return `Instant Form ${formId}: Meta did not return the form (${form.readError}). Reading lead forms needs a Page permission: add pages_manage_ads in the Graph API Explorer and run offertest init.`;
+	if (form.readError) return `Instant Form ${formId}: Meta did not return the form (${form.readError})${/permission|page access token|\(#(10|200)\)/i.test(form.readError) ? " Reading lead forms needs Page permissions: get a new token with pages_show_list, pages_read_engagement, and pages_manage_ads (offertest init, step 2, answer n to keep the old token)." : ""}`;
 	return [
 		`Instant Form: ${form.name ?? formId}`,
 		form.intro ? `Intro: ${form.intro}` : "",
@@ -1311,11 +1311,11 @@ function accountId(id) {
 	if (!a) throw new Error("No ad account. Pass --account act_123 or set META_AD_ACCOUNT_ID.");
 	return a.startsWith("act_") ? a : `act_${a}`;
 }
-async function graph(path$1, params = {}, method = "GET") {
+async function graph(path$1, params = {}, method = "GET", tok) {
 	const url = new URL(`https://graph.facebook.com/${VERSION()}/${path$1.replace(/^\//, "")}`);
 	const body = new URLSearchParams({
 		...params,
-		access_token: token()
+		access_token: tok ?? token()
 	});
 	const res = method === "GET" ? await fetch(`${url}?${body}`) : await fetch(url, {
 		method: "POST",
@@ -1372,10 +1372,14 @@ async function listAds(account, statuses = PRELAUNCH) {
 async function pauseAd(adId) {
 	await graph(adId, { status: "PAUSED" }, "POST");
 }
-async function getLeadForm(formId) {
+async function getLeadForm(formId, pageId) {
 	try {
 		return await readLeadForm(formId);
 	} catch (e) {
+		if (pageId) try {
+			const page = await graph(pageId, { fields: "access_token" });
+			if (page.access_token) return await readLeadForm(formId, page.access_token);
+		} catch {}
 		return {
 			id: formId,
 			questions: [],
@@ -1383,8 +1387,8 @@ async function getLeadForm(formId) {
 		};
 	}
 }
-async function readLeadForm(formId) {
-	const f = await graph(formId, { fields: "id,name,questions,context_card,thank_you_page,privacy_policy,follow_up_action_url" });
+async function readLeadForm(formId, tok) {
+	const f = await graph(formId, { fields: "id,name,questions,context_card,thank_you_page,privacy_policy,follow_up_action_url" }, "GET", tok);
 	return {
 		id: f.id,
 		name: f.name,
@@ -1424,7 +1428,7 @@ async function destinationOf(cta, link$1, ld, g) {
 	if (formId) return {
 		type: "lead_form",
 		formId,
-		form: await getLeadForm(formId)
+		form: await getLeadForm(formId, g.creative?.object_story_spec?.page_id)
 	};
 	if (/WHATSAPP/.test(type)) return {
 		type: "messaging",

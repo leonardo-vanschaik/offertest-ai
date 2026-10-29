@@ -17,7 +17,7 @@ npx offertest doctor      # checks the setup; prints the fix for anything wrong
 
 If a command fails with a setup error, run `npx offertest doctor` and tell the user the fix it prints. `init` is interactive: ask the user to run it themselves (in Muse Code or Claude Code they can type `! npx offertest init`).
 
-Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (ads_read, for Ads Manager), `META_AD_ACCOUNT_ID`.
+Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (Ads Manager; `offertest init` lists the permissions), `META_AD_ACCOUNT_ID`.
 
 ## Pick the command
 

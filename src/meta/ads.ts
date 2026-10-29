@@ -19,9 +19,9 @@ export function accountId(id?: string): string {
   return a.startsWith("act_") ? a : `act_${a}`;
 }
 
-async function graph<T>(path: string, params: Record<string, string> = {}, method: "GET" | "POST" = "GET"): Promise<T> {
+async function graph<T>(path: string, params: Record<string, string> = {}, method: "GET" | "POST" = "GET", tok?: string): Promise<T> {
   const url = new URL(`https://graph.facebook.com/${VERSION()}/${path.replace(/^\//, "")}`);
-  const body = new URLSearchParams({ ...params, access_token: token() });
+  const body = new URLSearchParams({ ...params, access_token: tok ?? token() });
   const res =
     method === "GET"
       ? await fetch(`${url}?${body}`)
@@ -74,6 +74,7 @@ type GraphAd = {
     link_url?: string;
     object_story_id?: string;
     object_story_spec?: {
+      page_id?: string;
       link_data?: LinkData;
       template_data?: LinkData;
       video_data?: { message?: string; title?: string; link_description?: string; image_url?: string; call_to_action?: CTA };
@@ -122,15 +123,25 @@ export async function pauseAd(adId: string): Promise<void> {
   await graph(adId, { status: "PAUSED" }, "POST");
 }
 
-export async function getLeadForm(formId: string): Promise<LeadForm | undefined> {
+// Meta often serves lead forms only to a Page access token. Try the user token first, then the
+// Page token (needs pages_show_list, pages_read_engagement, pages_manage_ads on the user token).
+export async function getLeadForm(formId: string, pageId?: string): Promise<LeadForm | undefined> {
   try {
     return await readLeadForm(formId);
   } catch (e) {
+    if (pageId) {
+      try {
+        const page = await graph<{ access_token?: string }>(pageId, { fields: "access_token" });
+        if (page.access_token) return await readLeadForm(formId, page.access_token);
+      } catch {
+        // fall through and report the first error
+      }
+    }
     return { id: formId, questions: [], readError: (e as Error).message };
   }
 }
 
-async function readLeadForm(formId: string): Promise<LeadForm> {
+async function readLeadForm(formId: string, tok?: string): Promise<LeadForm> {
     const f = await graph<{
       id: string;
       name?: string;
@@ -139,7 +150,7 @@ async function readLeadForm(formId: string): Promise<LeadForm> {
       thank_you_page?: { title?: string; body?: string; button_text?: string; website_url?: string };
       privacy_policy?: { url?: string };
       follow_up_action_url?: string;
-    }>(formId, { fields: "id,name,questions,context_card,thank_you_page,privacy_policy,follow_up_action_url" });
+    }>(formId, { fields: "id,name,questions,context_card,thank_you_page,privacy_policy,follow_up_action_url" }, "GET", tok);
     return {
       id: f.id,
       name: f.name,
@@ -174,7 +185,7 @@ export function landingUrl(link: string, urlTags: string | undefined, ad: GraphA
 async function destinationOf(cta: CTA | undefined, link: string | undefined, ld: LinkData | undefined, g: GraphAd): Promise<Destination> {
   const type = (cta?.type ?? g.creative?.call_to_action_type ?? "").toUpperCase();
   const formId = cta?.value?.lead_gen_form_id;
-  if (formId) return { type: "lead_form", formId, form: await getLeadForm(formId) };
+  if (formId) return { type: "lead_form", formId, form: await getLeadForm(formId, g.creative?.object_story_spec?.page_id) };
   if (/WHATSAPP/.test(type)) return { type: "messaging", channel: "whatsapp", welcomeMessage: welcome(ld?.page_welcome_message) };
   if (/INSTAGRAM_MESSAGE/.test(type)) return { type: "messaging", channel: "instagram", welcomeMessage: welcome(ld?.page_welcome_message) };
   if (/MESSAGE_PAGE|SEND_MESSAGE|MESSENGER/.test(type)) return { type: "messaging", channel: "messenger", welcomeMessage: welcome(ld?.page_welcome_message) };

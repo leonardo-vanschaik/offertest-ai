@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as loadEnv, i as listAdIds, l as CONFIG_DIR, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_ENV } from "./html-CgcDnzWb.mjs";
+import { c as runTest, d as loadEnv, i as listAdIds, l as CONFIG_DIR, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_ENV } from "./html-DmEieQ5Q.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -243,6 +243,11 @@ const ok = (s) => console.log(`  ${c$1.green("✓")} ${s}`);
 const bad = (s) => console.log(`  ${c$1.red("✗")} ${s}`);
 const warn = (s) => console.log(`  ${c$1.yellow("!")} ${s}`);
 const info = (s) => console.log(`    ${c$1.dim(s)}`);
+const PAGE_SCOPES = [
+	"pages_show_list",
+	"pages_read_engagement",
+	"pages_manage_ads"
+];
 const LINKS = {
 	metaApiKeys: "https://dev.meta.ai",
 	createApp: "https://developers.facebook.com/apps/creation/",
@@ -515,6 +520,7 @@ async function init() {
 			ok(`Connected as ${t.userName}. Token expires: ${fmtDate(t.expiresAt)}.`);
 			const noRead = t.scopesKnown && !t.scopes.includes("ads_read") && !t.scopes.includes("ads_management");
 			if (noRead) warn("The saved token cannot read ads (no ads_read). Get a new one below.");
+			if (!noRead && t.scopesKnown && !PAGE_SCOPES.every((p) => t.scopes.includes(p))) info(`To read lead ad forms, the token also needs ${PAGE_SCOPES.join(", ")}. Answer n to get a new token with them.`);
 			if (noRead || !await yes("Keep this token?")) token = void 0;
 			else if (expiresSoon(t)) {
 				const ext = await offerExtend(token, t);
@@ -537,7 +543,7 @@ async function init() {
       1. Open ${LINKS.explorer}
       2. In "Meta App", pick your OfferTest app.
       3. Under "Permissions", add ${c$1.bold("ads_read")}, ${c$1.bold("ads_management")} (to pause broken ads),
-         and ${c$1.bold("pages_manage_ads")} (to read Instant Forms for lead ads).
+         and for lead ads (Instant Forms): ${c$1.bold("pages_show_list")}, ${c$1.bold("pages_read_engagement")}, ${c$1.bold("pages_manage_ads")}.
       4. Click "Generate Access Token", approve, and copy the token.
 `);
 		if (await yes("Open the app page and the Graph API Explorer now?")) {
@@ -560,7 +566,7 @@ async function init() {
 					continue;
 				}
 				if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
-				if (!t.scopes.includes("pages_manage_ads")) info("For lead ads (Instant Forms), also add pages_manage_ads so OfferTest can read the form.");
+				if (!PAGE_SCOPES.every((p) => t.scopes.includes(p))) info(`For lead ads (Instant Forms), also add ${PAGE_SCOPES.join(", ")} so OfferTest can read the form.`);
 			}
 			token = pasted;
 			if (expiresSoon(t)) token = await offerExtend(pasted, t) ?? pasted;
@@ -642,7 +648,8 @@ async function doctor() {
 			else {
 				if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) fail("The token lacks ads_read", `add ads_read in ${LINKS.explorer} and generate a new token`);
 				if (!t.scopes.includes("ads_management")) info("No ads_management: OfferTest cannot pause ads (reading works).");
-				if (!t.scopes.includes("pages_manage_ads")) info("No pages_manage_ads: lead ad forms cannot be read (other ads work).");
+				const missing = PAGE_SCOPES.filter((p) => !t.scopes.includes(p));
+				if (missing.length) info(`No ${missing.join(", ")}: lead ad forms may not be readable (other ads work).`);
 			}
 			const acct = process.env.META_AD_ACCOUNT_ID;
 			const accounts = await adAccounts(token);
@@ -811,7 +818,7 @@ async function main() {
 		process.exit(EXIT.usage);
 	}
 	if (!targets.length) {
-		console.log("No ads matched.");
+		console.log(values.account && !values.live ? "No paused or in-review ads found. Use --live for active ads." : "No ads matched.");
 		return;
 	}
 	const opts = {
