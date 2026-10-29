@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#F3EEE4"/>
+      <stop offset="1" stop-color="#E4DDCE"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+    <linearGradient id="upper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7A8592"/>
+      <stop offset="1" stop-color="#5E6874"/>
+    </linearGradient>
+    <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7F4EE"/>
+      <stop offset="1" stop-color="#E2DDD3"/>
+    </linearGradient>
+    <pattern id="mesh" width="10" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="5" r="1.6" fill="#55606C" opacity="0.55"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <ellipse cx="420" cy="572" rx="290" ry="20" fill="#3B3528" opacity="0.22" filter="url(#soft)"/>
+
+  <!-- outsole -->
+  <path d="M150 512 L662 500 Q700 498 704 512 Q700 532 664 538 L180 552 Q150 551 146 534 Z" fill="#2C3035"/>
+  <g fill="#2C3035">
+    <rect x="182" y="546" width="26" height="12" rx="3"/>
+    <rect x="226" y="545" width="26" height="12" rx="3"/>
+    <rect x="270" y="544" width="26" height="12" rx="3"/>
+    <rect x="314" y="543" width="26" height="12" rx="3"/>
+    <rect x="358" y="542" width="26" height="12" rx="3"/>
+    <rect x="402" y="541" width="26" height="12" rx="3"/>
+    <rect x="446" y="540" width="26" height="12" rx="3"/>
+    <rect x="490" y="539" width="26" height="12" rx="3"/>
+    <rect x="534" y="538" width="26" height="12" rx="3"/>
+    <rect x="578" y="536" width="26" height="12" rx="3"/>
+    <rect x="622" y="533" width="24" height="11" rx="3"/>
+  </g>
+
+  <!-- midsole -->
+  <path d="M138 452 Q300 462 470 462 Q600 461 668 448 Q712 440 716 470 Q714 496 676 502 L176 516 Q140 516 136 490 Z" fill="url(#mid)"/>
+  <path d="M170 492 Q420 486 690 478" stroke="#6E7A88" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- upper -->
+  <path d="M146 456 Q128 400 142 352 Q150 318 178 304 Q206 318 244 330 Q290 342 330 336 Q352 300 384 268 Q410 252 438 256 Q456 262 462 284 Q500 330 560 360 Q630 392 676 420 Q708 440 704 456 Q600 470 470 470 Q300 470 146 456 Z" fill="url(#upper)"/>
+  <!-- mesh panel -->
+  <path d="M300 352 Q350 340 392 300 Q440 300 470 334 Q520 372 590 398 Q560 440 470 446 Q380 446 300 438 Z" fill="url(#mesh)"/>
+  <!-- toe cap -->
+  <path d="M596 396 Q650 412 684 432 Q708 446 704 458 Q650 466 584 464 Q568 430 596 396 Z" fill="#48515C"/>
+  <!-- heel counter -->
+  <path d="M146 456 Q130 404 142 356 Q150 330 170 318 Q206 340 214 390 Q220 436 210 460 Z" fill="#48515C"/>
+  <!-- side overlay stripes -->
+  <path d="M232 448 Q300 400 360 380" stroke="#48515C" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M276 452 Q350 410 420 392" stroke="#48515C" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <!-- collar padding -->
+  <path d="M176 304 Q210 322 248 334 Q292 346 332 338" stroke="#363D46" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- tongue -->
+  <path d="M340 336 Q356 296 386 270 Q412 252 440 258 Q452 262 454 276 Q420 284 396 312 Q372 336 362 352 Z" fill="#3E4650"/>
+  <!-- laces -->
+  <g stroke="#E6E8EB" stroke-width="7" stroke-linecap="round">
+    <path d="M384 324 L412 300"/>
+    <path d="M404 340 L436 316"/>
+    <path d="M426 356 L462 334"/>
+    <path d="M450 372 L490 352"/>
+    <path d="M476 388 L518 370"/>
+  </g>
+  <g fill="#2E343B">
+    <circle cx="414" cy="298" r="4"/><circle cx="438" cy="314" r="4"/><circle cx="464" cy="332" r="4"/>
+    <circle cx="492" cy="350" r="4"/><circle cx="520" cy="368" r="4"/>
+  </g>
+  <!-- heel tab -->
+  <path d="M168 300 Q160 274 176 268 Q190 272 192 296 Z" fill="#C8693A"/>
+  <!-- logo mark -->
+  <path d="M236 420 L262 384 L276 402 L288 388 L312 420 Z" fill="#DCE1E6" opacity="0.92"/>
+</svg>

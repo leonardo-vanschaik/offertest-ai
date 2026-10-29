@@ -1,0 +1,256 @@
+{
+  "id": "sample",
+  "createdAt": "2026-10-29T14:02:11.000Z",
+  "finishedAt": "2026-10-29T14:03:36.100Z",
+  "mode": "agent",
+  "status": "done",
+  "phase": "Done. Fix waits for your approval",
+  "ad": {
+    "headline": "20% off the Ridge trail shoe.",
+    "text": "This week only. Use code SAVE20 at checkout.",
+    "cta": "Shop now",
+    "imageUrl": "/brand/sample-ad.svg"
+  },
+  "landingUrl": "http://localhost:3000/store/products/ridge-trail-shoe",
+  "allowPayment": true,
+  "scenario": "code_expired",
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount_code",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "Use code SAVE20 at checkout.",
+      "conditions": {
+        "product": "Ridge trail shoe",
+        "code": "SAVE20",
+        "percentOff": 20,
+        "validUntil": "2026-11-09T23:59:00-05:00"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-10-29T14:02:14.400Z",
+      "kind": "model",
+      "summary": "Muse Spark turned the ad into 1 test: code SAVE20 gives 20% off the Ridge trail shoe.",
+      "modelText": "Assertion a1 (discount_code): \"Use code SAVE20 at checkout.\" plus \"20% off the Ridge trail shoe.\" Expected: 20% off $120.00 = -$24.00. Test: add the Ridge to the cart, apply SAVE20, read the cart message and total."
+    },
+    {
+      "n": 2,
+      "at": "2026-10-29T14:02:20.800Z",
+      "kind": "action",
+      "summary": "Opened the landing page: Ridge trail shoe, $120.00",
+      "actions": [
+        {
+          "type": "screenshot"
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "The product page shows the Ridge trail shoe in Slate at $120.00 with sizes 7 to 12. I will pick a size and add it to the cart."
+    },
+    {
+      "n": 3,
+      "at": "2026-10-29T14:02:27.200Z",
+      "kind": "action",
+      "summary": "Selected size 10",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 842,
+          "y": 471
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    },
+    {
+      "n": 4,
+      "at": "2026-10-29T14:02:33.700Z",
+      "kind": "action",
+      "summary": "Clicked Add to cart",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 948,
+          "y": 588
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    },
+    {
+      "n": 5,
+      "at": "2026-10-29T14:02:40.100Z",
+      "kind": "action",
+      "summary": "Opened the cart: 1 item, subtotal $120.00",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1198,
+          "y": 38
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/cart"
+    },
+    {
+      "n": 6,
+      "at": "2026-10-29T14:02:47.500Z",
+      "kind": "action",
+      "summary": "Typed \"SAVE20\" in Discount code",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 948,
+          "y": 402
+        },
+        {
+          "type": "type",
+          "text": "SAVE20"
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/cart"
+    },
+    {
+      "n": 7,
+      "at": "2026-10-29T14:02:54.000Z",
+      "kind": "action",
+      "summary": "Clicked Apply. The cart says: \"This code has expired.\" Total stays $120.00",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1131,
+          "y": 402
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "The cart shows \"This code has expired.\" under the discount field. Discount: $0.00. Total: $120.00. The ad promised 20% off with SAVE20. I will not try other codes."
+    },
+    {
+      "n": 8,
+      "at": "2026-10-29T14:03:02.600Z",
+      "kind": "action",
+      "summary": "Opened checkout to confirm the total: $120.00",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1040,
+          "y": 642
+        }
+      ],
+      "screenshot": "/brand/placeholder-shot.svg",
+      "url": "http://localhost:3000/store/checkout"
+    },
+    {
+      "n": 9,
+      "at": "2026-10-29T14:03:06.200Z",
+      "kind": "note",
+      "summary": "Stopped before payment: the promised discount failed in the cart, so no order was placed."
+    },
+    {
+      "n": 10,
+      "at": "2026-10-29T14:03:22.900Z",
+      "kind": "model",
+      "summary": "Judged 1 promise: 1 contradicted. Both quotes found word for word.",
+      "modelText": "a1 contradicted. Ad quote \"Use code SAVE20 at checkout.\" found in the ad. Page quote \"This code has expired.\" found in the step 7 screenshot text."
+    },
+    {
+      "n": 11,
+      "at": "2026-10-29T14:03:35.300Z",
+      "kind": "model",
+      "summary": "Proposed one fix: extend SAVE20 to Nov 9, 11:59 PM."
+    },
+    {
+      "n": 12,
+      "at": "2026-10-29T14:03:35.900Z",
+      "kind": "approval",
+      "summary": "Waiting for you to approve the fix."
+    }
+  ],
+  "approvals": [
+    {
+      "id": "ap-fix-1",
+      "kind": "fix",
+      "status": "pending",
+      "title": "Extend SAVE20 and test again?",
+      "detail": "SAVE20 expired before the ad's week ended. Approve to extend it, then a fresh browser session tests the ad again.",
+      "createdAt": "2026-10-29T14:03:35.900Z"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Use code SAVE20 at checkout.",
+      "pageQuote": "This code has expired.",
+      "evidenceStep": 7,
+      "reason": "The ad promises 20% off with code SAVE20 this week. In the cart, SAVE20 was rejected with \"This code has expired.\" The discount stayed $0.00 and the total stayed $120.00.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "overall": "fail",
+  "fix": {
+    "summary": "Extend SAVE20 to Nov 9, 11:59 PM, the ad's last day.",
+    "rationale": "The ad says \"This week only.\" The code expired before the week ended. Extending the code to the ad's last day makes the store match the ad, with no change to the ad itself.",
+    "target": "store",
+    "storeFix": {
+      "type": "extend_coupon",
+      "code": "SAVE20",
+      "expiresAt": "2026-11-09T23:59:00-05:00"
+    },
+    "status": "proposed",
+    "approvalId": "ap-fix-1"
+  },
+  "sam": {
+    "screenshot": "/brand/placeholder-shot.svg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 96,
+        "top": 236,
+        "right": 268,
+        "bottom": 352,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "Apply button",
+        "left": 1072,
+        "top": 380,
+        "right": 1190,
+        "bottom": 424,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "coupon message",
+        "left": 812,
+        "top": 436,
+        "right": 1110,
+        "bottom": 462,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "boundary": "Tested up to payment, not paid",
+  "usage": {
+    "inputTokens": 48213,
+    "outputTokens": 2147,
+    "images": 9,
+    "usd": 0.1873
+  }
+}

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#F3EEE4"/>
+      <stop offset="1" stop-color="#E4DDCE"/>
+    </radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4A4F55"/>
+      <stop offset="1" stop-color="#33373C"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <ellipse cx="400" cy="640" rx="190" ry="16" fill="#3B3528" opacity="0.2" filter="url(#soft)"/>
+
+  <!-- haul loop -->
+  <path d="M376 170 Q400 136 424 170" stroke="#2A2D31" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <!-- shoulder straps peeking -->
+  <path d="M276 240 Q246 300 252 420 Q256 520 270 600" stroke="#2A2D31" stroke-width="26" fill="none" stroke-linecap="round"/>
+  <path d="M524 240 Q554 300 548 420 Q544 520 530 600" stroke="#2A2D31" stroke-width="26" fill="none" stroke-linecap="round"/>
+  <!-- main body -->
+  <path d="M290 250 Q290 170 400 166 Q510 170 510 250 L522 590 Q522 628 486 630 L314 630 Q278 628 278 590 Z" fill="url(#body)"/>
+  <!-- top zip arc -->
+  <path d="M300 268 Q400 222 500 268" stroke="#22252A" stroke-width="6" fill="none"/>
+  <rect x="488" y="262" width="10" height="26" rx="3" fill="#C8693A" transform="rotate(20 493 275)"/>
+  <!-- front pocket -->
+  <path d="M318 410 Q318 380 350 378 L450 378 Q482 380 482 410 L486 576 Q486 604 458 606 L342 606 Q314 604 314 576 Z" fill="#3C4146"/>
+  <path d="M330 412 Q400 394 470 412" stroke="#22252A" stroke-width="5" fill="none"/>
+  <rect x="456" y="402" width="9" height="22" rx="3" fill="#C8693A"/>
+  <!-- daisy chain -->
+  <g fill="#22252A">
+    <rect x="392" y="296" width="16" height="10" rx="2"/>
+    <rect x="392" y="320" width="16" height="10" rx="2"/>
+    <rect x="392" y="344" width="16" height="10" rx="2"/>
+  </g>
+  <!-- logo patch -->
+  <rect x="368" y="470" width="64" height="40" rx="6" fill="#D9CCB2"/>
+  <path d="M378 502 L394 480 L403 491 L410 484 L424 502 Z" fill="#33373C"/>
+  <!-- side compression strap -->
+  <path d="M290 330 L318 330" stroke="#22252A" stroke-width="8"/>
+  <path d="M482 330 L510 330" stroke="#22252A" stroke-width="8"/>
+  <!-- base -->
+  <path d="M278 580 L522 580 L522 594 Q522 630 486 632 L314 632 Q278 630 278 594 Z" fill="#26292D"/>
+</svg>

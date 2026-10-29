@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#F3EEE4"/>
+      <stop offset="1" stop-color="#E4DDCE"/>
+    </radialGradient>
+    <pattern id="knit" width="12" height="12" patternUnits="userSpaceOnUse">
+      <path d="M0 6 L6 0 L12 6" stroke="#B9AA8E" stroke-width="1.4" fill="none" opacity="0.55"/>
+    </pattern>
+    <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <ellipse cx="420" cy="618" rx="230" ry="16" fill="#3B3528" opacity="0.18" filter="url(#soft)"/>
+
+  <!-- back sock -->
+  <g transform="translate(96 -30)">
+    <path d="M300 190 L404 190 L404 452 Q404 476 424 486 L540 532 Q586 552 578 590 Q568 622 524 616 L362 594 Q300 584 300 520 Z" fill="#D9CCB2"/>
+    <path d="M300 190 L404 190 L404 452 Q404 476 424 486 L540 532 Q586 552 578 590 Q568 622 524 616 L362 594 Q300 584 300 520 Z" fill="url(#knit)"/>
+    <rect x="300" y="190" width="104" height="58" fill="#C9BBA0"/>
+    <rect x="300" y="262" width="104" height="12" fill="#4E5E45"/>
+    <rect x="300" y="282" width="104" height="8" fill="#C8693A"/>
+    <path d="M504 548 Q560 556 578 590 Q568 622 524 616 L496 612 Q486 576 504 548 Z" fill="#8E806A"/>
+  </g>
+
+  <!-- front sock -->
+  <path d="M260 190 L364 190 L364 452 Q364 476 384 486 L500 532 Q546 552 538 590 Q528 622 484 616 L322 594 Q260 584 260 520 Z" fill="#E6DBC5"/>
+  <path d="M260 190 L364 190 L364 452 Q364 476 384 486 L500 532 Q546 552 538 590 Q528 622 484 616 L322 594 Q260 584 260 520 Z" fill="url(#knit)"/>
+  <rect x="260" y="190" width="104" height="58" fill="#D7CAB0"/>
+  <g stroke="#BFB094" stroke-width="2">
+    <path d="M272 194 L272 244"/><path d="M286 194 L286 244"/><path d="M300 194 L300 244"/><path d="M314 194 L314 244"/>
+    <path d="M328 194 L328 244"/><path d="M342 194 L342 244"/><path d="M356 194 L356 244"/>
+  </g>
+  <rect x="260" y="262" width="104" height="12" fill="#4E5E45"/>
+  <rect x="260" y="282" width="104" height="8" fill="#C8693A"/>
+  <!-- heel and toe reinforcement -->
+  <path d="M260 520 Q260 584 322 594 L346 597 Q350 548 320 520 Q296 500 260 500 Z" fill="#9C8E76"/>
+  <path d="M464 548 Q520 556 538 590 Q528 622 484 616 L456 612 Q446 576 464 548 Z" fill="#9C8E76"/>
+</svg>

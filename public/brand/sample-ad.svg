@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4ead8"/>
+      <stop offset="1" stop-color="#e7d6b8"/>
+    </linearGradient>
+    <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fa58e"/>
+      <stop offset="1" stop-color="#6f876f"/>
+    </linearGradient>
+    <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f6b58"/>
+      <stop offset="1" stop-color="#3b5444"/>
+    </linearGradient>
+    <linearGradient id="upper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6b7a88"/>
+      <stop offset="1" stop-color="#46525e"/>
+    </linearGradient>
+    <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3f1ec"/>
+      <stop offset="1" stop-color="#d9d5cc"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#1d2a22" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#1d2a22" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1080" height="1080" fill="url(#sky)"/>
+  <circle cx="820" cy="250" r="120" fill="#f8dfae" opacity="0.7"/>
+  <path d="M0 560 L170 430 L300 520 L470 360 L640 500 L780 410 L1080 600 L1080 1080 L0 1080 Z" fill="url(#hill1)"/>
+  <path d="M0 700 L220 560 L420 660 L620 540 L860 680 L1080 600 L1080 1080 L0 1080 Z" fill="url(#hill2)"/>
+  <rect y="820" width="1080" height="260" fill="#2c3f33"/>
+
+  <!-- brand -->
+  <text x="72" y="104" font-family="Georgia, 'Times New Roman', serif" font-size="34" letter-spacing="6" fill="#2c3f33">ALDER TRAIL CO.</text>
+  <rect x="72" y="124" width="72" height="3" fill="#c46a2f"/>
+
+  <!-- offer -->
+  <text x="72" y="300" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="196" letter-spacing="-6" fill="#1f2d24">20%</text>
+  <text x="80" y="388" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="96" letter-spacing="2" fill="#c46a2f">OFF</text>
+  <text x="76" y="452" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="36" fill="#1f2d24">The Ridge trail shoe</text>
+
+  <!-- shoe -->
+  <g transform="translate(470 520) rotate(-6) scale(0.98)">
+    <ellipse cx="200" cy="330" rx="300" ry="34" fill="url(#shadow)"/>
+    <!-- outsole with lugs -->
+    <path d="M-60 268 C-64 300 -40 318 0 318 L420 318 C470 318 498 296 494 262 L488 240 L-56 240 Z" fill="#1d232a"/>
+    <g fill="#1d232a">
+      <rect x="-30" y="312" width="34" height="18" rx="5"/>
+      <rect x="30" y="312" width="34" height="18" rx="5"/>
+      <rect x="90" y="312" width="34" height="18" rx="5"/>
+      <rect x="150" y="312" width="34" height="18" rx="5"/>
+      <rect x="210" y="312" width="34" height="18" rx="5"/>
+      <rect x="270" y="312" width="34" height="18" rx="5"/>
+      <rect x="330" y="312" width="34" height="18" rx="5"/>
+      <rect x="390" y="312" width="34" height="18" rx="5"/>
+      <rect x="444" y="306" width="30" height="16" rx="5"/>
+    </g>
+    <!-- midsole -->
+    <path d="M-58 210 C-62 236 -52 258 -20 262 L440 262 C478 262 496 244 492 214 L484 190 L-50 196 Z" fill="url(#mid)"/>
+    <path d="M-50 236 L486 232" stroke="#c46a2f" stroke-width="6" stroke-linecap="round"/>
+    <!-- upper -->
+    <path d="M-50 200 C-62 140 -40 70 20 40 C60 20 110 18 150 30 L190 44 C230 60 270 100 320 130 C380 160 450 168 482 190 L486 206 L-46 208 Z" fill="url(#upper)"/>
+    <!-- toe cap -->
+    <path d="M330 136 C390 162 452 170 482 192 L486 206 L320 208 C318 180 320 156 330 136 Z" fill="#2f3943"/>
+    <!-- heel tab and collar -->
+    <path d="M-10 52 C-20 20 0 -6 30 -2 L60 4 L48 44 Z" fill="#c46a2f"/>
+    <path d="M20 40 C60 30 110 30 150 42" fill="none" stroke="#2f3943" stroke-width="10" stroke-linecap="round"/>
+    <!-- side stripe -->
+    <path d="M40 170 C110 110 180 90 250 96" fill="none" stroke="#dfe4e8" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+    <path d="M60 196 C130 140 210 122 300 126" fill="none" stroke="#dfe4e8" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+    <!-- laces -->
+    <g stroke="#f1ede4" stroke-width="9" stroke-linecap="round">
+      <path d="M170 50 L200 70"/>
+      <path d="M200 64 L232 86"/>
+      <path d="M230 82 L262 104"/>
+      <path d="M260 100 L292 120"/>
+    </g>
+    <g fill="#2f3943">
+      <circle cx="166" cy="44" r="6"/><circle cx="196" cy="60" r="6"/><circle cx="226" cy="78" r="6"/><circle cx="256" cy="96" r="6"/><circle cx="288" cy="114" r="6"/>
+    </g>
+  </g>
+
+  <!-- code pill -->
+  <rect x="72" y="900" width="560" height="104" rx="52" fill="#f4ead8"/>
+  <text x="120" y="968" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="38" fill="#2c3f33">Code</text>
+  <text x="232" y="968" font-family="Menlo, 'Courier New', monospace" font-weight="700" font-size="44" letter-spacing="4" fill="#c46a2f">SAVE20</text>
+  <text x="680" y="966" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="34" fill="#f4ead8">This week only</text>
+</svg>
