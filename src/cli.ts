@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import fs from "node:fs";
 import { createRequire } from "node:module";
 import readline from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { runTest, VERSION } from "./core/run.ts";
-import { CONFIG_DIR, CONFIG_ENV, loadEnv } from "./meta/client.ts";
+import { loadEnv } from "./meta/client.ts";
 import { getAd, listAds, pauseAd } from "./meta/ads.ts";
 import { writeReport } from "./report/html.ts";
 import { serve } from "./server.ts";
+import { doctor, init } from "./onboarding.ts";
 import type { Ad, Overall, RunOptions, RunResult } from "./types.ts";
 
 const c = {
@@ -30,7 +30,8 @@ ${c.bold("Usage")}
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
   offertest ads [--account <act_123>] [--live] list ads and where they send people
   offertest serve [--port 7777]                local server for the Ads Manager Chrome extension
-  offertest init                               save your Meta keys to ~/.offertest/.env
+  offertest init                               guided setup: Meta API key, Ads Manager, browser, agent skill
+  offertest doctor                             check the setup and print the fix for anything wrong
   offertest install-browser                    download Chromium if you have no Chrome
 
 ${c.bold("Check options")}
@@ -81,7 +82,8 @@ async function main() {
 
   if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h" || values.help) return void console.log(HELP);
   if (cmd === "--version" || cmd === "version") return void console.log(VERSION);
-  if (cmd === "init") return await init();
+  if (cmd === "init" || cmd === "setup") return await init();
+  if (cmd === "doctor") process.exit(await doctor());
   if (cmd === "install-browser") return installBrowser();
   if (cmd === "ads") return await ads(values.account, values.live);
   if (cmd === "serve") return await serve(values.port ? Number(values.port) : undefined);
@@ -92,7 +94,8 @@ async function main() {
 
   loadEnv();
   if (!process.env.META_API_KEY) {
-    console.error(c.red("META_API_KEY is not set. Run `offertest init`, or add it to .env (get a key at https://dev.meta.ai)."));
+    console.error(c.red("OfferTest is not set up yet: no Meta Model API key."));
+    console.error(`Run ${c.bold("npx offertest init")}: a 3-minute guided setup that opens the right pages and tests each key.`);
     process.exit(EXIT.error);
   }
   const tty = process.stdin.isTTY && !values.json;
@@ -192,19 +195,6 @@ async function ads(account?: string, live?: boolean) {
   const list = await listAds(account, live ? ["ACTIVE"] : undefined);
   if (!list.length) return void console.log("No ads matched.");
   for (const a of list) console.log(`${a.id}  ${c.dim((a.status ?? "").padEnd(14))} ${a.headline.slice(0, 50).padEnd(50)}  -> ${dest(a)}`);
-}
-
-async function init() {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  console.log(`Saves keys to ${CONFIG_ENV}. Press Enter to skip one.\n`);
-  const key = await rl.question("Meta Model API key (dev.meta.ai): ");
-  const token = await rl.question("Meta access token with ads_read (optional, for Ads Manager): ");
-  const account = await rl.question("Default ad account id, e.g. act_123 (optional): ");
-  rl.close();
-  const lines = [key && `META_API_KEY=${key.trim()}`, token && `META_ACCESS_TOKEN=${token.trim()}`, account && `META_AD_ACCOUNT_ID=${account.trim()}`].filter(Boolean);
-  fs.mkdirSync(CONFIG_DIR, { recursive: true });
-  fs.writeFileSync(CONFIG_ENV, lines.join("\n") + "\n", { mode: 0o600 });
-  console.log(c.green(`\nSaved ${lines.length} value(s). Try: offertest ads`));
 }
 
 function installBrowser() {

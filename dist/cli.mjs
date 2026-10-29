@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-import { a as pauseAd, c as CONFIG_DIR, i as listAds, l as CONFIG_ENV, n as getAd, o as VERSION, s as runTest, t as writeReport, u as loadEnv } from "./html-9O6usmGv.mjs";
+import { a as pauseAd, c as CONFIG_DIR, i as listAds, l as CONFIG_ENV, n as getAd, o as VERSION, s as runTest, t as writeReport, u as loadEnv } from "./html-DjBHBAP8.mjs";
 import { createRequire } from "node:module";
-import { spawnSync } from "node:child_process";
-import fs from "node:fs";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { chromium } from "playwright-core";
 import http from "node:http";
+import { fileURLToPath } from "node:url";
 
 //#region src/server.ts
 const OUT_DIR = "offertest-runs";
@@ -227,6 +230,356 @@ function view(t) {
 }
 
 //#endregion
+//#region src/onboarding.ts
+const c$1 = {
+	dim: (s) => `\x1b[2m${s}\x1b[0m`,
+	bold: (s) => `\x1b[1m${s}\x1b[0m`,
+	green: (s) => `\x1b[32m${s}\x1b[0m`,
+	red: (s) => `\x1b[31m${s}\x1b[0m`,
+	yellow: (s) => `\x1b[33m${s}\x1b[0m`,
+	blue: (s) => `\x1b[34m${s}\x1b[0m`
+};
+const ok = (s) => console.log(`  ${c$1.green("✓")} ${s}`);
+const bad = (s) => console.log(`  ${c$1.red("✗")} ${s}`);
+const warn = (s) => console.log(`  ${c$1.yellow("!")} ${s}`);
+const info = (s) => console.log(`    ${c$1.dim(s)}`);
+const LINKS = {
+	metaApiKeys: "https://dev.meta.ai",
+	createApp: "https://developers.facebook.com/apps/creation/",
+	myApps: "https://developers.facebook.com/apps/",
+	explorer: "https://developers.facebook.com/tools/explorer/",
+	tokenDebugger: "https://developers.facebook.com/tools/debug/accesstoken/",
+	adsManager: "https://adsmanager.facebook.com/adsmanager/manage/ads"
+};
+const GRAPH = () => `https://graph.facebook.com/${process.env.META_GRAPH_VERSION ?? "v24.0"}`;
+const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SKILL_DIR = path.join(PKG_ROOT, "skills", "offertest");
+function openUrl(url) {
+	const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
+	const args = process.platform === "win32" ? [
+		"/c",
+		"start",
+		"",
+		url
+	] : [url];
+	try {
+		spawn(cmd, args, {
+			stdio: "ignore",
+			detached: true
+		}).unref();
+	} catch {}
+}
+function readEnvFile() {
+	if (!fs.existsSync(CONFIG_ENV)) return {};
+	return Object.fromEntries(fs.readFileSync(CONFIG_ENV, "utf8").split("\n").map((l) => l.match(/^([A-Z_]+)=(.*)$/)).filter((m) => !!m).map((m) => [m[1], m[2]]));
+}
+function saveEnv(values) {
+	const merged = {
+		...readEnvFile(),
+		...Object.fromEntries(Object.entries(values).filter(([, v]) => v))
+	};
+	fs.mkdirSync(CONFIG_DIR, { recursive: true });
+	fs.writeFileSync(CONFIG_ENV, Object.entries(merged).map(([k, v]) => `${k}=${v}`).join("\n") + "\n", { mode: 384 });
+	for (const [k, v] of Object.entries(merged)) process.env[k] = v;
+}
+async function checkModelKey(key) {
+	const base = process.env.META_BASE_URL ?? "https://api.meta.ai/v1";
+	try {
+		const res = await fetch(`${base}/models`, { headers: { authorization: `Bearer ${key}` } });
+		if (res.status === 401 || res.status === 403) return {
+			ok: false,
+			detail: "Meta rejected this key (401). Copy it again from dev.meta.ai."
+		};
+		if (res.ok) {
+			const ids = (await res.json().catch(() => ({}))).data?.map((m) => m.id) ?? [];
+			const wonder = ids.some((id) => id.startsWith("muse-wonder"));
+			return {
+				ok: true,
+				detail: ids.length ? `${ids.length} models${wonder ? ", including Muse Wonder" : " (Muse Wonder not listed: the agent may not run)"}` : "key accepted"
+			};
+		}
+		return {
+			ok: true,
+			detail: `key accepted (models list returned ${res.status})`
+		};
+	} catch (e) {
+		return {
+			ok: false,
+			detail: `Could not reach ${base}: ${e.message}`
+		};
+	}
+}
+async function checkAdsToken(token) {
+	try {
+		const me = await (await fetch(`${GRAPH()}/me?fields=id,name&access_token=${encodeURIComponent(token)}`)).json();
+		if (me.error) return {
+			valid: false,
+			scopes: [],
+			error: me.error.message
+		};
+		const dbg = await (await fetch(`${GRAPH()}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`)).json();
+		return {
+			valid: true,
+			userName: me.name,
+			appId: dbg.data?.app_id,
+			expiresAt: dbg.data?.expires_at,
+			scopes: dbg.data?.scopes ?? []
+		};
+	} catch (e) {
+		return {
+			valid: false,
+			scopes: [],
+			error: e.message
+		};
+	}
+}
+async function adAccounts(token) {
+	return ((await (await fetch(`${GRAPH()}/me/adaccounts?fields=id,name,account_status,currency&limit=100&access_token=${encodeURIComponent(token)}`)).json()).data ?? []).map((a) => ({
+		id: a.id,
+		name: a.name,
+		status: a.account_status,
+		currency: a.currency
+	}));
+}
+async function extendToken(token, appId, appSecret) {
+	const url = `${GRAPH()}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${encodeURIComponent(appSecret)}&fb_exchange_token=${encodeURIComponent(token)}`;
+	const res = await (await fetch(url)).json();
+	return res.access_token ? { token: res.access_token } : { error: res.error?.message ?? "no token returned" };
+}
+async function browserReady() {
+	for (const channel of [
+		"chrome",
+		"msedge",
+		void 0
+	]) try {
+		await (await chromium.launch({
+			headless: true,
+			...channel ? { channel } : {}
+		})).close();
+		return channel === "chrome" ? "Google Chrome" : channel === "msedge" ? "Microsoft Edge" : "Playwright Chromium";
+	} catch {}
+	return null;
+}
+function installChromium() {
+	const cli = createRequire(import.meta.url).resolve("playwright-core/cli.js");
+	return spawnSync(process.execPath, [
+		cli,
+		"install",
+		"chromium"
+	], { stdio: "inherit" }).status === 0;
+}
+function hasCommand(cmd) {
+	try {
+		execFileSync(process.platform === "win32" ? "where" : "which", [cmd], { stdio: "ignore" });
+		return true;
+	} catch {
+		return false;
+	}
+}
+const SKILL_TARGETS = [
+	{
+		name: "Muse Code",
+		detect: () => hasCommand("muse"),
+		installed: () => fs.existsSync(path.join(os.homedir(), ".agents", "skills", "offertest", "SKILL.md")),
+		install: () => {
+			if (spawnSync("muse", [
+				"skills",
+				"install",
+				SKILL_DIR,
+				"--scope",
+				"user",
+				"--force"
+			], { stdio: "inherit" }).status !== 0) throw new Error("muse skills install failed");
+		}
+	},
+	{
+		name: "Claude Code",
+		detect: () => fs.existsSync(path.join(os.homedir(), ".claude")),
+		installed: () => fs.existsSync(path.join(os.homedir(), ".claude", "skills", "offertest", "SKILL.md")),
+		install: () => fs.cpSync(SKILL_DIR, path.join(os.homedir(), ".claude", "skills", "offertest"), { recursive: true })
+	},
+	{
+		name: "Codex",
+		detect: () => fs.existsSync(path.join(os.homedir(), ".codex")),
+		installed: () => fs.existsSync(path.join(os.homedir(), ".agents", "skills", "offertest", "SKILL.md")),
+		install: () => fs.cpSync(SKILL_DIR, path.join(os.homedir(), ".agents", "skills", "offertest"), { recursive: true })
+	}
+];
+const fmtDate = (sec) => sec ? (/* @__PURE__ */ new Date(sec * 1e3)).toISOString().slice(0, 10) : "never";
+async function init() {
+	const rl = readline.createInterface({
+		input: process.stdin,
+		output: process.stdout
+	});
+	const ask = async (q) => (await rl.question(`${c$1.yellow("?")} ${q} `)).trim();
+	const yes = async (q, def = true) => {
+		const a = (await ask(`${q} ${c$1.dim(def ? "[Y/n]" : "[y/N]")}`)).toLowerCase();
+		return a ? a.startsWith("y") : def;
+	};
+	loadEnv();
+	const saved = readEnvFile();
+	console.log(`\n${c$1.bold("OfferTest setup")}  ${c$1.dim(`(saves to ${CONFIG_ENV})`)}\n`);
+	console.log(`${c$1.bold("Step 1 of 4: Meta Model API key")}  ${c$1.dim("runs the AI: Muse Wonder, Muse Spark, SAM 3.1")}`);
+	let key = saved.META_API_KEY ?? process.env.META_API_KEY;
+	if (key && (await checkModelKey(key)).ok && !await yes("A working key is already saved. Keep it?")) key = void 0;
+	while (!key) {
+		info(`1. Open ${LINKS.metaApiKeys} and sign in.`);
+		info("2. Create an API key. Hackathon participants: claim the $150 credits there too.");
+		info("3. Copy the key and paste it here.");
+		if (await yes("Open dev.meta.ai in your browser now?")) openUrl(LINKS.metaApiKeys);
+		const pasted = await ask("Paste your Meta Model API key:");
+		if (!pasted) break;
+		const r = await checkModelKey(pasted);
+		if (r.ok) {
+			ok(`Key works: ${r.detail}`);
+			key = pasted;
+			saveEnv({ META_API_KEY: key });
+		} else bad(r.detail);
+	}
+	if (!key) warn("No model key yet. Run `offertest init` again when you have it.");
+	console.log(`\n${c$1.bold("Step 2 of 4: Connect Meta Ads Manager")}  ${c$1.dim("optional: lets OfferTest read your ads and pause broken ones")}`);
+	let token = saved.META_ACCESS_TOKEN ?? process.env.META_ACCESS_TOKEN;
+	if (token) {
+		const t = await checkAdsToken(token);
+		if (t.valid) ok(`Connected as ${t.userName}. Token expires: ${fmtDate(t.expiresAt)}.`);
+		else {
+			warn(`The saved token no longer works: ${t.error}`);
+			token = void 0;
+		}
+	}
+	if (!token && await yes("Connect Ads Manager now? (about 3 minutes)")) {
+		console.log(`
+    ${c$1.bold("A. Create a Meta app")} (once)
+      1. Open ${LINKS.createApp}
+      2. Choose "Other", then app type "Business". Name it "OfferTest". Create it.
+      3. On the app dashboard, find "Marketing API" and click "Set up".
+         No App Review or business verification is needed to read your own ad account.
+
+    ${c$1.bold("B. Get a token")}
+      1. Open ${LINKS.explorer}
+      2. In "Meta App", pick your OfferTest app.
+      3. Under "Permissions", add ${c$1.bold("ads_read")} and ${c$1.bold("ads_management")} (to pause broken ads).
+      4. Click "Generate Access Token", approve, and copy the token.
+`);
+		if (await yes("Open the app page and the Graph API Explorer now?")) {
+			openUrl(LINKS.createApp);
+			setTimeout(() => openUrl(LINKS.explorer), 800);
+		}
+		while (!token) {
+			const pasted = await ask("Paste the access token (Enter to skip):");
+			if (!pasted) break;
+			const t = await checkAdsToken(pasted);
+			if (!t.valid) {
+				bad(`Meta rejected this token: ${t.error}`);
+				continue;
+			}
+			ok(`Connected as ${t.userName}.`);
+			if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) warn("This token has no ads_read permission. Add it in the Explorer and generate a new token.");
+			if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
+			token = pasted;
+			if (t.expiresAt && t.expiresAt * 1e3 - Date.now() < 3 * 864e5) {
+				warn(`This token expires soon (${fmtDate(t.expiresAt)}). OfferTest can extend it to 60 days.`);
+				info(`Find the App Secret at ${LINKS.myApps} > your app > App settings > Basic > App secret > Show.`);
+				const secret = await ask("Paste the App Secret to extend the token (Enter to skip):");
+				if (secret && t.appId) {
+					const ext = await extendToken(pasted, t.appId, secret);
+					if (ext.token) {
+						token = ext.token;
+						ok(`Extended. The token now lasts until ${fmtDate((await checkAdsToken(token)).expiresAt)}.`);
+					} else bad(`Could not extend: ${ext.error}`);
+				}
+			}
+			saveEnv({ META_ACCESS_TOKEN: token });
+		}
+	}
+	if (token) {
+		const accounts = await adAccounts(token);
+		if (!accounts.length) warn("This token sees no ad accounts. Use the Facebook profile that has access to your ad account.");
+		else {
+			console.log("");
+			accounts.forEach((a, i) => console.log(`    ${c$1.bold(String(i + 1))}. ${a.name}  ${c$1.dim(`${a.id} · ${a.currency}${a.status === 1 ? "" : " · not active"}`)}`));
+			const current = process.env.META_AD_ACCOUNT_ID;
+			const pick = await ask(`Default ad account (1-${accounts.length})${current ? `, Enter keeps ${current}` : ""}:`);
+			const chosen = accounts[Number(pick) - 1] ?? (accounts.length === 1 && !current ? accounts[0] : void 0);
+			if (chosen) {
+				saveEnv({ META_AD_ACCOUNT_ID: chosen.id });
+				ok(`Default ad account: ${chosen.name} (${chosen.id})`);
+			}
+		}
+	}
+	console.log(`\n${c$1.bold("Step 3 of 4: Browser")}  ${c$1.dim("the agent shops in a real browser")}`);
+	const browser = await browserReady();
+	if (browser) ok(`Using ${browser}.`);
+	else if (await yes("No browser found. Download Chromium now? (about 150 MB)")) if (installChromium()) ok("Chromium installed.");
+	else bad("The download failed. Install Google Chrome, or run `npx offertest install-browser` later.");
+	console.log(`\n${c$1.bold("Step 4 of 4: Use it from your coding agent")}  ${c$1.dim("optional")}`);
+	const found = SKILL_TARGETS.filter((t) => t.detect());
+	if (!found.length) info("No Muse Code, Claude Code, or Codex found. You can install the skill later: see docs/SETUP.md.");
+	for (const t of found) {
+		if (t.installed()) {
+			ok(`${t.name}: skill already installed.`);
+			continue;
+		}
+		if (await yes(`Install the OfferTest skill into ${t.name}?`)) try {
+			t.install();
+			ok(`${t.name}: installed. Ask it: "Check the ads I'm about to launch."`);
+		} catch (e) {
+			bad(`${t.name}: ${e.message}`);
+		}
+	}
+	rl.close();
+	console.log(`\n${c$1.green(c$1.bold("Done."))} Try one of these:`);
+	if (process.env.META_ACCESS_TOKEN) console.log(`  offertest ads                     ${c$1.dim("see your ads and where they send people")}`);
+	if (process.env.META_ACCESS_TOKEN) console.log(`  offertest check                   ${c$1.dim("test every ad that is about to launch")}`);
+	console.log(`  offertest check --url <page> --headline "..." --text "..."`);
+	console.log(`  offertest doctor                  ${c$1.dim("check the setup at any time")}\n`);
+}
+async function doctor() {
+	loadEnv();
+	let problems = 0;
+	const fail = (s, fix) => {
+		problems++;
+		bad(s);
+		info(`Fix: ${fix}`);
+	};
+	console.log(`\n${c$1.bold("OfferTest doctor")}\n`);
+	if (Number(process.versions.node.split(".")[0]) >= 22) ok(`Node ${process.versions.node}`);
+	else fail(`Node ${process.versions.node} is too old`, "install Node 22 or newer from https://nodejs.org");
+	const key = process.env.META_API_KEY;
+	if (!key) fail("No Meta Model API key", "run `offertest init` (step 1)");
+	else {
+		const r = await checkModelKey(key);
+		if (r.ok) ok(`Meta Model API key: ${r.detail}`);
+		else fail(`Meta Model API key: ${r.detail}`, "run `offertest init` and paste a new key");
+	}
+	const token = process.env.META_ACCESS_TOKEN;
+	if (!token) warn("Ads Manager not connected (optional). To test ads by id or account: `offertest init` (step 2).");
+	else {
+		const t = await checkAdsToken(token);
+		if (!t.valid) fail(`Ads Manager token: ${t.error}`, "run `offertest init` (step 2) to get a new token");
+		else {
+			const days = t.expiresAt ? Math.round((t.expiresAt * 1e3 - Date.now()) / 864e5) : null;
+			ok(`Ads Manager: connected as ${t.userName}${days === null ? ", token never expires" : `, token expires in ${days} day(s)`}`);
+			if (days !== null && days < 7) warn("The token expires soon. Run `offertest init` to extend it.");
+			if (!t.scopes.includes("ads_read") && !t.scopes.includes("ads_management")) fail("The token lacks ads_read", `add ads_read in ${LINKS.explorer} and generate a new token`);
+			if (!t.scopes.includes("ads_management")) info("No ads_management: OfferTest cannot pause ads (reading works).");
+			const acct = process.env.META_AD_ACCOUNT_ID;
+			const accounts = await adAccounts(token);
+			if (acct && !accounts.some((a) => a.id === acct || a.id === `act_${acct}`)) fail(`This token cannot see ad account ${acct}`, "run `offertest init` and pick an account from the list");
+			else if (acct) ok(`Default ad account: ${accounts.find((a) => a.id === acct || a.id === `act_${acct}`)?.name} (${acct})`);
+			else warn(`No default ad account. Pass --account act_<id> or pick one in \`offertest init\`. Accounts this token sees: ${accounts.length}`);
+		}
+	}
+	const browser = await browserReady();
+	if (browser) ok(`Browser: ${browser}`);
+	else fail("No browser found", "install Google Chrome, or run `npx offertest install-browser`");
+	const skills = SKILL_TARGETS.filter((t) => t.detect());
+	for (const t of skills) (t.installed() ? ok : warn)(`${t.name}: skill ${t.installed() ? "installed" : "not installed (optional): run `offertest init` (step 4)"}`);
+	console.log(problems ? `\n${c$1.red(`${problems} problem(s).`)} Fix them, then run \`offertest doctor\` again.\n` : `\n${c$1.green("All good.")}\n`);
+	return problems ? 1 : 0;
+}
+
+//#endregion
 //#region src/cli.ts
 const c = {
 	dim: (s) => `\x1b[2m${s}\x1b[0m`,
@@ -251,7 +604,8 @@ ${c.bold("Usage")}
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
   offertest ads [--account <act_123>] [--live] list ads and where they send people
   offertest serve [--port 7777]                local server for the Ads Manager Chrome extension
-  offertest init                               save your Meta keys to ~/.offertest/.env
+  offertest init                               guided setup: Meta API key, Ads Manager, browser, agent skill
+  offertest doctor                             check the setup and print the fix for anything wrong
   offertest install-browser                    download Chromium if you have no Chrome
 
 ${c.bold("Check options")}
@@ -315,7 +669,8 @@ async function main() {
 	});
 	if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h" || values.help) return void console.log(HELP);
 	if (cmd === "--version" || cmd === "version") return void console.log(VERSION);
-	if (cmd === "init") return await init();
+	if (cmd === "init" || cmd === "setup") return await init();
+	if (cmd === "doctor") process.exit(await doctor());
 	if (cmd === "install-browser") return installBrowser();
 	if (cmd === "ads") return await ads(values.account, values.live);
 	if (cmd === "serve") return await serve(values.port ? Number(values.port) : void 0);
@@ -325,7 +680,8 @@ async function main() {
 	}
 	loadEnv();
 	if (!process.env.META_API_KEY) {
-		console.error(c.red("META_API_KEY is not set. Run `offertest init`, or add it to .env (get a key at https://dev.meta.ai)."));
+		console.error(c.red("OfferTest is not set up yet: no Meta Model API key."));
+		console.error(`Run ${c.bold("npx offertest init")}: a 3-minute guided setup that opens the right pages and tests each key.`);
 		process.exit(EXIT.error);
 	}
 	const tty = process.stdin.isTTY && !values.json;
@@ -439,25 +795,6 @@ async function ads(account, live) {
 	const list = await listAds(account, live ? ["ACTIVE"] : void 0);
 	if (!list.length) return void console.log("No ads matched.");
 	for (const a of list) console.log(`${a.id}  ${c.dim((a.status ?? "").padEnd(14))} ${a.headline.slice(0, 50).padEnd(50)}  -> ${dest(a)}`);
-}
-async function init() {
-	const rl = readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
-	console.log(`Saves keys to ${CONFIG_ENV}. Press Enter to skip one.\n`);
-	const key = await rl.question("Meta Model API key (dev.meta.ai): ");
-	const token = await rl.question("Meta access token with ads_read (optional, for Ads Manager): ");
-	const account = await rl.question("Default ad account id, e.g. act_123 (optional): ");
-	rl.close();
-	const lines = [
-		key && `META_API_KEY=${key.trim()}`,
-		token && `META_ACCESS_TOKEN=${token.trim()}`,
-		account && `META_AD_ACCOUNT_ID=${account.trim()}`
-	].filter(Boolean);
-	fs.mkdirSync(CONFIG_DIR, { recursive: true });
-	fs.writeFileSync(CONFIG_ENV, lines.join("\n") + "\n", { mode: 384 });
-	console.log(c.green(`\nSaved ${lines.length} value(s). Try: offertest ads`));
 }
 function installBrowser() {
 	const cli = createRequire(import.meta.url).resolve("playwright-core/cli.js");

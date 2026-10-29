@@ -1,5 +1,5 @@
-import fs from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import OpenAI from "openai";
@@ -1248,7 +1248,7 @@ const VERSION = () => process.env.META_GRAPH_VERSION ?? "v24.0";
 function token() {
 	loadEnv();
 	const t = process.env.META_ACCESS_TOKEN;
-	if (!t) throw new Error("META_ACCESS_TOKEN is not set (a Meta token with ads_read). See `offertest init`.");
+	if (!t) throw new Error("Ads Manager is not connected. Run `npx offertest init` (step 2 connects Ads Manager in about 3 minutes).");
 	return t;
 }
 function accountId(id) {
@@ -1269,7 +1269,11 @@ async function graph(path$1, params = {}, method = "GET") {
 		headers: { "content-type": "application/x-www-form-urlencoded" }
 	});
 	const json = await res.json().catch(() => ({}));
-	if (!res.ok || json.error) throw new Error(`Meta Graph API ${res.status}: ${json.error?.message ?? res.statusText}`);
+	if (!res.ok || json.error) {
+		const msg = json.error?.message ?? res.statusText;
+		const hint = json.error?.code === 190 ? " Your Ads Manager token expired or was revoked: run `npx offertest init` to connect again." : json.error?.code === 200 || json.error?.code === 10 ? " The token lacks a permission (ads_read, or ads_management to pause): run `npx offertest doctor`." : "";
+		throw new Error(`Meta Graph API: ${msg}.${hint}`);
+	}
 	return json;
 }
 const AD_FIELDS = `id,name,account_id,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,call_to_action_type,object_type,url_tags,link_url,object_story_spec,asset_feed_spec}`;

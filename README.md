@@ -48,12 +48,14 @@ Ads promise things: a price, a code, free shipping, a 30-day free trial, a free 
 ## Quickstart
 
 ```bash
-npx offertest init                                   # Meta Model API key (+ optional Ads Manager token)
-npx offertest check --ad <your ad id>                # test one ad from Ads Manager
+npx offertest init                                   # 3-minute guided setup: opens each page, tests each key
+npx offertest check                                  # test every ad about to launch in your ad account
 npx offertest check --url https://yourstore.com/p/x --headline "20% off" --text "Use code SAVE20"
 ```
 
-Needs Node 22+ and Google Chrome (or run `npx offertest install-browser`). Each check writes `offertest-runs/<id>/` with a one-file `report.html`, `result.json`, an append-only `log.jsonl`, and every screenshot.
+`offertest init` walks you through the Meta Model API key, connecting Ads Manager (no App Review, no ID), the browser, and installing the skill in Muse Code, Claude Code, or Codex. `offertest doctor` checks the setup at any time and prints the fix for anything wrong. Prefer to read first? [docs/SETUP.md](docs/SETUP.md).
+
+Needs Node 22+. Each check writes `offertest-runs/<id>/` with a one-file `report.html`, `result.json`, an append-only `log.jsonl`, and every screenshot.
 
 ## Works with Meta Ads Manager
 
