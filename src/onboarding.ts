@@ -65,20 +65,38 @@ function saveEnv(values: Record<string, string | undefined>) {
 
 // ---------- checks (shared by init and doctor) ----------
 
-export async function checkModelKey(key: string): Promise<{ ok: boolean; detail: string }> {
+export type KeyCheck = { ok: boolean; inconclusive?: boolean; detail: string };
+
+export async function checkModelKey(key: string): Promise<KeyCheck> {
   const base = process.env.META_BASE_URL ?? "https://api.meta.ai/v1";
+  const headers = { authorization: `Bearer ${key}`, "content-type": "application/json" };
+  const rejected = { ok: false, detail: "Meta rejected this key. Copy it again from dev.meta.ai." };
+  const unsure = (status: number) => ({
+    ok: false,
+    inconclusive: true,
+    detail: status === 429 ? "Meta is rate-limiting right now (429). Try again in a minute." : `Meta's API answered ${status}. It may be down; try again shortly.`,
+  });
   try {
-    const res = await fetch(`${base}/models`, { headers: { authorization: `Bearer ${key}` } });
-    if (res.status === 401 || res.status === 403) return { ok: false, detail: "Meta rejected this key (401). Copy it again from dev.meta.ai." };
+    const res = await fetch(`${base}/models`, { headers });
+    if (res.status === 401 || res.status === 403) return rejected;
     if (res.ok) {
       const json = (await res.json().catch(() => ({}))) as { data?: { id: string }[] };
       const ids = json.data?.map((m) => m.id) ?? [];
       const wonder = ids.some((id) => id.startsWith("muse-wonder"));
       return { ok: true, detail: ids.length ? `${ids.length} models${wonder ? ", including Muse Wonder" : " (Muse Wonder not listed: the agent may not run)"}` : "key accepted" };
     }
-    return { ok: true, detail: `key accepted (models list returned ${res.status})` };
+    if (res.status !== 404) return unsure(res.status);
+    // No model list on this endpoint: prove the key with the smallest possible call.
+    const probe = await fetch(`${base}/chat/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ model: process.env.OFFERTEST_SPARK_MODEL ?? "muse-spark-1.3", messages: [{ role: "user", content: "ok" }], max_tokens: 1 }),
+    });
+    if (probe.status === 401 || probe.status === 403) return rejected;
+    if (probe.ok) return { ok: true, detail: "key works (test call to Muse Spark)" };
+    return unsure(probe.status);
   } catch (e) {
-    return { ok: false, detail: `Could not reach ${base}: ${(e as Error).message}` };
+    return { ok: false, inconclusive: true, detail: `Could not reach ${base}: ${(e as Error).message}` };
   }
 }
 
@@ -171,13 +189,39 @@ export async function init() {
     const a = (await ask(`${q} ${c.dim(def ? "[Y/n]" : "[y/N]")}`)).toLowerCase();
     return a ? a.startsWith("y") : def;
   };
+  const expiresSoon = (t: TokenInfo) => !!t.expiresAt && t.expiresAt * 1000 - Date.now() < 3 * 86400_000;
+  const offerExtend = async (tok: string, t: TokenInfo): Promise<string | undefined> => {
+    warn(`This token expires soon (${fmtDate(t.expiresAt)}). OfferTest can extend it to 60 days.`);
+    info(`Find the App Secret at ${LINKS.myApps} > your app > App settings > Basic > App secret > Show.`);
+    const secret = await ask("Paste the App Secret to extend the token (Enter to skip):");
+    if (!secret || !t.appId) return undefined;
+    const ext = await extendToken(tok, t.appId, secret);
+    if (!ext.token) {
+      bad(`Could not extend: ${ext.error}`);
+      return undefined;
+    }
+    ok(`Extended. The token now lasts until ${fmtDate((await checkAdsToken(ext.token)).expiresAt)}.`);
+    return ext.token;
+  };
   loadEnv();
   const saved = readEnvFile();
 
   console.log(`\n${c.bold("OfferTest setup")}  ${c.dim(`(saves to ${CONFIG_ENV})`)}\n`);
   console.log(`${c.bold("Step 1 of 4: Meta Model API key")}  ${c.dim("runs the AI: Muse Wonder, Muse Spark, SAM 3.1")}`);
   let key: string | undefined = saved.META_API_KEY ?? process.env.META_API_KEY;
-  if (key && (await checkModelKey(key)).ok && !(await yes("A working key is already saved. Keep it?"))) key = undefined;
+  if (key) {
+    const r = await checkModelKey(key);
+    if (r.ok) {
+      ok(`A working key is saved: ${r.detail}`);
+      if (!(await yes("Keep it?"))) key = undefined;
+    } else if (r.inconclusive) {
+      warn(`Could not check the saved key: ${r.detail}`);
+      if (!(await yes("Keep the saved key for now?"))) key = undefined;
+    } else {
+      bad(`The saved key no longer works: ${r.detail}`);
+      key = undefined;
+    }
+  }
   while (!key) {
     info(`1. Open ${LINKS.metaApiKeys} and sign in.`);
     info("2. Create an API key. Hackathon participants: claim the $150 credits there too.");
@@ -190,6 +234,12 @@ export async function init() {
       ok(`Key works: ${r.detail}`);
       key = pasted;
       saveEnv({ META_API_KEY: key });
+    } else if (r.inconclusive) {
+      warn(r.detail);
+      if (await yes("Save this key anyway and check it later with `offertest doctor`?", false)) {
+        key = pasted;
+        saveEnv({ META_API_KEY: key });
+      }
     } else bad(r.detail);
   }
   if (!key) warn("No model key yet. Run `offertest init` again when you have it.");
@@ -198,10 +248,21 @@ export async function init() {
   let token: string | undefined = saved.META_ACCESS_TOKEN ?? process.env.META_ACCESS_TOKEN;
   if (token) {
     const t = await checkAdsToken(token);
-    if (t.valid) ok(`Connected as ${t.userName}. Token expires: ${fmtDate(t.expiresAt)}.`);
-    else {
+    if (!t.valid) {
       warn(`The saved token no longer works: ${t.error}`);
       token = undefined;
+    } else {
+      ok(`Connected as ${t.userName}. Token expires: ${fmtDate(t.expiresAt)}.`);
+      const noRead = !t.scopes.includes("ads_read") && !t.scopes.includes("ads_management");
+      if (noRead) warn("The saved token cannot read ads (no ads_read). Get a new one below.");
+      if (noRead || !(await yes("Keep this token?"))) token = undefined;
+      else if (expiresSoon(t)) {
+        const ext = await offerExtend(token, t);
+        if (ext) {
+          token = ext;
+          saveEnv({ META_ACCESS_TOKEN: token });
+        }
+      }
     }
   }
   if (!token && (await yes("Connect Ads Manager now? (about 3 minutes)"))) {
@@ -236,18 +297,7 @@ export async function init() {
       if (!t.scopes.includes("ads_management")) info("Without ads_management, OfferTest can read ads but cannot pause them. That is fine.");
       token = pasted;
       // Explorer tokens last about an hour. Swap for a 60-day token with the app's ID and secret.
-      if (t.expiresAt && t.expiresAt * 1000 - Date.now() < 3 * 86400_000) {
-        warn(`This token expires soon (${fmtDate(t.expiresAt)}). OfferTest can extend it to 60 days.`);
-        info(`Find the App Secret at ${LINKS.myApps} > your app > App settings > Basic > App secret > Show.`);
-        const secret = await ask("Paste the App Secret to extend the token (Enter to skip):");
-        if (secret && t.appId) {
-          const ext = await extendToken(pasted, t.appId, secret);
-          if (ext.token) {
-            token = ext.token;
-            ok(`Extended. The token now lasts until ${fmtDate((await checkAdsToken(token)).expiresAt)}.`);
-          } else bad(`Could not extend: ${ext.error}`);
-        }
-      }
+      if (expiresSoon(t)) token = (await offerExtend(pasted, t)) ?? pasted;
       saveEnv({ META_ACCESS_TOKEN: token });
     }
   }
@@ -323,6 +373,7 @@ export async function doctor(): Promise<number> {
   else {
     const r = await checkModelKey(key);
     if (r.ok) ok(`Meta Model API key: ${r.detail}`);
+    else if (r.inconclusive) fail(`Meta Model API key not checked: ${r.detail}`, "run `offertest doctor` again in a minute");
     else fail(`Meta Model API key: ${r.detail}`, "run `offertest init` and paste a new key");
   }
 
