@@ -1,5 +1,5 @@
 import { formatCents } from "@/lib/types";
-import type { Cart, Coupon, PricedCart, StoreConfig } from "@/lib/types";
+import type { Cart, Channel, Coupon, PricedCart, StoreConfig } from "@/lib/types";
 
 // Pure pricing. No I/O. Safe to import anywhere.
 
@@ -28,7 +28,7 @@ export function shippingFor(config: StoreConfig, merchandiseCents: number, hasIt
   return flatRateCents;
 }
 
-export function priceCart(config: StoreConfig, cart: Cart, now: Date = new Date()): PricedCart {
+export function priceCart(config: StoreConfig, cart: Cart, now: Date = new Date(), channel: Channel = "web"): PricedCart {
   const lines: PricedCart["lines"] = [];
   for (const item of cart.items) {
     const product = config.products.find((p) => p.id === item.productId);
@@ -55,7 +55,7 @@ export function priceCart(config: StoreConfig, cart: Cart, now: Date = new Date(
 
   if (couponCode) {
     const coupon = findCoupon(config, couponCode);
-    if (!coupon || !coupon.active) {
+    if (!coupon || !coupon.active || (coupon.channels && !coupon.channels.includes(channel))) {
       couponMessage = COUPON_MESSAGES.invalid;
     } else if (isCouponExpired(coupon, now)) {
       couponMessage = COUPON_MESSAGES.expired;

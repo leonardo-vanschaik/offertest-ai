@@ -6,6 +6,7 @@ import { baselineConfig } from "./catalog";
 export const SCENARIOS: { name: ScenarioName; label: string }[] = [
   { name: "baseline", label: "Baseline (everything matches the ad)" },
   { name: "code_expired", label: "SAVE20 expired yesterday" },
+  { name: "agent_code_rejected", label: "SAVE20 works on the website, not for AI agents" },
   { name: "code_wrong_percent", label: "SAVE20 gives 10% instead of 20%" },
   { name: "code_missing", label: "SAVE20 does not exist" },
   { name: "code_excludes_product", label: "SAVE20 does not apply to Ridge" },
@@ -34,6 +35,9 @@ export function scenarioConfig(name: ScenarioName, now: Date = new Date()): Stor
       break;
     case "code_expired":
       save20.expiresAt = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      break;
+    case "agent_code_rejected":
+      save20.channels = ["web"];
       break;
     case "code_wrong_percent":
       save20.percentOff = 10;

@@ -93,3 +93,19 @@ test("Enter in the discount-code field is not payment", async () => {
     await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
   }
 });
+
+test("agent checkout (UCP) rejects a web-only code that the website accepts", async () => {
+  const { agentCheckout } = await import("../src/core/ucp.ts");
+  const set = (scenario: string) =>
+    fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scenario }) });
+  try {
+    await set("baseline");
+    const ok = await agentCheckout(`${STORE}/store/products/ridge-trail-shoe`, ["SAVE20"], "Ridge trail shoe");
+    assert.ok("text" in ok && /Discount applied: SAVE20/.test(ok.text) && /Total: \$96\.00/.test(ok.text));
+    await set("agent_code_rejected");
+    const bad = await agentCheckout(`${STORE}/store/products/ridge-trail-shoe`, ["SAVE20"], "Ridge trail shoe");
+    assert.ok("text" in bad && /This code is not valid\./.test(bad.text) && /Total: \$120\.00/.test(bad.text));
+  } finally {
+    await set("baseline");
+  }
+});

@@ -1,6 +1,6 @@
 // Full pipeline against a fake Meta API (scripted model replies) and the demo store.
 // Needs the demo store on :3000. Run: node --import tsx --test test/pipeline.e2e.ts
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import http from "node:http";
@@ -48,10 +48,13 @@ function fakeMeta(): Promise<{ url: string; close: () => void }> {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ url: `http://127.0.0.1:${(server.address() as { port: number }).port}/v1`, close: () => server.close() })));
 }
 
+// One fake server for the whole file: the Meta client is created once and keeps its base URL.
+const meta = await fakeMeta();
+process.env.META_BASE_URL = meta.url;
+process.env.META_API_KEY = "test";
+after(() => meta.close());
+
 test("pipeline: promises -> funnel -> verdict with quote check -> fix -> report", async () => {
-  const meta = await fakeMeta();
-  process.env.META_BASE_URL = meta.url;
-  process.env.META_API_KEY = "test";
   await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"code_expired"}' });
   // Put the expired message on the page the agent sees: open the cart with SAVE20 applied by a real customer flow.
   const { runTest } = await import("../src/core/run.ts");
@@ -59,9 +62,8 @@ test("pipeline: promises -> funnel -> verdict with quote check -> fix -> report"
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "offertest-"));
   const { result, dir } = await runTest(
     { source: "manual", headline: "20% off the Ridge trail shoe.", text: "This week only. Use code SAVE20 at checkout.", cta: "Shop now", destination: { type: "website", url: `${STORE}/store/products/ridge-trail-shoe` } },
-    { outDir: out, maxTurns: 6 },
+    { outDir: out, maxTurns: 6, agentCheckout: false },
   );
-  meta.close();
   assert.equal(result.error, undefined, result.error);
   assert.equal(result.assertions.length, 1);
   assert.ok(result.steps.length >= 3, "funnel steps recorded");
@@ -75,4 +77,21 @@ test("pipeline: promises -> funnel -> verdict with quote check -> fix -> report"
   assert.ok(fs.existsSync(path.join(dir, "log.jsonl")));
   assert.ok(fs.existsSync(path.join(dir, "shots", "001.jpg")));
   await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
+});
+
+test("pipeline: the agent checkout (UCP) supplies the proof the web pages lacked", async () => {
+  await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"code_expired"}' });
+  const { runTest } = await import("../src/core/run.ts");
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), "offertest-"));
+  try {
+    const { result } = await runTest(
+      { source: "manual", headline: "20% off the Ridge trail shoe.", text: "This week only. Use code SAVE20 at checkout.", cta: "Shop now", destination: { type: "website", url: `${STORE}/store/products/ridge-trail-shoe` } },
+      { outDir: out, maxTurns: 6 },
+    );
+    assert.ok(result.steps.some((s) => s.url?.startsWith("ucp://")), "agent checkout step recorded");
+    assert.equal(result.verdicts[0].status, "contradicted");
+    assert.equal(result.overall, "fail");
+  } finally {
+    await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
+  }
 });

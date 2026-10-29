@@ -80,6 +80,28 @@ OfferTest reads the ad itself from the Marketing API: headline, primary text, im
 | Messenger / WhatsApp / Instagram Direct | Checks the welcome message against the ad's offer |
 | App install | Opens the store page |
 
+### Agent checkout: where AI shopping agents buy
+
+Shoppers now buy through AI agents such as Meta Muse, ChatGPT, and Gemini. Those agents do not click through your website: they use the store's agent checkout (the [Universal Commerce Protocol](https://ucp.dev), which every Shopify store publishes at `/.well-known/ucp`). A code can work on the website and still fail there, for example when the discount is limited to the Online Store sales channel.
+
+So for every website ad, OfferTest also builds a cart in the store's agent checkout with the ad's codes and reads the real totals. A code that fails there fails the test, and the report quotes the store's message. This needs no keys, costs nothing, and never places an order. Try it on any Shopify store:
+
+```
+$ npx offertest agent-checkout --url https://yourstore.com/products/ridge --code SAVE20
+Agent checkout cart (UCP: the channel AI shopping agents such as Meta Muse buy through)
+Item: Ridge trail shoe - Size 7 x1: $120.00
+Discount codes sent: SAVE20
+Discounts applied: none
+Store message (warning discount_code_invalid): This code is not valid.
+Total: $120.00
+
+Does not work in agent checkout: SAVE20
+```
+
+Skip it with `--no-agent-checkout`.
+
+### Payments
+
 It never pays real money. Without `--pay` it stops at the payment step. With `--pay` (test-mode stores only, for example a Shopify Bogus Gateway or Stripe test mode) it asks you before the final click.
 
 ## Use it from your coding agent
@@ -114,7 +136,7 @@ Then ask: *"Check the ads I'm about to launch."* The agent runs OfferTest, reads
 
 ## Does it work?
 
-We built a small store, **Alder Trail Co.** ([examples/demo-store](examples/demo-store)), with switchable offer bugs: expired code, wrong percent, missing code, code that excludes the product, hidden minimum spend, raised price, shipping charged, sold-out size, trial that demands a card, broken download link. Labels were frozen before the scored run.
+We built a small store, **Alder Trail Co.** ([examples/demo-store](examples/demo-store)), with switchable offer bugs: expired code, wrong percent, missing code, code that excludes the product, hidden minimum spend, raised price, shipping charged, sold-out size, trial that demands a card, broken download link, and a code that works on the website but not in agent checkout. Labels were frozen before the scored run.
 
 <!-- EVAL_TABLE -->
 _Scored run pending._

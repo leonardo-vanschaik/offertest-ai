@@ -28,7 +28,11 @@ export type Coupon = {
   minSubtotalCents?: number;
   expiresAt: string; // ISO
   active: boolean;
+  channels?: Channel[]; // sales channels the code works in; undefined = all
 };
+
+// "web" is the online store; "agent" is the agent checkout (UCP) that AI shopping agents use.
+export type Channel = "web" | "agent";
 
 export type Shipping = {
   flatRateCents: number; // charged when not free
@@ -88,6 +92,7 @@ export type Order = {
 export type ScenarioName =
   | "baseline" // everything matches the ads
   | "code_expired" // SAVE20 expired yesterday: "This code has expired."
+  | "agent_code_rejected" // SAVE20 works on the website but not in agent checkout (UCP)
   | "code_wrong_percent" // SAVE20 gives 10% instead of 20%
   | "code_missing" // SAVE20 does not exist: "This code is not valid."
   | "code_excludes_product" // SAVE20 does not apply to the Ridge shoe

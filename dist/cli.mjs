@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as loadEnv, i as listAdIds, l as CONFIG_DIR, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_ENV } from "./html-C8OkghPd.mjs";
+import { c as runTest, d as CONFIG_ENV, f as loadEnv, i as listAdIds, l as agentCheckout, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_DIR } from "./html-yPVoa-wT.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -690,6 +690,8 @@ ${c.bold("Usage")}
   offertest check --ad <ad id>                 test one ad from Meta Ads Manager
   offertest check --account <act_123>          test every ad about to launch (paused / in review)
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
+  offertest agent-checkout --url <product url> [--code SAVE20]
+                                               test a code in the store's AI-agent checkout (no keys, free)
   offertest ads [--account <act_123>] [--live] list ads and where they send people
   offertest serve [--port 7777]                local server for the Ads Manager Chrome extension
   offertest init                               guided setup: Meta API key, Ads Manager, browser, agent skill
@@ -701,6 +703,7 @@ ${c.bold("Check options")}
   --live                with --account: test live (ACTIVE) ads instead of ads about to launch
   --pay                 allow a test-mode payment (asks before paying; test stores only)
   --no-submit           do not submit forms (sign-up, lead, booking)
+  --no-agent-checkout   skip the agent checkout (UCP) check of the offer
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
   --headless            hide the browser (default when not in a terminal)
@@ -714,6 +717,26 @@ ${c.bold("Check options")}
 
 ${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved or blocked · 3 error · 4 usage
 ${c.bold("Env")}  META_API_KEY (Meta Model API) · META_ACCESS_TOKEN (Marketing API, ads_read) · META_AD_ACCOUNT_ID`;
+async function agentCheckoutCmd(url, codes) {
+	if (!url) {
+		console.error(`Give --url <product page>.\n\n${HELP}`);
+		process.exit(EXIT.usage);
+	}
+	const r = await agentCheckout(url, codes.map((x) => x.toUpperCase()), new URL(url).pathname.split("/").pop()?.replace(/[-_]/g, " ") ?? "");
+	if ("skipped" in r) {
+		console.log(c.yellow(r.skipped));
+		process.exit(EXIT.unresolved);
+	}
+	console.log(r.text);
+	if (!codes.length) process.exit(EXIT.pass);
+	if (/no discount result/.test(r.text)) {
+		console.log(c.yellow("\nThe store did not say whether the code works for agents."));
+		process.exit(EXIT.unresolved);
+	}
+	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code.toUpperCase()}`));
+	console.log(failed.length ? c.red(`\nDoes not work in agent checkout: ${failed.join(", ")}`) : c.green("\nThe code works in agent checkout."));
+	process.exit(failed.length ? EXIT.fail : EXIT.pass);
+}
 async function main() {
 	const [cmd, ...rest] = process.argv.slice(2);
 	const { values } = parseArgs({
@@ -739,6 +762,11 @@ async function main() {
 			image: { type: "string" },
 			pay: { type: "boolean" },
 			"no-submit": { type: "boolean" },
+			"no-agent-checkout": { type: "boolean" },
+			code: {
+				type: "string",
+				multiple: true
+			},
 			"pause-failing": { type: "boolean" },
 			mobile: { type: "boolean" },
 			headful: { type: "boolean" },
@@ -766,6 +794,7 @@ async function main() {
 	if (cmd === "doctor") process.exit(await doctor());
 	if (cmd === "install-browser") return installBrowser();
 	if (cmd === "ads") return await ads(values.account, values.live);
+	if (cmd === "agent-checkout") return await agentCheckoutCmd(values.url, values.code ?? []);
 	if (cmd === "serve") return await serve(values.port ? Number(values.port) : void 0);
 	if (cmd !== "check") {
 		console.error(`Unknown command "${cmd}".\n\n${HELP}`);
@@ -825,6 +854,7 @@ async function main() {
 		outDir: values.out,
 		pay: values.pay,
 		submit: !values["no-submit"],
+		agentCheckout: !values["no-agent-checkout"],
 		headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
 		retryHeadful: !values.headless && !!process.stdout.isTTY,
 		confirmSafetyChecks: values["confirm-safety-checks"],

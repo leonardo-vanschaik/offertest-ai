@@ -3,6 +3,7 @@
 export type ScenarioName =
   | "baseline"
   | "code_expired"
+  | "agent_code_rejected"
   | "code_wrong_percent"
   | "code_missing"
   | "code_excludes_product"
@@ -201,7 +202,15 @@ export const CASES: EvalCase[] = [
     "Thanks page says \"Your guide is ready. Unlock it for $4.99\". The ad says free.", GUIDE),
   c("guide-price_raised", "price_raised", GUIDE_AD, "pass",
     "Only the Ridge price changes. The guide is still free and downloads right away.", GUIDE),
+
+  // ---------- Agent checkout (UCP) (3): the website works, AI shopping agents do not ----------
+  c("save20a-agent_code_rejected", "agent_code_rejected", SAVE20_A, "fail",
+    "SAVE20 works on the website (-$24.00), but the agent checkout says \"This code is not valid.\" Shoppers who buy through an AI agent pay $120.00."),
+  c("save20b-agent_code_rejected", "agent_code_rejected", SAVE20_B, "fail",
+    "Copy B, same promise. The agent checkout rejects SAVE20."),
+  c("price-a-agent_code_rejected", "agent_code_rejected", PRICE_A, "pass",
+    "Only SAVE20 is web-only. The ad makes no code claim. Ridge is $120.00 and ships free in both channels."),
 ];
 
-if (CASES.length !== 38) throw new Error(`eval/cases.ts must have 38 cases, has ${CASES.length}`);
+if (CASES.length !== 41) throw new Error(`eval/cases.ts must have 41 cases, has ${CASES.length}`);
 if (new Set(CASES.map((x) => x.id)).size !== CASES.length) throw new Error("duplicate case id");

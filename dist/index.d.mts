@@ -192,6 +192,7 @@ type RunOptions = {
   pay?: boolean;
   submit?: boolean;
   headful?: boolean;
+  agentCheckout?: boolean;
   retryHeadful?: boolean;
   confirmSafetyChecks?: boolean;
   mobile?: boolean;

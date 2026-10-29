@@ -28,6 +28,7 @@ Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (Ads
 | One ad id | `npx offertest check --ad <ad id>` |
 | No ad id, only ad text and a URL | `npx offertest check --url <landing url> --headline "<headline>" --text "<primary text>" [--image <file>]` |
 | Not sure which ads exist | `npx offertest ads [--account act_<id>]` |
+| A discount code, and wants to know if AI shopping agents (Meta Muse, ChatGPT) can use it | `npx offertest agent-checkout --url <product url> --code <CODE>` (no keys, free, no order) |
 
 Add `--json` when you need to parse the output. Add `--mobile` to test as a phone in the Facebook in-app browser.
 
@@ -35,6 +36,7 @@ Add `--json` when you need to parse the output. Add `--mobile` to test as a phon
 
 - Do not pass `--pay` unless the user says the store is in test mode. Without it, the agent stops at the payment step.
 - Do not pass `--pause-failing` unless the user asks to pause failing ads.
+- `check` also tests website ads in the store's agent checkout (UCP). A verdict quoting a `ucp://` page means the offer fails for shoppers who buy through an AI agent, even if the website works.
 - A run takes 1 to 5 minutes per ad. Run ads one command at a time; the CLI tests them in sequence.
 
 ## Read the result
