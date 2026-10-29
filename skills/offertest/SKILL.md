@@ -11,8 +11,11 @@ OfferTest reads an ad, turns it into promises ("Code SAVE20 gives 20% off"), fol
 ## Setup (once)
 
 ```bash
-npx offertest init        # Meta Model API key; optional Meta ads token + ad account
+npx offertest init        # guided: Meta Model API key, Ads Manager, browser (the user runs this in a terminal)
+npx offertest doctor      # checks the setup; prints the fix for anything wrong
 ```
+
+If a command fails with a setup error, run `npx offertest doctor` and tell the user the fix it prints. `init` is interactive: ask the user to run it themselves (in Muse Code or Claude Code they can type `! npx offertest init`).
 
 Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (ads_read, for Ads Manager), `META_AD_ACCOUNT_ID`.
 
