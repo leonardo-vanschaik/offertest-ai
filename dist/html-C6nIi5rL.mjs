@@ -234,6 +234,7 @@ const PAY_IDS = [
 	"[data-requires-approval]"
 ];
 const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
+const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|register|log ?in|sign ?in|save|send|submit|get|download|claim|book|request|start|confirm)\b)(apply|redeem|use code|search|go|update|calculate|check|validate|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 const ORDER_SUBMIT = [
 	/\/graphql.*SubmitForCompletion/i,
 	/checkout\.pci\.shopifyinc\.com\/sessions/i,
@@ -357,7 +358,7 @@ var Driver = class {
 				kind: "payment",
 				label: hit.label || "Submit"
 			};
-			if (!this.allowSubmit && !hit.pay && !SAFE_SUBMIT.test(hit.label)) return {
+			if (!this.allowSubmit && !hit.pay && !SAFE_STEP.test(hit.label)) return {
 				kind: "submit",
 				label: hit.label || "Submit"
 			};
@@ -393,8 +394,20 @@ var Driver = class {
 		}
 		return null;
 	}
+	async focusedFrame() {
+		let frame = this.page.mainFrame();
+		for (let depth = 0; depth < 5; depth++) {
+			const el = (await frame.evaluateHandle(() => document.activeElement).catch(() => null))?.asElement();
+			const tag = el ? await el.evaluate((e) => e.tagName).catch(() => "") : "";
+			if (tag !== "IFRAME" && tag !== "FRAME") return frame;
+			const child = await el.contentFrame().catch(() => null);
+			if (!child) return frame;
+			frame = child;
+		}
+		return frame;
+	}
 	async enterSubmitsForm(buttonOnly = false) {
-		return this.page.evaluate(([safe, buttonOnly$1]) => {
+		return (await this.focusedFrame()).evaluate(([safe, buttonOnly$1]) => {
 			const a = document.activeElement;
 			if (!a || a === document.body || a.tagName === "TEXTAREA") return null;
 			const isButton = /^(submit|image)$/.test(a.type) && /^(button|input)$/i.test(a.tagName);
@@ -411,12 +424,12 @@ var Driver = class {
 			].join(" ");
 			if (new RegExp(safe, "i").test(text) || /discount|coupon|promo|gift ?card|voucher|search/i.test(field)) return null;
 			return text || "Submit";
-		}, [SAFE_SUBMIT.source, buttonOnly]).catch(() => null);
+		}, [SAFE_STEP.source, buttonOnly]).catch(() => null);
 	}
 	async enterSubmitsPay() {
 		const focused = await this.focusedPayButton();
 		if (focused) return focused;
-		const r = await this.page.evaluate(([src, ids, safe]) => {
+		const r = await (await this.focusedFrame()).evaluate(([src, ids, safe]) => {
 			const a = document.activeElement;
 			if (!a || a === document.body || /^(textarea|button)$/i.test(a.tagName)) return {
 				pay: null,

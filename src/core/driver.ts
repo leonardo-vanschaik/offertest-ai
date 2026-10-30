@@ -1,4 +1,4 @@
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
+import { chromium, type Browser, type BrowserContext, type Frame, type Page } from "playwright-core";
 import type { ComputerAction } from "../types.ts";
 
 export const DESKTOP = { width: 1280, height: 800 };
@@ -23,6 +23,9 @@ const PAY_IDS = ["#checkout-pay-button", "#place_order", "#submit-button", "[dat
 // Form buttons that clearly do not place an order (apply a code, go to the next checkout step). On a payment page
 // any other form submit button, such as a plain "Submit", counts as payment: by click, Enter, or Space.
 const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
+// With --no-submit, only buttons that send nothing about the customer stay free: applying a code, searching,
+// or moving between steps. Sign up, subscribe, join, log in, and save send data, so they are blocked.
+const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|register|log ?in|sign ?in|save|send|submit|get|download|claim|book|request|start|confirm)\b)(apply|redeem|use code|search|go|update|calculate|check|validate|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 
 // Order-submit requests on common platforms. Aborted when the run does not allow payment.
 const ORDER_SUBMIT = [
@@ -160,7 +163,7 @@ export class Driver {
       if (hit.byId) return { kind: "payment", label: hit.label };
       if ((hit.pay || !SAFE_SUBMIT.test(hit.label)) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
       // --no-submit: a form submit button that does more than apply a code or move to the next step.
-      if (!this.allowSubmit && !hit.pay && !SAFE_SUBMIT.test(hit.label)) return { kind: "submit", label: hit.label || "Submit" };
+      if (!this.allowSubmit && !hit.pay && !SAFE_STEP.test(hit.label)) return { kind: "submit", label: hit.label || "Submit" };
       return null;
     }
     const submits =
@@ -190,9 +193,24 @@ export class Driver {
     return null;
   }
 
+  // The frame that holds the focused control: focus inside an embedded form (an iframe) belongs to that frame.
+  private async focusedFrame(): Promise<Frame> {
+    let frame: Frame = this.page.mainFrame();
+    for (let depth = 0; depth < 5; depth++) {
+      const el = (await frame.evaluateHandle(() => document.activeElement).catch(() => null))?.asElement();
+      const tag = el ? await el.evaluate((e) => e.tagName).catch(() => "") : "";
+      if (tag !== "IFRAME" && tag !== "FRAME") return frame;
+      const child = await el!.contentFrame().catch(() => null);
+      if (!child) return frame;
+      frame = child;
+    }
+    return frame;
+  }
+
   // Would Enter (or Space on a focused button) send the focused form? Applying a code or a search does not count.
   private async enterSubmitsForm(buttonOnly = false): Promise<string | null> {
-    return this.page
+    const frame = await this.focusedFrame();
+    return frame
       .evaluate(
         ([safe, buttonOnly]) => {
           const a = document.activeElement as HTMLInputElement | null;
@@ -207,7 +225,7 @@ export class Driver {
           if (new RegExp(safe, "i").test(text) || /discount|coupon|promo|gift ?card|voucher|search/i.test(field)) return null;
           return text || "Submit";
         },
-        [SAFE_SUBMIT.source, buttonOnly] as [string, boolean],
+        [SAFE_STEP.source, buttonOnly] as [string, boolean],
       )
       .catch(() => null);
   }
@@ -215,7 +233,7 @@ export class Driver {
   private async enterSubmitsPay(): Promise<string | null> {
     const focused = await this.focusedPayButton();
     if (focused) return focused;
-    const r = await this.page
+    const r = await (await this.focusedFrame())
       .evaluate(([src, ids, safe]) => {
         const a = document.activeElement as HTMLInputElement | null;
         if (!a || a === document.body || /^(textarea|button)$/i.test(a.tagName)) return { pay: null, known: true };

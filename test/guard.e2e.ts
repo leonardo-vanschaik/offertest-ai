@@ -97,3 +97,27 @@ test("--no-submit blocks sending a lead form by click or Enter, but not applying
     await d.page.locator("input[name=code]").focus();
     assert.equal(await d.guard(enter), null);
   }));
+
+test("--no-submit also blocks Sign up, Subscribe, and Join, which send customer data", () =>
+  noSubmitPage(
+    `<form><input name="email"><button id="u">Sign up</button></form><form><input name="e2"><button id="s">Subscribe</button></form><form><input name="e3"><button id="j">Join now</button></form><form><input name="q"><button id="c">Continue</button></form>`,
+    async (d) => {
+      for (const id of ["#u", "#s", "#j"]) assert.equal((await d.guard(await at(d, id)))?.kind, "submit", id);
+      await d.page.locator("input[name=e2]").focus();
+      assert.equal((await d.guard(enter))?.kind, "submit");
+      assert.equal(await d.guard(await at(d, "#c")), null, "moving to the next step is allowed");
+    },
+  ));
+
+test("--no-submit sees a form inside an embedded frame: Enter and Space there are blocked", () =>
+  noSubmitPage(
+    `<h1>Get the guide</h1><iframe srcdoc='<form action="/lead" method="post"><input name="email"><button id="g">Get the guide</button></form>' width="400" height="200"></iframe>`,
+    async (d) => {
+      const frame = d.page.frameLocator("iframe");
+      await frame.locator("input[name=email]").focus();
+      assert.equal((await d.guard(enter))?.kind, "submit");
+      await frame.locator("#g").focus();
+      assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "submit");
+      assert.equal((await d.guard(await at(d, "iframe")))?.kind, undefined, "a click on the frame's empty area is not a submit");
+    },
+  ));

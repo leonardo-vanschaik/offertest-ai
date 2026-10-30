@@ -22,6 +22,7 @@ export const EXTENSION_ORIGIN = "chrome-extension://hfjeehndnoioofnabimflagfndlm
 export type ShopStep =
   | { click: string; guarded?: boolean } // Playwright selector; guarded: a pay button the shadow must not press
   | { fill: string; text: string }
+  | { press: string; guarded?: boolean } // a key, sent to whatever has focus
   | { say: string }; // the agent's last words
 export type Promise_ = { kind: string; claim: string; adQuote: string; card?: number | null; conditions?: { key: string; value: string }[] };
 // A judge rule per promise, in promise order (a1, a2, ...). The first rule that matches a line of evidence wins.
@@ -173,6 +174,10 @@ export class FakeMeta {
   // Find the element in the shadow page, mirror the action there, and return the same action for the agent.
   private async act(step: Exclude<ShopStep, { say: string }>): Promise<ComputerAction[]> {
     const page = this.shadow!.page;
+    if ("press" in step) {
+      if (!step.guarded) await page.keyboard.press(step.press);
+      return [{ type: "keypress", keys: [step.press] }];
+    }
     const sel = "click" in step ? step.click : step.fill;
     const loc = page.locator(sel).first();
     await loc.waitFor({ state: "visible", timeout: 10_000 });
@@ -305,14 +310,16 @@ export async function orderCount(): Promise<number> {
 
 // ---------- a tiny site for pages the demo store does not have (password wall) ----------
 
-export async function staticSite(pages: Record<string, string>): Promise<{ url: string; close: () => void }> {
+export async function staticSite(pages: Record<string, string>): Promise<{ url: string; close: () => void; posts: string[] }> {
+  const posts: string[] = [];
   const srv = http.createServer((req, res) => {
+    if (req.method === "POST") posts.push(req.url ?? "");
     const html = pages[new URL(req.url ?? "/", "http://x").pathname];
     res.writeHead(html ? 200 : 404, { "content-type": "text/html" });
     res.end(html ?? "<h1>Not found</h1>");
   });
   await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
-  return { url: `http://127.0.0.1:${(srv.address() as { port: number }).port}`, close: () => srv.close() };
+  return { url: `http://127.0.0.1:${(srv.address() as { port: number }).port}`, close: () => srv.close(), posts };
 }
 
 // ---------- shopper scripts for the demo store ----------

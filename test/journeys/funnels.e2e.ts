@@ -91,6 +91,30 @@ test("--no-submit: the form is never sent (no fake lead), and the promise stays 
   assert.ok(!r.steps.some((s) => /thanks/.test(s.url ?? "")), "never reached the thank-you page");
 });
 
+test("--no-submit with an embedded lead form (iframe): pressing Enter there sends nothing", async () => {
+  const site = await staticSite({
+    "/guide": `<html><body><h1>Free trail guide</h1><p>Enter your email to get the free PDF.</p><iframe src="/form" width="500" height="220"></iframe></body></html>`,
+    "/form": `<html><body><form action="/lead" method="post"><label>Email <input id="email" name="email"></label><button>Get the guide</button></form></body></html>`,
+  });
+  try {
+    const run = await check(
+      {
+        shopper: { "/guide": [{ fill: "iframe >> internal:control=enter-frame >> #email", text: "test@offertest.ai" }, { press: "Enter", guarded: true }, { say: "I pressed Enter." }] },
+        promises: [{ kind: "free", claim: "The guide is a free PDF", adQuote: "Free PDF guide." }],
+        rules: [{ supported: /Your guide is ready/ }],
+      },
+      `${site.url}/guide`,
+      "Free trail guide.",
+      "Free PDF guide.",
+      ["--no-submit"],
+    );
+    assert.deepEqual(site.posts, [], "no lead was sent");
+    assert.ok(resultOf(run).steps.some((s) => /Stopped before submitting a form/.test(s.summary)), why(run));
+  } finally {
+    site.close();
+  }
+});
+
 test("ad links to a retired product page: the 404 fails the offer", async () => {
   await scenario("baseline");
   const run = await check(
