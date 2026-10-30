@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fromMeta } from "../src/core/funnel.ts";
+import { fromMeta, planBatch } from "../src/core/funnel.ts";
 
 const view = { width: 1280, height: 800 };
 
@@ -21,4 +21,13 @@ test("bad actions come back as errors the model can fix, not crashes", () => {
   assert.match(fromMeta({ action: "left_click" }, view) as string, /needs a coordinate/);
   assert.match(fromMeta({ action: "key" }, view) as string, /needs text/);
   assert.match(fromMeta({ action: "hold_key", text: "shift" }, view) as string, /unsupported/);
+});
+
+test("one bad action stops the whole batch: no typing or Enter after a rejected click", () => {
+  const plan = planBatch([{ action: "left_click" }, { action: "type", text: "test@offertest.ai" }, { action: "key", text: "enter" }], view);
+  assert.equal(typeof plan, "string");
+  assert.match(plan as string, /nothing was run. action 1: left_click needs a coordinate/);
+  assert.match(planBatch([], view) as string, /non-empty actions list/);
+  const ok = planBatch([{ action: "left_click", coordinate: [500, 500] }, { action: "type", text: "SAVE20" }], view);
+  assert.deepEqual(Array.isArray(ok) && ok.map((p) => p.action), ["left_click", "type"]);
 });

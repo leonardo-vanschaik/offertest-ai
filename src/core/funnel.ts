@@ -119,6 +119,19 @@ export function fromMeta(a: MetaAction, view: { width: number; height: number })
   }
 }
 
+// The model's batch as driver actions, or one error message if any action is invalid (then nothing runs).
+export function planBatch(actions: unknown, view: { width: number; height: number }): { action: string; steps: ComputerAction[] }[] | string {
+  if (!Array.isArray(actions) || !actions.length) return "error: call computer.computer with a non-empty actions list";
+  const plan = [];
+  const errors: string[] = [];
+  for (const [i, a] of actions.slice(0, MAX_BATCH).entries()) {
+    const steps = a && typeof a === "object" ? fromMeta(a as MetaAction, view) : "each action must be an object";
+    if (typeof steps === "string") errors.push(`action ${i + 1}: ${steps}`);
+    else plan.push({ action: String((a as MetaAction).action), steps });
+  }
+  return errors.length ? `error: nothing was run. ${errors.join("; ")}` : plan;
+}
+
 function args(call: FunctionCall): Record<string, unknown> | undefined {
   try {
     const v = JSON.parse(call.arguments || "{}");
@@ -256,21 +269,16 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
       return out;
     }
 
-    // Run the batch in order. Stop early when the page changes, so the model looks again.
-    const batch = (args(call)?.actions ?? []) as MetaAction[];
-    const status: string[] = [];
-    if (!Array.isArray(batch) || !batch.length) status.push("error: call computer.computer with a non-empty actions list");
+    // Check the whole batch first: later actions depend on earlier ones (click a field, then type), so one bad
+    // action means none run. Then run it in order and stop early when the page changes, so the model looks again.
+    const plan = planBatch(args(call)?.actions, driver.viewport);
+    const status: string[] = typeof plan === "string" ? [plan] : [];
     const done: ComputerAction[] = [];
     const urlBefore = driver.url();
     let stop = false;
-    for (const a of Array.isArray(batch) ? batch.slice(0, MAX_BATCH) : []) {
+    for (const { action: name, steps } of typeof plan === "string" ? [] : plan) {
       if (stop || driver.url() !== urlBefore) {
-        status.push(`${a?.action}: skipped, the page changed`);
-        continue;
-      }
-      const steps = a && typeof a === "object" ? fromMeta(a, driver.viewport) : "each action must be an object";
-      if (typeof steps === "string") {
-        status.push(`error: ${steps}`);
+        status.push(`${name}: skipped, the page changed`);
         continue;
       }
       for (const action of steps) {
@@ -305,7 +313,7 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
         if (guard) await driver.waitToLeave(urlBefore);
         done.push(action);
       }
-      if (!stop) status.push(`${a.action}: ok`);
+      if (!stop) status.push(`${name}: ok`);
     }
     const summary = done.map(describeAction).join(" · ") || "Look at the screen";
     const cap = await capture(summary, done, said || undefined);
