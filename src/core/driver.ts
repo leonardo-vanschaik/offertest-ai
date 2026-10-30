@@ -20,8 +20,9 @@ const key = (k: string) => KEY_MAP[k.toUpperCase()] ?? (k.length === 1 ? k : k[0
 const PAY_TEXT =
   /^\s*(place (my )?order|pay( now| \$?[\d.,]+)?|complete (my )?(order|purchase|payment)|confirm (and pay|order|purchase|payment)|submit (order|payment)|buy now and pay|purchase|order now and pay|finalizar compra|pagar( ahora)?|commander|payer|jetzt kaufen|zahlungspflichtig bestellen)\s*$/i;
 const PAY_IDS = ["#checkout-pay-button", "#place_order", "#submit-button", "[data-requires-approval]"];
-// Default buttons that clearly do not place an order: Enter on their form needs no approval.
-const SAFE_SUBMIT = /^(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save)\b/;
+// Form buttons that clearly do not place an order (apply a code, go to the next checkout step). On a payment page
+// any other form submit button, such as a plain "Submit", counts as payment: by click, Enter, or Space.
+const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 
 // Order-submit requests on common platforms. Aborted when the run does not allow payment.
 const ORDER_SUBMIT = [
@@ -151,8 +152,10 @@ export class Driver {
   async guard(action: ComputerAction): Promise<Guard> {
     if (action.type === "click" || action.type === "double_click") {
       const hit = await this.payTargetAt(action.x, action.y);
-      // A known pay-button id always counts; a "Pay"/"Place order" label counts on a payment page.
-      if (hit && (hit.byId || (await this.onPaymentPage()))) return { kind: "payment", label: hit.label };
+      // A known pay-button id always counts; a "Pay"/"Place order" label, or an unknown form submit button, counts on a payment page.
+      if (!hit) return null;
+      if (hit.byId) return { kind: "payment", label: hit.label };
+      if ((hit.pay || !SAFE_SUBMIT.test(hit.label)) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
       return null;
     }
     const submits =
@@ -203,14 +206,18 @@ export class Driver {
   }
 
   private async focusedPayButton(): Promise<string | null> {
-    const label = await this.page
+    const hit = await this.page
       .evaluate(([src, ids]) => {
         const a = document.activeElement as HTMLElement | null;
         if (!a || !/^(button|a|input)$/i.test(a.tagName) && a.getAttribute("role") !== "button") return null;
         const text = (a.innerText || (a as HTMLInputElement).value || a.getAttribute("aria-label") || "").trim();
-        return ids.some((sel: string) => a.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
+        if (ids.some((sel: string) => a.matches(sel)) || new RegExp(src, "i").test(text)) return { label: text || "Pay", pay: true };
+        const b = a as HTMLInputElement;
+        return /^(submit|image)$/.test(b.type) && b.form ? { label: text, pay: false } : null;
       }, [PAY_TEXT.source, PAY_IDS] as [string, string[]])
       .catch(() => null);
+    // A focused form submit button with an unknown label (such as "Submit") counts on a payment page.
+    const label = hit && (hit.pay ? hit.label : !SAFE_SUBMIT.test(hit.label) && (await this.onPaymentPage()) ? hit.label || "Submit" : null);
     // Focus inside a payment iframe (wallet or card frame) also counts.
     if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {
       const inFrame = await this.page.evaluate(() => document.activeElement?.tagName === "IFRAME").catch(() => false);
@@ -219,15 +226,19 @@ export class Driver {
     return label;
   }
 
-  private async payTargetAt(x: number, y: number): Promise<{ label: string; byId: boolean } | null> {
-    const probe = ([px, py, src, ids]: [number, number, string, string[]]): { label: string; byId: boolean } | null => {
+  // The button under (x, y): a pay button by id or label, or a form submit button (pay: false).
+  private async payTargetAt(x: number, y: number): Promise<{ label: string; byId: boolean; pay: boolean } | null> {
+    const probe = ([px, py, src, ids]: [number, number, string, string[]]): { label: string; byId: boolean; pay: boolean } | null => {
       const re = new RegExp(src, "i");
       let el = document.elementFromPoint(px, py) as HTMLElement | null;
       for (let i = 0; el && i < 6; i++, el = el.parentElement) {
         const label = (el.innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim();
-        if (ids.some((sel) => el!.matches(sel))) return { label: label || "Pay", byId: true };
-        if (/^(button|a|input)$/i.test(el.tagName) || el.getAttribute("role") === "button")
-          return re.test(label) ? { label, byId: false } : null;
+        if (ids.some((sel) => el!.matches(sel))) return { label: label || "Pay", byId: true, pay: true };
+        if (/^(button|a|input)$/i.test(el.tagName) || el.getAttribute("role") === "button") {
+          if (re.test(label)) return { label, byId: false, pay: true };
+          const b = el as HTMLInputElement;
+          return /^(submit|image)$/.test(b.type) && b.form ? { label, byId: false, pay: false } : null;
+        }
       }
       return null;
     };
@@ -238,7 +249,7 @@ export class Driver {
       const el = await frame.frameElement().catch(() => null);
       const box = await el?.boundingBox().catch(() => null);
       if (!box || x < box.x || x > box.x + box.width || y < box.y || y > box.y + box.height) continue;
-      if (/paypal|shop\.app|pay\.google|apple-pay|stripe\.com\/.*(payment-request|wallet)/i.test(frame.url())) return { label: "Express pay button", byId: true };
+      if (/paypal|shop\.app|pay\.google|apple-pay|stripe\.com\/.*(payment-request|wallet)/i.test(frame.url())) return { label: "Express pay button", byId: true, pay: true };
       const inner = await frame
         .evaluate(probe, [x - box.x, y - box.y, PAY_TEXT.source, PAY_IDS] as [number, number, string, string[]])
         .catch(() => null);

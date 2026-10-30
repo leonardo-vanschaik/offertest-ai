@@ -189,16 +189,18 @@ async function pay(s: Session, body: Body, origin: string): Promise<Response | n
   if (!s.items.length || !fullAddress(s.details?.address)) return fail(400, "not_ready", "The checkout session is not ready for payment: add an item and a full shipping address.");
   const token = body.payment_data?.instrument?.credential?.token;
   if (!token) return fail(400, "missing", "payment_data.instrument.credential.token is required.", "$.payment_data");
+  // Freeze what is paid for and where it goes before the payment await.
   const priced = priceCart(config, { items: s.items, couponCode: s.codes[0] }, new Date(), "agent");
+  const details = { ...s.details!, address: { ...s.details!.address! } };
   if (!s.paid) {
     s.declined = (STRIPE ? await chargeSpt(s.id, token, priced.totalCents) : /^spt_/.test(token) && token !== DECLINE_TOKEN ? null : "Your card was declined.") ?? undefined;
     if (s.declined) return fail(400, "payment_declined", s.declined, "$.payment_data");
     s.paid = true;
   }
-  const a = s.details!.address!;
+  const a = details.address;
   const order = createOrder({
-    email: s.details!.email ?? "agent@example.com",
-    name: s.details!.name ?? a.name,
+    email: details.email ?? "agent@example.com",
+    name: details.name ?? a.name,
     address: [a.line_one, a.line_two, a.city, a.state, a.postal_code, a.country].filter(Boolean).join(", "),
     cardLast4: "4242",
     priced,
@@ -264,6 +266,9 @@ async function post(raw: string, id: string | undefined, action: string | undefi
     if (action === "complete") {
       const err = await complete(s, body, origin);
       if (err) return err;
+    } else if (s.completing) {
+      // A payment is running: no cancel or change until it has an answer.
+      return fail(409, "complete_in_progress", "This checkout session is being paid. Read it again in a moment.");
     } else if (action === "cancel") {
       if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
       s.status = "canceled";

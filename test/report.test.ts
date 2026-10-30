@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { writeReport } from "../src/report/html.ts";
+import { execFileSync } from "node:child_process";
+import { retestCommand, shellQuote, writeReport } from "../src/report/html.ts";
 import type { RunResult } from "../src/types.ts";
 
 // A valid 1x1 JPEG.
@@ -122,4 +123,15 @@ test("large runs embed only the important screenshots", () => {
   assert.ok(embedded > 20 && embedded < 50, `embedded ${embedded}`);
   assert.ok(html.includes("Screenshot not embedded"));
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// What a shell makes of a pasted command: print each argument on its own line instead of running offertest.
+const argsOf = (cmd: string) => execFileSync("/bin/sh", ["-c", `printf '%s\\n' ${cmd.replace(/^offertest /, "")}`], { encoding: "utf8" }).trimEnd().split("\n");
+
+test("a pasted re-test command keeps ad text and URLs exactly, and runs nothing", () => {
+  const nasty = "Save $20 $(printf INJECTED) `id` \"quoted\" it's & more";
+  const url = "https://shop.example/p?a=1&b=$HOME";
+  const cmd = retestCommand({ ad: { source: "manual", headline: nasty, text: "Use code SAVE20; ok", cta: "Shop now", destination: { type: "website", url } } });
+  assert.deepEqual(argsOf(cmd), ["check", "--url", url, "--headline", nasty, "--text", "Use code SAVE20; ok"]);
+  assert.equal(shellQuote("it's"), `'it'\\''s'`);
 });

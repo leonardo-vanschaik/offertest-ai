@@ -52,3 +52,26 @@ test("Enter in a plain Submit form off the payment page is allowed", () =>
     await d.page.locator("input[name=email]").focus();
     assert.equal(await d.guard(enter), null);
   }));
+
+// Where a button is on the page, for a click action.
+async function at(d: Driver, sel: string): Promise<ComputerAction> {
+  const b = (await d.page.locator(sel).boundingBox())!;
+  return { type: "click", x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), button: "left" };
+}
+
+test("clicking or pressing a plain Submit button on a payment page asks first", () =>
+  page(`<form action="/custom-order"><input autocomplete="cc-number"><button id="s">Submit</button></form>`, async (d) => {
+    assert.equal((await d.guard(await at(d, "#s")))?.kind, "payment");
+    await d.page.locator("#s").focus();
+    assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "payment");
+    assert.equal((await d.guard(enter))?.kind, "payment");
+  }));
+
+test("next-step and apply buttons on a payment page need no approval", () =>
+  page(
+    `<form><input autocomplete="cc-number"><button id="c">Continue to shipping</button></form><form><input name="code"><button id="a">Apply</button></form>`,
+    async (d) => {
+      assert.equal(await d.guard(await at(d, "#c")), null);
+      assert.equal(await d.guard(await at(d, "#a")), null);
+    },
+  ));

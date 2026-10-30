@@ -225,7 +225,7 @@ const KEY_MAP = {
 	OPTION: "Alt",
 	SHIFT: "Shift"
 };
-const key$1 = (k) => KEY_MAP[k.toUpperCase()] ?? (k.length === 1 ? k : k[0].toUpperCase() + k.slice(1));
+const key = (k) => KEY_MAP[k.toUpperCase()] ?? (k.length === 1 ? k : k[0].toUpperCase() + k.slice(1));
 const PAY_TEXT = /^\s*(place (my )?order|pay( now| \$?[\d.,]+)?|complete (my )?(order|purchase|payment)|confirm (and pay|order|purchase|payment)|submit (order|payment)|buy now and pay|purchase|order now and pay|finalizar compra|pagar( ahora)?|commander|payer|jetzt kaufen|zahlungspflichtig bestellen)\s*$/i;
 const PAY_IDS = [
 	"#checkout-pay-button",
@@ -233,7 +233,7 @@ const PAY_IDS = [
 	"#submit-button",
 	"[data-requires-approval]"
 ];
-const SAFE_SUBMIT = /^(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save)\b/;
+const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 const ORDER_SUBMIT = [
 	/\/graphql.*SubmitForCompletion/i,
 	/checkout\.pci\.shopifyinc\.com\/sessions/i,
@@ -346,9 +346,14 @@ var Driver = class {
 	async guard(action) {
 		if (action.type === "click" || action.type === "double_click") {
 			const hit = await this.payTargetAt(action.x, action.y);
-			if (hit && (hit.byId || await this.onPaymentPage())) return {
+			if (!hit) return null;
+			if (hit.byId) return {
 				kind: "payment",
 				label: hit.label
+			};
+			if ((hit.pay || !SAFE_SUBMIT.test(hit.label)) && await this.onPaymentPage()) return {
+				kind: "payment",
+				label: hit.label || "Submit"
 			};
 			return null;
 		}
@@ -413,12 +418,21 @@ var Driver = class {
 		return null;
 	}
 	async focusedPayButton() {
-		const label = await this.page.evaluate(([src, ids]) => {
+		const hit = await this.page.evaluate(([src, ids]) => {
 			const a = document.activeElement;
 			if (!a || !/^(button|a|input)$/i.test(a.tagName) && a.getAttribute("role") !== "button") return null;
 			const text = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
-			return ids.some((sel) => a.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null;
+			if (ids.some((sel) => a.matches(sel)) || new RegExp(src, "i").test(text)) return {
+				label: text || "Pay",
+				pay: true
+			};
+			const b = a;
+			return /^(submit|image)$/.test(b.type) && b.form ? {
+				label: text,
+				pay: false
+			} : null;
 		}, [PAY_TEXT.source, PAY_IDS]).catch(() => null);
+		const label = hit && (hit.pay ? hit.label : !SAFE_SUBMIT.test(hit.label) && await this.onPaymentPage() ? hit.label || "Submit" : null);
 		if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {
 			if (await this.page.evaluate(() => document.activeElement?.tagName === "IFRAME").catch(() => false)) return "Express pay button";
 		}
@@ -432,12 +446,22 @@ var Driver = class {
 				const label = (el.innerText || el.value || el.getAttribute("aria-label") || "").trim();
 				if (ids.some((sel) => el.matches(sel))) return {
 					label: label || "Pay",
-					byId: true
+					byId: true,
+					pay: true
 				};
-				if (/^(button|a|input)$/i.test(el.tagName) || el.getAttribute("role") === "button") return re.test(label) ? {
-					label,
-					byId: false
-				} : null;
+				if (/^(button|a|input)$/i.test(el.tagName) || el.getAttribute("role") === "button") {
+					if (re.test(label)) return {
+						label,
+						byId: false,
+						pay: true
+					};
+					const b = el;
+					return /^(submit|image)$/.test(b.type) && b.form ? {
+						label,
+						byId: false,
+						pay: false
+					} : null;
+				}
 			}
 			return null;
 		};
@@ -453,7 +477,8 @@ var Driver = class {
 			if (!box || x < box.x || x > box.x + box.width || y < box.y || y > box.y + box.height) continue;
 			if (/paypal|shop\.app|pay\.google|apple-pay|stripe\.com\/.*(payment-request|wallet)/i.test(frame.url())) return {
 				label: "Express pay button",
-				byId: true
+				byId: true,
+				pay: true
 			};
 			const inner = await frame.evaluate(probe, [
 				x - box.x,
@@ -500,7 +525,7 @@ var Driver = class {
 				await p.keyboard.type(action.text, { delay: 12 });
 				break;
 			case "keypress": {
-				const keys = action.keys.map(key$1);
+				const keys = action.keys.map(key);
 				await p.keyboard.press(keys.length > 1 ? keys.join("+") : keys[0] ?? "");
 				break;
 			}
@@ -1242,7 +1267,7 @@ const SHOPPER = {
 		postal_code: "43215"
 	}
 };
-async function acp(o, path$1, body, key$2 = randomUUID()) {
+async function acp(o, path$1, body, key$1 = randomUUID()) {
 	const res = await fetch(`${o.endpoint.replace(/\/$/, "")}/checkout_sessions${path$1}`, {
 		method: body ? "POST" : "GET",
 		signal: AbortSignal.timeout(TIMEOUT),
@@ -1251,7 +1276,7 @@ async function acp(o, path$1, body, key$2 = randomUUID()) {
 			"api-version": VERSION$2,
 			"content-type": "application/json",
 			"user-agent": "OfferTest",
-			...body ? { "idempotency-key": key$2 } : {}
+			...body ? { "idempotency-key": key$1 } : {}
 		},
 		body: body ? JSON.stringify(body) : void 0
 	});
@@ -1340,7 +1365,7 @@ async function acpCheckout(o) {
 			const cred = await testCredential(o, s);
 			if (typeof cred === "string") purchase = `Test purchase: not attempted (${cred})`;
 			else {
-				const key$2 = randomUUID();
+				const key$1 = randomUUID();
 				const body = { payment_data: {
 					handler_id: cred.handler,
 					instrument: {
@@ -1351,7 +1376,7 @@ async function acpCheckout(o) {
 						}
 					}
 				} };
-				let done = await acp(o, `/${s.id}/complete`, body, key$2).catch((e) => e);
+				let done = await acp(o, `/${s.id}/complete`, body, key$1).catch((e) => e);
 				if (done instanceof Error && /abort|timeout|fetch failed|^5\d\d|409/i.test(done.message)) done = await acp(o, `/${s.id}`).catch(() => done);
 				if (!(done instanceof Error)) s = done;
 				purchase = done instanceof Error ? `Test purchase: refused by the store (${done.message})` : s.status === "completed" ? `Test purchase: completed, order ${s.order?.id ?? "?"}, paid ${money(totalOf(s), cur)} in test mode${s.order?.permalink_url ? ` (${s.order.permalink_url})` : ""}` : `Test purchase: not completed (session is ${s.status})`;
@@ -1639,9 +1664,9 @@ async function landingOnly(driver, log) {
 }
 function destinations(ad) {
 	const out = [{ destination: ad.destination }];
-	const seen = new Set([key(ad.destination)]);
+	const seen = new Set([destinationKey(ad.destination)]);
 	(ad.cards ?? []).forEach((c, i) => {
-		const k = key(c.destination);
+		const k = destinationKey(c.destination);
 		if (!seen.has(k) && out.length < 3) {
 			seen.add(k);
 			out.push({
@@ -1652,8 +1677,16 @@ function destinations(ad) {
 	});
 	return out;
 }
-function key(d) {
-	return d.type === "website" || d.type === "app" ? `${d.type}:${d.url.split("?")[0]}` : d.type === "lead_form" ? `form:${d.formId}` : d.type;
+const TRACKING = /^(utm_\w+|fbclid|gclid|msclkid|ttclid|mc_cid|mc_eid|ref|_ga)$/i;
+function destinationKey(d) {
+	if (d.type !== "website" && d.type !== "app") return d.type === "lead_form" ? `form:${d.formId}` : d.type;
+	try {
+		const u = new URL(d.url);
+		const q = [...u.searchParams].filter(([k]) => !TRACKING.test(k)).sort(([a], [b]) => a.localeCompare(b));
+		return `${d.type}:${u.origin}${u.pathname}${q.length ? `?${new URLSearchParams(q)}` : ""}`;
+	} catch {
+		return `${d.type}:${d.url.split("?")[0]}`;
+	}
 }
 function leadFormText(formId, form) {
 	if (!form) return `Instant Form ${formId} (details not readable)`;
@@ -2234,11 +2267,13 @@ function verdictSection(r, shots) {
 	if (!cards.length) cards.push(`<div class="empty-card">No promises were found in this ad.</div>`);
 	return section("verdicts", "Promises", "Each promise in the ad, checked against what the funnel really shows.", cards.join(""));
 }
+function shellQuote(s) {
+	return `'${s.replace(/'/g, `'\\''`)}'`;
+}
 function retestCommand(r) {
 	const d = r.ad.destination;
-	const q = (s) => `"${s.replace(/"/g, "\\\"")}"`;
-	if (r.ad.source === "meta" && r.ad.id) return `offertest check --ad ${r.ad.id}`;
-	if ("url" in d) return `offertest check --url ${d.url} --headline ${q(r.ad.headline)} --text ${q(r.ad.text)}`;
+	if (r.ad.source === "meta" && r.ad.id) return `offertest check --ad ${shellQuote(r.ad.id)}`;
+	if ("url" in d) return `offertest check --url ${shellQuote(d.url)} --headline ${shellQuote(r.ad.headline)} --text ${shellQuote(r.ad.text)}`;
 	return "offertest check";
 }
 function fixSection(r) {

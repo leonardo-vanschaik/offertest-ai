@@ -202,11 +202,11 @@ async function landingOnly(driver: Driver, log: RunLog): Promise<FunnelResult> {
 }
 
 // The main destination plus each carousel card that links somewhere else (max 3 funnels).
-function destinations(ad: Ad): { destination: Destination; card?: number }[] {
+export function destinations(ad: Ad): { destination: Destination; card?: number }[] {
   const out: { destination: Destination; card?: number }[] = [{ destination: ad.destination }];
-  const seen = new Set([key(ad.destination)]);
+  const seen = new Set([destinationKey(ad.destination)]);
   (ad.cards ?? []).forEach((c, i) => {
-    const k = key(c.destination);
+    const k = destinationKey(c.destination);
     if (!seen.has(k) && out.length < 3) {
       seen.add(k);
       out.push({ destination: c.destination, card: i });
@@ -215,8 +215,17 @@ function destinations(ad: Ad): { destination: Destination; card?: number }[] {
   return out;
 }
 
-function key(d: Destination): string {
-  return d.type === "website" || d.type === "app" ? `${d.type}:${d.url.split("?")[0]}` : d.type === "lead_form" ? `form:${d.formId}` : d.type;
+// Two cards are the same target when only tracking tags differ. Other query values (variant, offer) count.
+const TRACKING = /^(utm_\w+|fbclid|gclid|msclkid|ttclid|mc_cid|mc_eid|ref|_ga)$/i;
+export function destinationKey(d: Destination): string {
+  if (d.type !== "website" && d.type !== "app") return d.type === "lead_form" ? `form:${d.formId}` : d.type;
+  try {
+    const u = new URL(d.url);
+    const q = [...u.searchParams].filter(([k]) => !TRACKING.test(k)).sort(([a], [b]) => a.localeCompare(b));
+    return `${d.type}:${u.origin}${u.pathname}${q.length ? `?${new URLSearchParams(q)}` : ""}`;
+  } catch {
+    return `${d.type}:${d.url.split("?")[0]}`;
+  }
 }
 
 export function leadFormText(formId: string, form?: LeadForm): string {

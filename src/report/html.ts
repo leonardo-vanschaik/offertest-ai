@@ -348,11 +348,15 @@ function verdictSection(r: RunResult, shots: Map<string, string>): string {
   return section("verdicts", "Promises", "Each promise in the ad, checked against what the funnel really shows.", cards.join(""));
 }
 
-function retestCommand(r: RunResult): string {
+// One shell word: single quotes stop $, backticks, and & from doing anything when the command is pasted.
+export function shellQuote(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`;
+}
+
+export function retestCommand(r: Pick<RunResult, "ad">): string {
   const d = r.ad.destination;
-  const q = (s: string) => `"${s.replace(/"/g, '\\"')}"`;
-  if (r.ad.source === "meta" && r.ad.id) return `offertest check --ad ${r.ad.id}`;
-  if ("url" in d) return `offertest check --url ${d.url} --headline ${q(r.ad.headline)} --text ${q(r.ad.text)}`;
+  if (r.ad.source === "meta" && r.ad.id) return `offertest check --ad ${shellQuote(r.ad.id)}`;
+  if ("url" in d) return `offertest check --url ${shellQuote(d.url)} --headline ${shellQuote(r.ad.headline)} --text ${shellQuote(r.ad.text)}`;
   return "offertest check";
 }
 
