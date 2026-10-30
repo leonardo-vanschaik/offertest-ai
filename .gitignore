@@ -46,3 +46,6 @@ next-env.d.ts
 /eval/results/runs
 .env
 .env.local
+
+# Keep the key template in git
+!.env.example
