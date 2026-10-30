@@ -29,6 +29,6 @@ The store also has an agent checkout, like every Shopify store: `/.well-known/uc
 
 The store also sells through the Agentic Commerce Protocol (spec 2026-04-17), the checkout API AI agents such as ChatGPT use: `POST /api/acp/checkout_sessions`, `GET` and `POST /api/acp/checkout_sessions/{id}`, `.../complete`, `.../cancel`. Send `Authorization: Bearer alder-trail-demo` (change it with `ACP_API_KEY`) and an `Idempotency-Key` on every POST. Sessions use the same "agent" pricing as UCP, so `agent_code_rejected` rejects SAVE20 here too, in `discounts.rejected` with `discount_code_invalid`.
 
-Payment never uses real money. With no Stripe key, any `spt_` test token pays (`spt_declined` is always declined). Set `STRIPE_SECRET_KEY=sk_test_...` to charge real Stripe test-mode Shared Payment Tokens instead. A completed session creates a normal store order.
+Payment never uses real money. With no Stripe key, any `spt_` test token pays (`spt_declined` is always declined). Set `STRIPE_SECRET_KEY=sk_test_...` to charge real Stripe test-mode Shared Payment Tokens instead. A completed session creates a normal store order. A session is paid at most once, even with parallel or retried `complete` calls, and a sold-out size returns `out_of_stock` and cannot be bought.
 
 Check it with `npx acp-check endpoints http://localhost:3000/api/acp --auth-token alder-trail-demo --item ridge-trail-shoe --allow-complete`.

@@ -60,23 +60,32 @@ async function call<T>(endpoint: string, tool: string, args: Record<string, unkn
   return out;
 }
 
-// The product on the ad's landing page, as an agent-checkout item id.
-async function findItem(endpoint: string, url: URL, query: string): Promise<{ id: string; title: string } | null> {
+// The product on the ad's landing page, as an agent-checkout item id. Only the advertised product counts:
+// the variant in the link (?variant=) if there is one, else the product page's default (first available) variant.
+// No guessing: a page that matches no catalog item gives a reason instead of some other product.
+async function findItem(endpoint: string, url: URL, query: string): Promise<{ id: string; title: string } | { skip: string }> {
+  const want = url.searchParams.get("variant");
   // Shopify product pages have a public JSON twin with the variant ids.
   const handle = url.pathname.match(/\/products\/([^/?#]+)/)?.[1];
   if (handle) {
     const res = await fetch(`${url.origin}/products/${handle}.js`, { signal: AbortSignal.timeout(TIMEOUT) }).catch(() => null);
     const p = res?.ok ? ((await res.json().catch(() => null)) as { title?: string; variants?: { id: number; title?: string; available?: boolean }[] } | null) : null;
-    const v = p?.variants?.find((x) => x.available !== false) ?? p?.variants?.[0];
-    if (v) return { id: `gid://shopify/ProductVariant/${v.id}`, title: [p?.title, v.title !== "Default Title" ? v.title : ""].filter(Boolean).join(" - ") };
+    if (p?.variants?.length) {
+      const v = want ? p.variants.find((x) => String(x.id) === want) : (p.variants.find((x) => x.available !== false) ?? p.variants[0]);
+      if (!v) return { skip: `Agent checkout skipped: variant ${want} from the ad's link is not on ${url.pathname}` };
+      if (want && v.available === false) return { skip: `Agent checkout skipped: the advertised variant (${v.title ?? want}) is sold out` };
+      return { id: `gid://shopify/ProductVariant/${v.id}`, title: [p.title, v.title !== "Default Title" ? v.title : ""].filter(Boolean).join(" - ") };
+    }
   }
   type Product = { title?: string; url?: string; variants?: { id?: string; title?: string; availability?: { available?: boolean }; available?: boolean }[] };
   const found = await call<{ products?: Product[] }>(endpoint, "search_catalog", { catalog: { query } }).catch(() => null);
-  const products = found?.products ?? [];
   const path = url.pathname.replace(/\/$/, "");
-  const p = products.find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path) ?? products[0];
-  const v = p?.variants?.find((x) => x.availability?.available !== false && x.available !== false) ?? p?.variants?.[0];
-  return v?.id ? { id: v.id, title: [p?.title, v.title].filter(Boolean).join(" - ") } : null;
+  const p = (found?.products ?? []).find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path);
+  if (!p) return { skip: `Agent checkout skipped: no catalog item matches the ad's landing page ${url.pathname}` };
+  const isWanted = (id?: string) => !!id && (id === want || id.endsWith(`/${want}`));
+  const v = want ? p.variants?.find((x) => isWanted(x.id)) : (p.variants?.find((x) => x.availability?.available !== false && x.available !== false) ?? p.variants?.[0]);
+  if (!v?.id) return { skip: `Agent checkout skipped: the advertised variant is not in the store's agent catalog` };
+  return { id: v.id, title: [p.title, v.title].filter(Boolean).join(" - ") };
 }
 
 export function money(amount: Money | undefined, currency = "USD"): string {
@@ -119,7 +128,7 @@ export async function agentCheckout(landing: string, codes: string[], query: str
   if (!ucp) return { skipped: `${url.host} has no agent checkout (no UCP profile at /.well-known/ucp)` };
   try {
     const item = await findItem(ucp.endpoint, url, query);
-    if (!item) return { skipped: "Could not find the ad's product in the store's agent catalog" };
+    if ("skip" in item) return { skipped: item.skip };
     const result = await call<{ cart?: Cart } & Cart>(ucp.endpoint, "create_cart", {
       cart: { line_items: [{ quantity: 1, item: { id: item.id } }], ...(codes.length ? { discounts: { codes } } : {}) },
     });

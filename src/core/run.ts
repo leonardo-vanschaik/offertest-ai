@@ -84,6 +84,7 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
       }
     };
 
+    const acpTried = new Set<string>(); // one ACP purchase per item, even across carousel cards
     for (const target of destinations(ad)) {
       const d = target.destination;
       if (d.type === "website" || d.type === "app") await follow(d.url, target.card);
@@ -97,8 +98,20 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
           evidence.push({ step: step.n, url: ac.url, text: ac.text });
         }
         // The store's ACP checkout, when you gave its endpoint and key: a full agent purchase in test mode.
-        if (opts.acp) {
-          const p = await acpCheckout({ ...opts.acp, item: opts.acp.item ?? itemFromUrl(d.url), codes, buy: opts.submit !== false });
+        const item = opts.acp && (opts.acp.item ?? itemFromUrl(d.url));
+        if (opts.acp && item && !acpTried.has(item)) {
+          acpTried.add(item);
+          // Like the browser: a purchase needs --pay and your approval; without them it stops before paying.
+          const buy = !!opts.pay && opts.acp.buy !== false;
+          const p = await acpCheckout({
+            ...opts.acp,
+            item,
+            codes,
+            buy,
+            hold: opts.acp.buy === false ? "--no-buy" : "add --pay to finish a test purchase",
+            approve: (total) =>
+              opts.approve?.({ kind: "payment", title: `Buy through the store's ACP checkout for ${total} (test mode, no real money)?`, detail: opts.acp!.endpoint }) ?? Promise.resolve(false),
+          });
           if ("skipped" in p) await log.step({ kind: "note", summary: p.skipped });
           else {
             const step = await log.step({ kind: "source", summary: "Bought through the store's ACP agent checkout with the ad's codes (test mode)", url: p.url }, undefined, p.text);

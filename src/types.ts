@@ -124,7 +124,7 @@ export type RunOptions = {
   headful?: boolean;
   agentCheckout?: boolean; // also test the offer in the store's agent checkout (UCP); default true
   retryHeadful?: boolean; // a blocked headless run retries once in a visible browser
-  acp?: { endpoint: string; key: string; item?: string; stripeTestKey?: string }; // the store's ACP checkout (stores you own)
+  acp?: { endpoint: string; key: string; item?: string; stripeTestKey?: string; buy?: boolean }; // the store's ACP checkout (stores you own); buys only with pay
   confirmSafetyChecks?: boolean; // ask a human for Muse Wonder safety checks (default: acknowledge and log)
   mobile?: boolean;
   maxTurns?: number;

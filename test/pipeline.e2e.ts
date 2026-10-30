@@ -80,6 +80,7 @@ test("pipeline: promises -> funnel -> verdict with quote check -> fix -> report"
 });
 
 test("pipeline: the agent checkouts (UCP and ACP) supply the proof the web pages lacked", async () => {
+  const started = Date.now();
   await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"code_expired"}' });
   const { runTest } = await import("../src/core/run.ts");
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "offertest-"));
@@ -90,6 +91,8 @@ test("pipeline: the agent checkouts (UCP and ACP) supply the proof the web pages
     );
     assert.ok(result.steps.some((s) => s.url?.startsWith("ucp://")), "agent checkout step recorded");
     assert.ok(result.steps.some((s) => s.url?.startsWith("acp://")), "ACP checkout step recorded");
+    const orders = (await (await fetch(`${STORE}/api/store/orders`)).json()) as { createdAt: string }[];
+    assert.ok(!orders.some((o) => Date.parse(o.createdAt) >= started), "check without --pay does not buy through ACP");
     assert.equal(result.verdicts[0].status, "contradicted");
     assert.equal(result.overall, "fail");
   } finally {

@@ -132,3 +132,34 @@ test("ACP checkout buys in test mode and catches a web-only code", async () => {
     await set("baseline");
   }
 });
+
+test("ACP seller: parallel completes pay once, and a sold-out size is never sold", async () => {
+  const set = (scenario: string) =>
+    fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scenario }) });
+  const acp = (path: string, body: object, key: string = crypto.randomUUID()) =>
+    fetch(`${STORE}/api/acp/checkout_sessions${path}`, {
+      method: "POST",
+      headers: { authorization: "Bearer alder-trail-demo", "content-type": "application/json", "idempotency-key": key },
+      body: JSON.stringify(body),
+    });
+  const address = { name: "Test Shopper", line_one: "100 Test Street", city: "Columbus", state: "OH", country: "US", postal_code: "43215" };
+  const orders = async () => ((await (await fetch(`${STORE}/api/store/orders`)).json()) as unknown[]).length;
+  const pay = { payment_data: { handler_id: "demo_card", instrument: { type: "card", credential: { type: "spt", token: "spt_demo_4242" } } } };
+  try {
+    await set("baseline");
+    const s = (await (await acp("", { line_items: [{ id: "ridge-trail-shoe" }], currency: "usd", fulfillment_details: { address } })).json()) as { id: string };
+    const before = await orders();
+    const answers = await Promise.all([acp(`/${s.id}/complete`, pay), acp(`/${s.id}/complete`, pay), acp(`/${s.id}/complete`, pay, "same"), acp(`/${s.id}/complete`, pay, "same")]);
+    assert.equal(answers.filter((r) => r.status === 200).length >= 1, true);
+    assert.equal((await orders()) - before, 1, "exactly one order for one session");
+
+    await set("size_sold_out");
+    const sold = (await (await acp("", { line_items: [{ id: "ridge-slate-10" }], currency: "usd", fulfillment_details: { address } })).json()) as { id: string; status: string; messages: { code: string }[] };
+    assert.equal(sold.status, "not_ready_for_payment");
+    assert.ok(sold.messages.some((m) => m.code === "out_of_stock"));
+    const refused = await acp(`/${sold.id}/complete`, pay);
+    assert.equal(refused.status, 400);
+  } finally {
+    await set("baseline");
+  }
+});

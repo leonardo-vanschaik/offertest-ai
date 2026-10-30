@@ -117,7 +117,7 @@ Test purchase: completed, order AT-10428, paid $120.00 in test mode
 Does not work in ACP checkout: SAVE20
 ```
 
-Add `--acp-url` and `--acp-key` (or `OFFERTEST_ACP_URL` and `OFFERTEST_ACP_KEY`) to `check`, and every website ad also gets an ACP purchase. `--item` sets the store's item id; the default is the last part of the landing page path. `--no-buy` stops before payment. The demo store has an ACP checkout at `http://localhost:3000/api/acp` (key `alder-trail-demo`), and it passes the [`acp-check`](https://www.npmjs.com/package/acp-check) conformance tool.
+Add `--acp-url` and `--acp-key` (or `OFFERTEST_ACP_URL` and `OFFERTEST_ACP_KEY`) to `check`, and every website ad is also tested in the ACP checkout. Like the browser, `check` stops before payment unless you add `--pay`, and then it asks you first. `--item` sets the store's item id; the default is the `?variant=` in the landing link, else the last part of the landing page path. `--no-buy` never finishes the purchase. The demo store has an ACP checkout at `http://localhost:3000/api/acp` (key `alder-trail-demo`), and it passes the [`acp-check`](https://www.npmjs.com/package/acp-check) conformance tool.
 
 ### Payments
 

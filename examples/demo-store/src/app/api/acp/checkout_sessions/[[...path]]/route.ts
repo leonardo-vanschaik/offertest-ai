@@ -25,6 +25,8 @@ type Session = {
   status: "open" | "completed" | "canceled";
   order?: { id: string; permalink_url: string };
   declined?: string;
+  completing?: boolean; // a complete request is paying right now
+  paid?: boolean; // charged; a retry must not charge again
 };
 type Body = {
   currency?: string;
@@ -56,6 +58,14 @@ function itemsFrom(config: StoreConfig, lines: Body["line_items"]): CartItem[] {
   return out;
 }
 
+// Lines whose size is sold out (or has less stock than the quantity). The web checkout refuses these too.
+function soldOut(config: StoreConfig, items: CartItem[]): number[] {
+  return items.flatMap((it, i) => {
+    const v = config.products.find((p) => p.id === it.productId)?.variants.find((x) => x.id === it.variantId);
+    return !v || v.stock < it.qty ? [i] : [];
+  });
+}
+
 // A shipping address needs every required field filled in.
 const fullAddress = (a?: Address) => !!a && [a.name, a.line_one, a.city, a.state, a.country, a.postal_code].every((x) => typeof x === "string" && x.trim().length > 0);
 
@@ -85,7 +95,12 @@ function view(s: Session, origin: string, config: StoreConfig = getConfig()) {
   if (!s.details?.address) messages.push({ type: "error", code: "missing", param: "$.fulfillment_details.address", resolution: "requires_buyer_input", content_type: "plain", content: "Add a shipping address." });
   else if (!fullAddress(s.details.address)) messages.push({ type: "error", code: "invalid", param: "$.fulfillment_details.address", resolution: "requires_buyer_input", content_type: "plain", content: "The shipping address is missing a name, street, city, state, country, or postal code." });
   if (s.declined) messages.push({ type: "error", code: "payment_declined", param: "$.payment_data", content_type: "plain", content: s.declined });
-  const ready = s.items.length > 0 && fullAddress(s.details?.address);
+  const out = soldOut(config, s.items);
+  for (const i of out) {
+    const l = priced.lines[i];
+    messages.push({ type: "error", code: "out_of_stock", param: `$.line_items[${i}]`, content_type: "plain", content: `${l ? `${l.name} (${l.variantLabel})` : "This item"} is sold out.` });
+  }
+  const ready = s.items.length > 0 && fullAddress(s.details?.address) && !out.length;
   return {
     id: s.id,
     status: s.status === "open" ? (ready ? "ready_for_payment" : "not_ready_for_payment") : s.status,
@@ -144,10 +159,11 @@ function apply(s: Session, body: Body, config: StoreConfig) {
 }
 
 // Charge a Stripe test-mode Shared Payment Token. Returns an error message or null.
-async function chargeSpt(token: string, cents: number): Promise<string | null> {
+// One Stripe Idempotency-Key per session, so a retried complete cannot charge twice.
+async function chargeSpt(sessionId: string, token: string, cents: number): Promise<string | null> {
   const res = await fetch("https://api.stripe.com/v1/payment_intents", {
     method: "POST",
-    headers: { authorization: `Bearer ${STRIPE}`, "stripe-version": STRIPE_VERSION, "content-type": "application/x-www-form-urlencoded" },
+    headers: { authorization: `Bearer ${STRIPE}`, "stripe-version": STRIPE_VERSION, "content-type": "application/x-www-form-urlencoded", "idempotency-key": `acp-complete-${sessionId}` },
     body: new URLSearchParams({ amount: String(cents), currency: "usd", confirm: "true", "payment_method_data[shared_payment_granted_token]": token }),
   }).catch((e: Error) => ({ ok: false, json: async () => ({ error: { message: e.message } }) }) as const);
   const pi = (await res.json()) as { status?: string; error?: { message?: string } };
@@ -156,14 +172,29 @@ async function chargeSpt(token: string, cents: number): Promise<string | null> {
 }
 
 async function complete(s: Session, body: Body, origin: string): Promise<Response | null> {
-  const config = getConfig();
   if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
+  // One payment at a time per session: a second complete waits for the first answer.
+  if (s.completing) return fail(409, "complete_in_progress", "This checkout session is being paid. Read it again in a moment.");
+  s.completing = true;
+  try {
+    return await pay(s, body, origin);
+  } finally {
+    s.completing = false;
+  }
+}
+
+async function pay(s: Session, body: Body, origin: string): Promise<Response | null> {
+  const config = getConfig();
+  if (soldOut(config, s.items).length) return fail(400, "out_of_stock", "An item in this checkout session is sold out.", "$.line_items");
   if (!s.items.length || !fullAddress(s.details?.address)) return fail(400, "not_ready", "The checkout session is not ready for payment: add an item and a full shipping address.");
   const token = body.payment_data?.instrument?.credential?.token;
   if (!token) return fail(400, "missing", "payment_data.instrument.credential.token is required.", "$.payment_data");
   const priced = priceCart(config, { items: s.items, couponCode: s.codes[0] }, new Date(), "agent");
-  s.declined = (STRIPE ? await chargeSpt(token, priced.totalCents) : /^spt_/.test(token) && token !== DECLINE_TOKEN ? null : "Your card was declined.") ?? undefined;
-  if (s.declined) return fail(400, "payment_declined", s.declined, "$.payment_data");
+  if (!s.paid) {
+    s.declined = (STRIPE ? await chargeSpt(s.id, token, priced.totalCents) : /^spt_/.test(token) && token !== DECLINE_TOKEN ? null : "Your card was declined.") ?? undefined;
+    if (s.declined) return fail(400, "payment_declined", s.declined, "$.payment_data");
+    s.paid = true;
+  }
   const a = s.details!.address!;
   const order = createOrder({
     email: s.details!.email ?? "agent@example.com",
@@ -195,7 +226,21 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
   const hash = createHash("sha256").update(raw).digest("hex");
   const slot = `${id ?? ""}/${action ?? ""}/${key}`;
   const seen = replays.get(slot);
-  if (seen) return seen.hash === hash ? Response.json(seen.body, { status: seen.status, headers: { "idempotent-replayed": "true" } }) : fail(422, "idempotency_conflict", "This Idempotency-Key was used with a different body.");
+  if (seen && seen.hash !== hash) return fail(422, "idempotency_conflict", "This Idempotency-Key was used with a different body.");
+  if (seen && !seen.status) {
+    const busy = fail(409, "idempotency_in_flight", "A request with this Idempotency-Key is still running.");
+    busy.headers.set("retry-after", "1");
+    return busy;
+  }
+  if (seen) return Response.json(seen.body, { status: seen.status, headers: { "idempotent-replayed": "true" } });
+  // Reserve the key before any work, so a parallel retry cannot run it twice. Every answer is saved for replays.
+  replays.set(slot, { hash, status: 0, body: {} });
+  const res = await post(raw, id, action, origin).catch((e: Error) => fail(500, "processing_error", e.message));
+  replays.set(slot, { hash, status: res.status, body: await res.clone().json() });
+  return res;
+}
+
+async function post(raw: string, id: string | undefined, action: string | undefined, origin: string): Promise<Response> {
   let body: Body;
   try {
     body = (raw ? JSON.parse(raw) : {}) as Body;
@@ -226,9 +271,7 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
     else if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
     else apply(s, body, config);
   }
-  const out = view(s, origin);
-  replays.set(slot, { hash, status, body: out });
-  return Response.json(out, { status });
+  return Response.json(view(s, origin), { status });
 }
 
 // Echo the Idempotency-Key on every answer.

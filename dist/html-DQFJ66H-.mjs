@@ -233,6 +233,7 @@ const PAY_IDS = [
 	"#submit-button",
 	"[data-requires-approval]"
 ];
+const SAFE_SUBMIT = /^(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save)\b/;
 const ORDER_SUBMIT = [
 	/\/graphql.*SubmitForCompletion/i,
 	/checkout\.pci\.shopifyinc\.com\/sessions/i,
@@ -370,7 +371,7 @@ var Driver = class {
 	async enterSubmitsPay() {
 		const focused = await this.focusedPayButton();
 		if (focused) return focused;
-		const r = await this.page.evaluate(([src, ids]) => {
+		const r = await this.page.evaluate(([src, ids, safe]) => {
 			const a = document.activeElement;
 			if (!a || a === document.body || /^(textarea|button)$/i.test(a.tagName)) return {
 				pay: null,
@@ -378,25 +379,32 @@ var Driver = class {
 			};
 			const form = a.form ?? a.closest("form");
 			const def = form && Array.from(form.elements).find((el) => el.type === "submit");
-			if (!def) {
-				const field = [
-					a.name,
-					a.id,
-					a.placeholder,
-					a.getAttribute("aria-label"),
-					a.labels?.[0]?.innerText
-				].join(" ");
-				return {
-					pay: null,
-					known: /discount|coupon|promo|gift ?card|voucher/i.test(field)
-				};
-			}
+			const field = [
+				a.name,
+				a.id,
+				a.placeholder,
+				a.getAttribute("aria-label"),
+				a.labels?.[0]?.innerText
+			].join(" ");
+			const discountField = /discount|coupon|promo|gift ?card|voucher/i.test(field);
+			if (!def) return {
+				pay: null,
+				known: discountField
+			};
 			const text = (def.innerText || def.value || def.getAttribute("aria-label") || "").trim();
-			return {
-				pay: ids.some((sel) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null,
+			if (ids.some((sel) => def.matches(sel)) || new RegExp(src, "i").test(text)) return {
+				pay: text || "Pay",
 				known: true
 			};
-		}, [PAY_TEXT.source, PAY_IDS]).catch(() => ({
+			return {
+				pay: null,
+				known: discountField || new RegExp(safe, "i").test(text)
+			};
+		}, [
+			PAY_TEXT.source,
+			PAY_IDS,
+			SAFE_SUBMIT.source
+		]).catch(() => ({
 			pay: null,
 			known: false
 		}));
@@ -947,7 +955,8 @@ Rules:
 - A different code or a workaround does not count. If the advertised code fails, the promise is contradicted.
 - Check the arithmetic (20% of $120.00 is $24.00).
 - A ucp:// page is the store's agent checkout: the channel AI shopping agents such as Meta Muse buy through. It is real evidence. If a promise holds on the website but fails in the agent checkout (code rejected, different price), it is contradicted: say "in agent checkout" in the reason and quote the agent checkout. If the agent checkout returned no discount result, that is not evidence either way.
-- An acp:// page is the store's ACP checkout (Agentic Commerce Protocol), where AI agents such as ChatGPT buy. Treat it like ucp://: a rejected code or a different total contradicts the promise ("in agent checkout"). A completed test purchase at the promised total supports it. A purchase that was not attempted is not evidence either way.`;
+- An acp:// page is the store's ACP checkout (Agentic Commerce Protocol), where AI agents such as ChatGPT buy. Treat it like ucp://: a rejected code or a different total contradicts the promise ("in agent checkout"). A completed test purchase at the promised total supports it. A purchase that was not attempted is not evidence either way.
+- A ucp:// or acp:// page is evidence only for the item on its "Item:" line. Use it for a promise only when that item is the advertised product, and the advertised size or variant if the ad names one. For any other promise (another product, a size the ad names that the page does not show), ignore that page.`;
 const SIGNAL = /[$€£]\s?\d|\d\s?%|\b(total|subtotal|discount|code|coupon|promo|applied|expired|invalid|not valid|shipping|delivery|free|trial|card|sold out|out of stock|in stock|price|save|off\b|download|thank|confirm|error|minimum|spend|per month|\/mo|cancel)/i;
 function excerpt(text, max = 7e3) {
 	if (text.length <= max) return text;
@@ -1131,24 +1140,32 @@ async function call(endpoint, tool, args, profile = PROFILE) {
 	return out;
 }
 async function findItem(endpoint, url, query) {
+	const want = url.searchParams.get("variant");
 	const handle = url.pathname.match(/\/products\/([^/?#]+)/)?.[1];
 	if (handle) {
 		const res = await fetch(`${url.origin}/products/${handle}.js`, { signal: AbortSignal.timeout(TIMEOUT$1) }).catch(() => null);
 		const p$1 = res?.ok ? await res.json().catch(() => null) : null;
-		const v$1 = p$1?.variants?.find((x) => x.available !== false) ?? p$1?.variants?.[0];
-		if (v$1) return {
-			id: `gid://shopify/ProductVariant/${v$1.id}`,
-			title: [p$1?.title, v$1.title !== "Default Title" ? v$1.title : ""].filter(Boolean).join(" - ")
-		};
+		if (p$1?.variants?.length) {
+			const v$1 = want ? p$1.variants.find((x) => String(x.id) === want) : p$1.variants.find((x) => x.available !== false) ?? p$1.variants[0];
+			if (!v$1) return { skip: `Agent checkout skipped: variant ${want} from the ad's link is not on ${url.pathname}` };
+			if (want && v$1.available === false) return { skip: `Agent checkout skipped: the advertised variant (${v$1.title ?? want}) is sold out` };
+			return {
+				id: `gid://shopify/ProductVariant/${v$1.id}`,
+				title: [p$1.title, v$1.title !== "Default Title" ? v$1.title : ""].filter(Boolean).join(" - ")
+			};
+		}
 	}
-	const products = (await call(endpoint, "search_catalog", { catalog: { query } }).catch(() => null))?.products ?? [];
+	const found = await call(endpoint, "search_catalog", { catalog: { query } }).catch(() => null);
 	const path$1 = url.pathname.replace(/\/$/, "");
-	const p = products.find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path$1) ?? products[0];
-	const v = p?.variants?.find((x) => x.availability?.available !== false && x.available !== false) ?? p?.variants?.[0];
-	return v?.id ? {
+	const p = (found?.products ?? []).find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path$1);
+	if (!p) return { skip: `Agent checkout skipped: no catalog item matches the ad's landing page ${url.pathname}` };
+	const isWanted = (id) => !!id && (id === want || id.endsWith(`/${want}`));
+	const v = want ? p.variants?.find((x) => isWanted(x.id)) : p.variants?.find((x) => x.availability?.available !== false && x.available !== false) ?? p.variants?.[0];
+	if (!v?.id) return { skip: `Agent checkout skipped: the advertised variant is not in the store's agent catalog` };
+	return {
 		id: v.id,
-		title: [p?.title, v.title].filter(Boolean).join(" - ")
-	} : null;
+		title: [p.title, v.title].filter(Boolean).join(" - ")
+	};
 }
 function money(amount, currency = "USD") {
 	const n = typeof amount === "object" ? Number(amount?.amount) : Number(amount);
@@ -1185,7 +1202,7 @@ async function agentCheckout(landing, codes, query) {
 	if (!ucp) return { skipped: `${url.host} has no agent checkout (no UCP profile at /.well-known/ucp)` };
 	try {
 		const item = await findItem(ucp.endpoint, url, query);
-		if (!item) return { skipped: "Could not find the ad's product in the store's agent catalog" };
+		if ("skip" in item) return { skipped: item.skip };
 		const result = await call(ucp.endpoint, "create_cart", { cart: {
 			line_items: [{
 				quantity: 1,
@@ -1225,7 +1242,7 @@ const SHOPPER = {
 		postal_code: "43215"
 	}
 };
-async function acp(o, path$1, body) {
+async function acp(o, path$1, body, key$2 = randomUUID()) {
 	const res = await fetch(`${o.endpoint.replace(/\/$/, "")}/checkout_sessions${path$1}`, {
 		method: body ? "POST" : "GET",
 		signal: AbortSignal.timeout(TIMEOUT),
@@ -1234,7 +1251,7 @@ async function acp(o, path$1, body) {
 			"api-version": VERSION$2,
 			"content-type": "application/json",
 			"user-agent": "OfferTest",
-			...body ? { "idempotency-key": randomUUID() } : {}
+			...body ? { "idempotency-key": key$2 } : {}
 		},
 		body: body ? JSON.stringify(body) : void 0
 	});
@@ -1315,13 +1332,16 @@ async function acpCheckout(o) {
 				last_name: "Shopper"
 			}
 		});
-		let purchase = "Test purchase: not attempted (--no-buy)";
+		const cur = (s.currency ?? "usd").toUpperCase();
+		let purchase = `Test purchase: not attempted (${o.hold ?? "--no-buy"})`;
 		if (o.buy !== false) if (s.status !== "ready_for_payment") purchase = `Test purchase: not attempted (session is ${s.status})`;
+		else if (o.approve && !await o.approve(money(totalOf(s), cur))) purchase = "Test purchase: not attempted (not approved)";
 		else {
 			const cred = await testCredential(o, s);
 			if (typeof cred === "string") purchase = `Test purchase: not attempted (${cred})`;
 			else {
-				const done = await acp(o, `/${s.id}/complete`, { payment_data: {
+				const key$2 = randomUUID();
+				const body = { payment_data: {
 					handler_id: cred.handler,
 					instrument: {
 						type: "card",
@@ -1330,9 +1350,11 @@ async function acpCheckout(o) {
 							token: cred.token
 						}
 					}
-				} }).catch((e) => e);
+				} };
+				let done = await acp(o, `/${s.id}/complete`, body, key$2).catch((e) => e);
+				if (done instanceof Error && /abort|timeout|fetch failed|^5\d\d|409/i.test(done.message)) done = await acp(o, `/${s.id}`).catch(() => done);
 				if (!(done instanceof Error)) s = done;
-				purchase = done instanceof Error ? `Test purchase: refused by the store (${done.message})` : s.status === "completed" ? `Test purchase: completed, order ${s.order?.id ?? "?"}, paid ${money(totalOf(s), (s.currency ?? "usd").toUpperCase())} in test mode${s.order?.permalink_url ? ` (${s.order.permalink_url})` : ""}` : `Test purchase: not completed (session is ${s.status})`;
+				purchase = done instanceof Error ? `Test purchase: refused by the store (${done.message})` : s.status === "completed" ? `Test purchase: completed, order ${s.order?.id ?? "?"}, paid ${money(totalOf(s), cur)} in test mode${s.order?.permalink_url ? ` (${s.order.permalink_url})` : ""}` : `Test purchase: not completed (session is ${s.status})`;
 			}
 		}
 		return {
@@ -1344,7 +1366,8 @@ async function acpCheckout(o) {
 	}
 }
 function itemFromUrl(url) {
-	return new URL(url).pathname.split("/").filter(Boolean).pop() ?? "";
+	const u = new URL(url);
+	return u.searchParams.get("variant") ?? u.pathname.split("/").filter(Boolean).pop() ?? "";
 }
 
 //#endregion
@@ -1451,6 +1474,7 @@ async function runTest(ad, opts) {
 				await driver.close();
 			}
 		};
+		const acpTried = /* @__PURE__ */ new Set();
 		for (const target of destinations(ad)) {
 			const d = target.destination;
 			if (d.type === "website" || d.type === "app") await follow(d.url, target.card);
@@ -1473,12 +1497,21 @@ async function runTest(ad, opts) {
 						text: ac.text
 					});
 				}
-				if (opts.acp) {
+				const item = opts.acp && (opts.acp.item ?? itemFromUrl(d.url));
+				if (opts.acp && item && !acpTried.has(item)) {
+					acpTried.add(item);
+					const buy = !!opts.pay && opts.acp.buy !== false;
 					const p = await acpCheckout({
 						...opts.acp,
-						item: opts.acp.item ?? itemFromUrl(d.url),
+						item,
 						codes,
-						buy: opts.submit !== false
+						buy,
+						hold: opts.acp.buy === false ? "--no-buy" : "add --pay to finish a test purchase",
+						approve: (total) => opts.approve?.({
+							kind: "payment",
+							title: `Buy through the store's ACP checkout for ${total} (test mode, no real money)?`,
+							detail: opts.acp.endpoint
+						}) ?? Promise.resolve(false)
 					});
 					if ("skipped" in p) await log.step({
 						kind: "note",

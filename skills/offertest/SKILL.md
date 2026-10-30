@@ -38,7 +38,7 @@ Add `--json` when you need to parse the output. Add `--mobile` to test as a phon
 - Do not pass `--pay` unless the user says the store is in test mode. Without it, the agent stops at the payment step.
 - Do not pass `--pause-failing` unless the user asks to pause failing ads.
 - `check` also tests website ads in the store's agent checkout (UCP). A verdict quoting a `ucp://` page means the offer fails for shoppers who buy through an AI agent, even if the website works.
-- With `--acp-url` and `--acp-key`, `check` also buys through the store's ACP checkout in test mode. An `acp://` page is the same kind of proof as `ucp://`.
+- With `--acp-url` and `--acp-key`, `check` also tests the store's ACP checkout (it buys in test mode only with `--pay`, after approval). An `acp://` page is the same kind of proof as `ucp://`, for the item it shows.
 - A run takes 1 to 5 minutes per ad. Run ads one command at a time; the CLI tests them in sequence.
 
 ## Read the result

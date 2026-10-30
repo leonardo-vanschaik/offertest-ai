@@ -20,6 +20,8 @@ const key = (k: string) => KEY_MAP[k.toUpperCase()] ?? (k.length === 1 ? k : k[0
 const PAY_TEXT =
   /^\s*(place (my )?order|pay( now| \$?[\d.,]+)?|complete (my )?(order|purchase|payment)|confirm (and pay|order|purchase|payment)|submit (order|payment)|buy now and pay|purchase|order now and pay|finalizar compra|pagar( ahora)?|commander|payer|jetzt kaufen|zahlungspflichtig bestellen)\s*$/i;
 const PAY_IDS = ["#checkout-pay-button", "#place_order", "#submit-button", "[data-requires-approval]"];
+// Default buttons that clearly do not place an order: Enter on their form needs no approval.
+const SAFE_SUBMIT = /^(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save)\b/;
 
 // Order-submit requests on common platforms. Aborted when the run does not allow payment.
 const ORDER_SUBMIT = [
@@ -176,23 +178,26 @@ export class Driver {
     const focused = await this.focusedPayButton();
     if (focused) return focused;
     const r = await this.page
-      .evaluate(([src, ids]) => {
+      .evaluate(([src, ids, safe]) => {
         const a = document.activeElement as HTMLInputElement | null;
         if (!a || a === document.body || /^(textarea|button)$/i.test(a.tagName)) return { pay: null, known: true };
         const form = a.form ?? a.closest("form");
         // form.elements includes submit buttons outside the form that point at it with form="id".
         const def = form && (Array.from(form.elements).find((el) => (el as HTMLButtonElement).type === "submit") as HTMLElement | undefined);
-        if (!def) {
-          // Unknown: a script may submit on Enter. A discount-code field is still safe to submit.
-          const field = [a.name, a.id, a.placeholder, a.getAttribute("aria-label"), a.labels?.[0]?.innerText].join(" ");
-          return { pay: null, known: /discount|coupon|promo|gift ?card|voucher/i.test(field) };
-        }
+        // A discount-code field is safe to submit on Enter.
+        const field = [a.name, a.id, a.placeholder, a.getAttribute("aria-label"), a.labels?.[0]?.innerText].join(" ");
+        const discountField = /discount|coupon|promo|gift ?card|voucher/i.test(field);
+        // Unknown: a script may submit on Enter.
+        if (!def) return { pay: null, known: discountField };
         const text = (def.innerText || (def as HTMLInputElement).value || def.getAttribute("aria-label") || "").trim();
-        return { pay: ids.some((sel: string) => def.matches(sel)) || new RegExp(src, "i").test(text) ? text || "Pay" : null, known: true };
-      }, [PAY_TEXT.source, PAY_IDS] as [string, string[]])
+        if (ids.some((sel: string) => def.matches(sel)) || new RegExp(src, "i").test(text)) return { pay: text || "Pay", known: true };
+        // Only a default button that clearly does something else (apply a code, search, sign up) is known safe.
+        // A plain "Submit" on a payment page may place the order.
+        return { pay: null, known: discountField || new RegExp(safe, "i").test(text) };
+      }, [PAY_TEXT.source, PAY_IDS, SAFE_SUBMIT.source] as [string, string[], string])
       .catch(() => ({ pay: null, known: false }));
     if (r.pay) return r.pay;
-    // No default button, or no form: a script may submit the order on Enter. On a payment page, ask.
+    // No default button, no form, or a button that may place the order: on a payment page, ask.
     if (!r.known && (await this.onPaymentPage())) return "Enter on the payment page";
     return null;
   }

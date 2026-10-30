@@ -66,3 +66,53 @@ test("a Stripe store with no test key stops before payment and says what to set"
     srv.close();
   }
 });
+
+// A tiny ACP store: one ready session; complete answers with `onComplete`, GET with the stored session.
+async function store(onComplete: (calls: number) => { status: number; body: object }) {
+  let completes = 0;
+  const session = {
+    id: "cs_1",
+    status: "ready_for_payment",
+    currency: "usd",
+    capabilities: { payment: { handlers: [{ id: "demo", name: "demo", config: { test_token: "spt_demo" } }] } },
+    totals: [{ type: "total", display_text: "Total", amount: 9600 }],
+  };
+  const srv = http.createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    if (req.url?.endsWith("/complete")) {
+      const r = onComplete(++completes);
+      return void res.writeHead(r.status).end(JSON.stringify(r.body));
+    }
+    res.writeHead(req.method === "GET" ? 200 : 201).end(JSON.stringify(completes ? { ...session, status: "completed", order: { id: "AT-1" } } : session));
+  });
+  await new Promise<void>((r) => srv.listen(0, r));
+  return { url: `http://127.0.0.1:${(srv.address() as AddressInfo).port}/acp`, completes: () => completes, close: () => srv.close() };
+}
+
+test("no purchase without buy, and none when the approval is refused", async () => {
+  const s = await store(() => ({ status: 200, body: {} }));
+  try {
+    const held = await acpCheckout({ endpoint: s.url, key: "k", item: "shoe", codes: [], buy: false, hold: "add --pay to finish a test purchase" });
+    assert.ok("text" in held && /not attempted \(add --pay/.test(held.text));
+    const refused = await acpCheckout({ endpoint: s.url, key: "k", item: "shoe", codes: [], approve: async () => false });
+    assert.ok("text" in refused && /not attempted \(not approved\)/.test(refused.text));
+    assert.equal(s.completes(), 0);
+  } finally {
+    s.close();
+  }
+});
+
+test("a lost complete answer is checked with a read before it is called refused", async () => {
+  const s = await store(() => ({ status: 409, body: { code: "complete_in_progress", message: "busy" } }));
+  try {
+    const r = await acpCheckout({ endpoint: s.url, key: "k", item: "shoe", codes: [] });
+    assert.ok("text" in r && /Test purchase: completed, order AT-1/.test(r.text), "text" in r ? r.text : r.skipped);
+    assert.equal(s.completes(), 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("the item id is the variant in the link, else the slug", () => {
+  assert.equal(itemFromUrl("https://shop.example/products/shoe?variant=222"), "222");
+});

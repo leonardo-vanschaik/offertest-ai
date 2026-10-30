@@ -199,6 +199,7 @@ type RunOptions = {
     key: string;
     item?: string;
     stripeTestKey?: string;
+    buy?: boolean;
   };
   confirmSafetyChecks?: boolean;
   mobile?: boolean;
@@ -248,6 +249,8 @@ type AcpOptions = {
   item: string;
   codes: string[];
   buy?: boolean;
+  hold?: string;
+  approve?: (total: string) => Promise<boolean>;
   stripeTestKey?: string;
 };
 declare function acpCheckout(o: AcpOptions): Promise<AgentCheckout>;

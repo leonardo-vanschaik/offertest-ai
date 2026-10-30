@@ -37,10 +37,12 @@ export type AcpOptions = {
   item: string; // product, variant, or SKU id in the store's ACP catalog
   codes: string[];
   buy?: boolean; // finish a test purchase (default true)
+  hold?: string; // why buy is off, for the report
+  approve?: (total: string) => Promise<boolean>; // asked before the purchase
   stripeTestKey?: string; // sk_test_ key of the store's Stripe account, to make a test payment token
 };
 
-async function acp(o: AcpOptions, path: string, body?: object): Promise<Session> {
+async function acp(o: AcpOptions, path: string, body?: object, key: string = randomUUID()): Promise<Session> {
   const res = await fetch(`${o.endpoint.replace(/\/$/, "")}/checkout_sessions${path}`, {
     method: body ? "POST" : "GET",
     signal: AbortSignal.timeout(TIMEOUT),
@@ -49,7 +51,7 @@ async function acp(o: AcpOptions, path: string, body?: object): Promise<Session>
       "api-version": VERSION,
       "content-type": "application/json",
       "user-agent": "OfferTest",
-      ...(body ? { "idempotency-key": randomUUID() } : {}),
+      ...(body ? { "idempotency-key": key } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -119,19 +121,25 @@ export async function acpCheckout(o: AcpOptions): Promise<AgentCheckout> {
       fulfillment_details: SHOPPER,
       buyer: { email: SHOPPER.email, first_name: "Test", last_name: "Shopper" },
     });
-    let purchase = "Test purchase: not attempted (--no-buy)";
+    const cur = (s.currency ?? "usd").toUpperCase();
+    let purchase = `Test purchase: not attempted (${o.hold ?? "--no-buy"})`;
     if (o.buy !== false) {
       if (s.status !== "ready_for_payment") purchase = `Test purchase: not attempted (session is ${s.status})`;
+      else if (o.approve && !(await o.approve(money(totalOf(s), cur)))) purchase = "Test purchase: not attempted (not approved)";
       else {
         const cred = await testCredential(o, s);
         if (typeof cred === "string") purchase = `Test purchase: not attempted (${cred})`;
         else {
-          const done = await acp(o, `/${s.id}/complete`, { payment_data: { handler_id: cred.handler, instrument: { type: "card", credential: { type: "spt", token: cred.token } } } }).catch((e: Error) => e);
+          // One Idempotency-Key for this purchase. If the answer is lost, read the session before calling it refused.
+          const key = randomUUID();
+          const body = { payment_data: { handler_id: cred.handler, instrument: { type: "card", credential: { type: "spt", token: cred.token } } } };
+          let done = await acp(o, `/${s.id}/complete`, body, key).catch((e: Error) => e);
+          if (done instanceof Error && /abort|timeout|fetch failed|^5\d\d|409/i.test(done.message)) done = await acp(o, `/${s.id}`).catch(() => done);
           if (!(done instanceof Error)) s = done;
           purchase = done instanceof Error
             ? `Test purchase: refused by the store (${done.message})`
             : s.status === "completed"
-            ? `Test purchase: completed, order ${s.order?.id ?? "?"}, paid ${money(totalOf(s), (s.currency ?? "usd").toUpperCase())} in test mode${s.order?.permalink_url ? ` (${s.order.permalink_url})` : ""}`
+            ? `Test purchase: completed, order ${s.order?.id ?? "?"}, paid ${money(totalOf(s), cur)} in test mode${s.order?.permalink_url ? ` (${s.order.permalink_url})` : ""}`
             : `Test purchase: not completed (session is ${s.status})`;
         }
       }
@@ -142,7 +150,8 @@ export async function acpCheckout(o: AcpOptions): Promise<AgentCheckout> {
   }
 }
 
-// The ACP item id for a landing page: the last path segment (a product slug), unless one is given.
+// The ACP item id for a landing page: the variant in the link (?variant=), else the last path segment (a product slug).
 export function itemFromUrl(url: string): string {
-  return new URL(url).pathname.split("/").filter(Boolean).pop() ?? "";
+  const u = new URL(url);
+  return u.searchParams.get("variant") ?? u.pathname.split("/").filter(Boolean).pop() ?? "";
 }

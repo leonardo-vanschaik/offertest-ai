@@ -46,7 +46,9 @@ ${c.bold("Check options")}
   --pay                 allow a test-mode payment (asks before paying; test stores only)
   --no-submit           do not submit forms (sign-up, lead, booking)
   --no-agent-checkout   skip the agent checkout (UCP) check of the offer
-  --acp-url <url>       also buy through your store's ACP checkout (test mode); key in --acp-key or OFFERTEST_ACP_KEY
+  --acp-url <url>       also test your store's ACP checkout; with --pay it buys in test mode after you approve
+                        (key in --acp-key or OFFERTEST_ACP_KEY)
+  --no-buy              with acp or --acp-url: never finish the ACP purchase
   --item <id>           ACP item id (default: the last part of the landing page path)
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
@@ -84,7 +86,7 @@ async function agentCheckoutCmd(url: string | undefined, codes: string[]) {
   process.exit(failed.length ? EXIT.fail : EXIT.pass);
 }
 
-function acpOptions(v: { "acp-url"?: string; "acp-key"?: string; item?: string }) {
+function acpOptions(v: { "acp-url"?: string; "acp-key"?: string; item?: string; "no-buy"?: boolean }) {
   const endpoint = v["acp-url"] ?? process.env.OFFERTEST_ACP_URL;
   if (!endpoint) return undefined;
   const key = v["acp-key"] ?? process.env.OFFERTEST_ACP_KEY;
@@ -92,7 +94,7 @@ function acpOptions(v: { "acp-url"?: string; "acp-key"?: string; item?: string }
     console.error(`Give your store's ACP API key: --acp-key <key> or OFFERTEST_ACP_KEY.`);
     process.exit(EXIT.usage);
   }
-  return { endpoint, key, item: v.item, stripeTestKey: process.env.STRIPE_TEST_KEY };
+  return { endpoint, key, item: v.item, stripeTestKey: process.env.STRIPE_TEST_KEY, buy: !v["no-buy"] };
 }
 
 async function acpCmd(v: { "acp-url"?: string; "acp-key"?: string; item?: string; url?: string; "no-buy"?: boolean }, codes: string[]) {

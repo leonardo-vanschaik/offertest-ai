@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html-CpYkrdxT.mjs";
+import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html-DQFJ66H-.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -706,7 +706,9 @@ ${c.bold("Check options")}
   --pay                 allow a test-mode payment (asks before paying; test stores only)
   --no-submit           do not submit forms (sign-up, lead, booking)
   --no-agent-checkout   skip the agent checkout (UCP) check of the offer
-  --acp-url <url>       also buy through your store's ACP checkout (test mode); key in --acp-key or OFFERTEST_ACP_KEY
+  --acp-url <url>       also test your store's ACP checkout; with --pay it buys in test mode after you approve
+                        (key in --acp-key or OFFERTEST_ACP_KEY)
+  --no-buy              with acp or --acp-url: never finish the ACP purchase
   --item <id>           ACP item id (default: the last part of the landing page path)
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
@@ -754,7 +756,8 @@ function acpOptions(v) {
 		endpoint,
 		key,
 		item: v.item,
-		stripeTestKey: process.env.STRIPE_TEST_KEY
+		stripeTestKey: process.env.STRIPE_TEST_KEY,
+		buy: !v["no-buy"]
 	};
 }
 async function acpCmd(v, codes) {

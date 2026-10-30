@@ -28,7 +28,8 @@ Rules:
 - A different code or a workaround does not count. If the advertised code fails, the promise is contradicted.
 - Check the arithmetic (20% of $120.00 is $24.00).
 - A ucp:// page is the store's agent checkout: the channel AI shopping agents such as Meta Muse buy through. It is real evidence. If a promise holds on the website but fails in the agent checkout (code rejected, different price), it is contradicted: say "in agent checkout" in the reason and quote the agent checkout. If the agent checkout returned no discount result, that is not evidence either way.
-- An acp:// page is the store's ACP checkout (Agentic Commerce Protocol), where AI agents such as ChatGPT buy. Treat it like ucp://: a rejected code or a different total contradicts the promise ("in agent checkout"). A completed test purchase at the promised total supports it. A purchase that was not attempted is not evidence either way.`;
+- An acp:// page is the store's ACP checkout (Agentic Commerce Protocol), where AI agents such as ChatGPT buy. Treat it like ucp://: a rejected code or a different total contradicts the promise ("in agent checkout"). A completed test purchase at the promised total supports it. A purchase that was not attempted is not evidence either way.
+- A ucp:// or acp:// page is evidence only for the item on its "Item:" line. Use it for a promise only when that item is the advertised product, and the advertised size or variant if the ad names one. For any other promise (another product, a size the ad names that the page does not show), ignore that page.`;
 
 // Long pages put the nav first and the price or code message far down. Send the top of the page plus every
 // line that carries offer evidence; the quote check still searches the full text.

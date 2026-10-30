@@ -40,3 +40,15 @@ test("Enter in a form whose default button applies a code is allowed", () =>
     await d.page.locator("input[name=email]").focus();
     assert.equal(await d.guard(enter), null);
   }));
+
+test("Enter on a payment page whose form button says only Submit asks first", () =>
+  page(`<form action="/custom-order"><input name="email"><input autocomplete="cc-number"><button>Submit</button></form>`, async (d) => {
+    await d.page.locator("input[name=email]").focus();
+    assert.equal((await d.guard(enter))?.kind, "payment");
+  }));
+
+test("Enter in a plain Submit form off the payment page is allowed", () =>
+  page(`<form><input name="email"><button>Submit</button></form>`, async (d) => {
+    await d.page.locator("input[name=email]").focus();
+    assert.equal(await d.guard(enter), null);
+  }));
