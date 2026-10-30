@@ -75,3 +75,25 @@ test("next-step and apply buttons on a payment page need no approval", () =>
       assert.equal(await d.guard(await at(d, "#a")), null);
     },
   ));
+
+// --no-submit: the guard blocks form submits that send data, but still lets codes be applied.
+async function noSubmitPage(html: string, fn: (d: Driver) => Promise<void>) {
+  const d = new Driver();
+  await d.start("about:blank", { allowSubmit: false });
+  try {
+    await d.page.setContent(html);
+    await fn(d);
+  } finally {
+    await d.close();
+  }
+}
+
+test("--no-submit blocks sending a lead form by click or Enter, but not applying a code", () =>
+  noSubmitPage(`<form><input name="email"><button id="s">Get the free guide</button></form><form><input name="code"><button id="a">Apply</button></form>`, async (d) => {
+    assert.equal((await d.guard(await at(d, "#s")))?.kind, "submit");
+    await d.page.locator("input[name=email]").focus();
+    assert.equal((await d.guard(enter))?.kind, "submit");
+    assert.equal(await d.guard(await at(d, "#a")), null);
+    await d.page.locator("input[name=code]").focus();
+    assert.equal(await d.guard(enter), null);
+  }));

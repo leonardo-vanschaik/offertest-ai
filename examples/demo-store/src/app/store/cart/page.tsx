@@ -29,7 +29,7 @@ export default async function CartPage() {
   return (
     <div className={`${container} pt-10`}>
       <h1 className={`${serif} text-[40px] font-semibold tracking-tight`}>Your cart</h1>
-      <div className="mt-6 grid grid-cols-[1fr_400px] items-start gap-10">
+      <div className="mt-6 grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_400px]">
         <ul className={`${card} divide-y divide-[#E2DCCF]`}>
           {priced.lines.map((l) => {
             const p = config.products.find((x) => x.id === l.productId)!;

@@ -37,7 +37,7 @@ export default async function CheckoutPage() {
           Back to cart
         </Link>
       </div>
-      <div className="mt-4 grid grid-cols-[1fr_400px] items-start gap-10">
+      <div className="mt-4 grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_400px]">
         <CheckoutForm />
         <aside className={`${card} p-6`}>
           <h2 className="text-[20px] font-semibold">Order summary</h2>

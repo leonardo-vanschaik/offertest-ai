@@ -62,7 +62,7 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     const follow = async (url: string, cardIndex?: number, headful = opts.headful): Promise<void> => {
       const driver = new Driver();
       try {
-        await driver.start(url, { headful, mobile: opts.mobile, allowPayment: opts.pay });
+        await driver.start(url, { headful, mobile: opts.mobile, allowPayment: opts.pay, allowSubmit: opts.submit !== false });
         const f = opts.baseline ? await landingOnly(driver, log) : await runFunnel(r, driver, log, opts, url, cardIndex);
         if (shouldRetryVisible(f, !!headful, opts)) {
           // Bot walls often stop headless browsers only: try once more in a visible browser.
@@ -87,8 +87,9 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     const acpTried = new Set<string>(); // one ACP purchase per item, even across carousel cards
     for (const target of destinations(ad)) {
       const d = target.destination;
-      if (d.type === "website" || d.type === "app") await follow(d.url, target.card);
-      if (d.type === "website" && opts.agentCheckout !== false && !opts.baseline) {
+      if (d.type === "website" || d.type === "app") {
+        await follow(d.url, target.card);
+        if (d.type !== "website" || opts.agentCheckout === false || opts.baseline) continue;
         // The same offer through the store's agent checkout, where AI shopping agents buy.
         const codes = codesFrom(r.assertions.map((a) => a.conditions));
         const ac = await agentCheckout(d.url, codes, subject || ad.headline);

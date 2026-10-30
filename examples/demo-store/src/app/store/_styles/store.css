@@ -377,6 +377,10 @@
     cursor: not-allowed;
   }
 
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -411,10 +415,6 @@
 
   .grid-cols-\[1fr_340px\] {
     grid-template-columns: 1fr 340px;
-  }
-
-  .grid-cols-\[1fr_400px\] {
-    grid-template-columns: 1fr 400px;
   }
 
   .flex-col {
@@ -1047,6 +1047,12 @@
 
   .disabled\:opacity-60:disabled {
     opacity: .6;
+  }
+
+  @media (min-width: 64rem) {
+    .lg\:grid-cols-\[1fr_400px\] {
+      grid-template-columns: 1fr 400px;
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html-BZBxxY6P.mjs";
+import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html-BrF7Wv2P.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -256,7 +256,7 @@ const LINKS = {
 	tokenDebugger: "https://developers.facebook.com/tools/debug/accesstoken/",
 	adsManager: "https://adsmanager.facebook.com/adsmanager/manage/ads"
 };
-const GRAPH = () => `https://graph.facebook.com/${process.env.META_GRAPH_VERSION ?? "v24.0"}`;
+const GRAPH = () => `${process.env.META_GRAPH_URL ?? "https://graph.facebook.com"}/${process.env.META_GRAPH_VERSION ?? "v24.0"}`;
 const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILL_DIR = path.join(PKG_ROOT, "skills", "offertest");
 function openUrl(url) {
@@ -713,6 +713,7 @@ ${c.bold("Check options")}
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
   --headless            hide the browser (default when not in a terminal)
+  --headful             show the browser even when not in a terminal
   --limit <n>           with --account: test at most n ads (default 5)
   --confirm-safety-checks  ask before acknowledging Muse Wonder safety checks
   --max-turns <n>       agent turns per funnel (default 25)
@@ -729,7 +730,8 @@ async function agentCheckoutCmd(url, codes) {
 		console.error(`Give --url <product page>.\n\n${HELP}`);
 		process.exit(EXIT.usage);
 	}
-	const r = await agentCheckout(url, codes.map((x) => x.toUpperCase()), new URL(url).pathname.split("/").pop()?.replace(/[-_]/g, " ") ?? "");
+	codes = codes.map((x) => x.toUpperCase());
+	const r = await agentCheckout(url, codes, new URL(url).pathname.split("/").pop()?.replace(/[-_]/g, " ") ?? "");
 	if ("skipped" in r) {
 		console.log(c.yellow(r.skipped));
 		process.exit(EXIT.unresolved);
@@ -740,7 +742,7 @@ async function agentCheckoutCmd(url, codes) {
 		console.log(c.yellow("\nThe store did not say whether the code works for agents."));
 		process.exit(EXIT.unresolved);
 	}
-	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code.toUpperCase()}`));
+	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
 	console.log(failed.length ? c.red(`\nDoes not work in agent checkout: ${failed.join(", ")}`) : c.green("\nThe code works in agent checkout."));
 	process.exit(failed.length ? EXIT.fail : EXIT.pass);
 }
@@ -962,8 +964,12 @@ async function main() {
 		fix: result.fix,
 		error: result.error
 	})), null, 2));
-	const worst = Math.max(...results.map(({ result }) => result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"]));
-	process.exit(worst);
+	const codes = results.map(({ result }) => result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"]);
+	process.exit([
+		EXIT.error,
+		EXIT.fail,
+		EXIT.unresolved
+	].find((c$2) => codes.includes(c$2)) ?? EXIT.pass);
 }
 function dest(ad) {
 	const d = ad.destination;

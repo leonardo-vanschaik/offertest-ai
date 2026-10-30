@@ -36,7 +36,8 @@ const ORDER_SUBMIT = [
   /paypal\.com\/.*\/(capture|authorize)/i,
 ];
 
-export type Guard = { kind: "payment"; label: string } | null;
+// payment: would spend money. submit: would send a form (sign-up, lead) when the run forbids it (--no-submit).
+export type Guard = { kind: "payment" | "submit"; label: string } | null;
 
 export class Driver {
   private browser?: Browser;
@@ -44,11 +45,13 @@ export class Driver {
   page!: Page;
   viewport = DESKTOP;
   allowPayment = false;
+  allowSubmit = true;
   blockedRequests: string[] = [];
   downloads: string[] = []; // a download leaves the page unchanged, so the agent would not see it
 
-  async start(url: string, opts: { headful?: boolean; mobile?: boolean; allowPayment?: boolean } = {}) {
+  async start(url: string, opts: { headful?: boolean; mobile?: boolean; allowPayment?: boolean; allowSubmit?: boolean } = {}) {
     this.allowPayment = !!opts.allowPayment;
+    this.allowSubmit = opts.allowSubmit !== false;
     this.viewport = opts.mobile ? MOBILE : DESKTOP;
     this.browser = await launch(!opts.headful);
     // A fresh browser with no cookies: every run is a new customer.
@@ -156,6 +159,8 @@ export class Driver {
       if (!hit) return null;
       if (hit.byId) return { kind: "payment", label: hit.label };
       if ((hit.pay || !SAFE_SUBMIT.test(hit.label)) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
+      // --no-submit: a form submit button that does more than apply a code or move to the next step.
+      if (!this.allowSubmit && !hit.pay && !SAFE_SUBMIT.test(hit.label)) return { kind: "submit", label: hit.label || "Submit" };
       return null;
     }
     const submits =
@@ -166,6 +171,10 @@ export class Driver {
       // button: the focused button itself, or the default (first) submit button of the focused field's form.
       const label = await this.enterSubmitsPay();
       if (label) return { kind: "payment", label };
+      if (!this.allowSubmit) {
+        const form = await this.enterSubmitsForm();
+        if (form) return { kind: "submit", label: form };
+      }
     }
     // Space (or typing a space) activates a focused button: check what has focus.
     const activates =
@@ -173,8 +182,34 @@ export class Driver {
     if (activates) {
       const focused = await this.focusedPayButton();
       if (focused) return { kind: "payment", label: focused };
+      if (!this.allowSubmit) {
+        const form = await this.enterSubmitsForm(true);
+        if (form) return { kind: "submit", label: form };
+      }
     }
     return null;
+  }
+
+  // Would Enter (or Space on a focused button) send the focused form? Applying a code or a search does not count.
+  private async enterSubmitsForm(buttonOnly = false): Promise<string | null> {
+    return this.page
+      .evaluate(
+        ([safe, buttonOnly]) => {
+          const a = document.activeElement as HTMLInputElement | null;
+          if (!a || a === document.body || a.tagName === "TEXTAREA") return null;
+          const isButton = /^(submit|image)$/.test(a.type) && /^(button|input)$/i.test(a.tagName);
+          if (buttonOnly && !isButton) return null;
+          const form = a.form ?? a.closest("form");
+          if (!form) return null;
+          const def = isButton ? (a as HTMLElement) : (Array.from(form.elements).find((el) => (el as HTMLButtonElement).type === "submit") as HTMLElement | undefined);
+          const text = (def?.innerText || (def as HTMLInputElement | undefined)?.value || def?.getAttribute("aria-label") || "").trim();
+          const field = [a.name, a.id, a.placeholder, a.getAttribute("aria-label")].join(" ");
+          if (new RegExp(safe, "i").test(text) || /discount|coupon|promo|gift ?card|voucher|search/i.test(field)) return null;
+          return text || "Submit";
+        },
+        [SAFE_SUBMIT.source, buttonOnly] as [string, boolean],
+      )
+      .catch(() => null);
   }
 
   private async enterSubmitsPay(): Promise<string | null> {
@@ -307,6 +342,12 @@ export class Driver {
       case "screenshot":
         break;
     }
+    await this.settle();
+  }
+
+  // After an approved payment: wait for the store to leave the payment page (the order confirmation).
+  async waitToLeave(url: string, ms = 15_000) {
+    await this.page.waitForURL((u) => u.toString() !== url, { timeout: ms }).catch(() => {});
     await this.settle();
   }
 

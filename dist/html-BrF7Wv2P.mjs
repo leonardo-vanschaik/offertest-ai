@@ -250,10 +250,12 @@ var Driver = class {
 	page;
 	viewport = DESKTOP;
 	allowPayment = false;
+	allowSubmit = true;
 	blockedRequests = [];
 	downloads = [];
 	async start(url, opts = {}) {
 		this.allowPayment = !!opts.allowPayment;
+		this.allowSubmit = opts.allowSubmit !== false;
 		this.viewport = opts.mobile ? MOBILE : DESKTOP;
 		this.browser = await launch(!opts.headful);
 		this.context = await this.browser.newContext({
@@ -355,6 +357,10 @@ var Driver = class {
 				kind: "payment",
 				label: hit.label || "Submit"
 			};
+			if (!this.allowSubmit && !hit.pay && !SAFE_SUBMIT.test(hit.label)) return {
+				kind: "submit",
+				label: hit.label || "Submit"
+			};
 			return null;
 		}
 		if (action.type === "keypress" && action.keys.some((k) => /^(enter|return)$/i.test(k)) || action.type === "type" && /[\r\n]/.test(action.text)) {
@@ -363,6 +369,13 @@ var Driver = class {
 				kind: "payment",
 				label
 			};
+			if (!this.allowSubmit) {
+				const form = await this.enterSubmitsForm();
+				if (form) return {
+					kind: "submit",
+					label: form
+				};
+			}
 		}
 		if (action.type === "keypress" && action.keys.some((k) => /^(space| )$/i.test(k)) || action.type === "type" && action.text.includes(" ")) {
 			const focused = await this.focusedPayButton();
@@ -370,8 +383,35 @@ var Driver = class {
 				kind: "payment",
 				label: focused
 			};
+			if (!this.allowSubmit) {
+				const form = await this.enterSubmitsForm(true);
+				if (form) return {
+					kind: "submit",
+					label: form
+				};
+			}
 		}
 		return null;
+	}
+	async enterSubmitsForm(buttonOnly = false) {
+		return this.page.evaluate(([safe, buttonOnly$1]) => {
+			const a = document.activeElement;
+			if (!a || a === document.body || a.tagName === "TEXTAREA") return null;
+			const isButton = /^(submit|image)$/.test(a.type) && /^(button|input)$/i.test(a.tagName);
+			if (buttonOnly$1 && !isButton) return null;
+			const form = a.form ?? a.closest("form");
+			if (!form) return null;
+			const def = isButton ? a : Array.from(form.elements).find((el) => el.type === "submit");
+			const text = (def?.innerText || def?.value || def?.getAttribute("aria-label") || "").trim();
+			const field = [
+				a.name,
+				a.id,
+				a.placeholder,
+				a.getAttribute("aria-label")
+			].join(" ");
+			if (new RegExp(safe, "i").test(text) || /discount|coupon|promo|gift ?card|voucher|search/i.test(field)) return null;
+			return text || "Submit";
+		}, [SAFE_SUBMIT.source, buttonOnly]).catch(() => null);
 	}
 	async enterSubmitsPay() {
 		const focused = await this.focusedPayButton();
@@ -534,6 +574,10 @@ var Driver = class {
 				break;
 			case "screenshot": break;
 		}
+		await this.settle();
+	}
+	async waitToLeave(url, ms = 15e3) {
+		await this.page.waitForURL((u) => u.toString() !== url, { timeout: ms }).catch(() => {});
 		await this.settle();
 	}
 	async settle() {
@@ -778,6 +822,19 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 			const urlBefore = driver.url();
 			for (const action of actions) {
 				const guard = await driver.guard(action);
+				if (guard?.kind === "submit") {
+					await log.event({
+						type: "submit_guard",
+						label: guard.label,
+						url: driver.url()
+					});
+					await log.step({
+						kind: "note",
+						summary: `Stopped before submitting a form ("${guard.label}"): --no-submit`
+					});
+					stop = true;
+					break;
+				}
 				if (guard) {
 					const total = lastTotal(await driver.text());
 					const ok = !!opts.pay && (await opts.approve?.({
@@ -807,6 +864,7 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 					action
 				});
 				await driver.execute(action);
+				if (guard) await driver.waitToLeave(urlBefore);
 				done.push(action);
 				if (driver.url() !== urlBefore) break;
 			}
@@ -1469,7 +1527,8 @@ async function runTest(ad, opts) {
 				await driver.start(url, {
 					headful,
 					mobile: opts.mobile,
-					allowPayment: opts.pay
+					allowPayment: opts.pay,
+					allowSubmit: opts.submit !== false
 				});
 				const f = opts.baseline ? await landingOnly(driver, log) : await runFunnel(r, driver, log, opts, url, cardIndex);
 				if (shouldRetryVisible(f, !!headful, opts)) {
@@ -1502,8 +1561,9 @@ async function runTest(ad, opts) {
 		const acpTried = /* @__PURE__ */ new Set();
 		for (const target of destinations(ad)) {
 			const d = target.destination;
-			if (d.type === "website" || d.type === "app") await follow(d.url, target.card);
-			if (d.type === "website" && opts.agentCheckout !== false && !opts.baseline) {
+			if (d.type === "website" || d.type === "app") {
+				await follow(d.url, target.card);
+				if (d.type !== "website" || opts.agentCheckout === false || opts.baseline) continue;
 				const codes = codesFrom(r.assertions.map((a) => a.conditions));
 				const ac = await agentCheckout(d.url, codes, subject || ad.headline);
 				if ("skipped" in ac) await log.step({
@@ -1734,7 +1794,7 @@ function accountId(id) {
 	return a.startsWith("act_") ? a : `act_${a}`;
 }
 async function graph(path$1, params = {}, method = "GET", tok) {
-	const url = new URL(`https://graph.facebook.com/${VERSION()}/${path$1.replace(/^\//, "")}`);
+	const url = new URL(`${process.env.META_GRAPH_URL ?? "https://graph.facebook.com"}/${VERSION()}/${path$1.replace(/^\//, "")}`);
 	const body = new URLSearchParams({
 		...params,
 		access_token: tok ?? token()

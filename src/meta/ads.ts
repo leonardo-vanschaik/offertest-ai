@@ -20,7 +20,7 @@ export function accountId(id?: string): string {
 }
 
 async function graph<T>(path: string, params: Record<string, string> = {}, method: "GET" | "POST" = "GET", tok?: string): Promise<T> {
-  const url = new URL(`https://graph.facebook.com/${VERSION()}/${path.replace(/^\//, "")}`);
+  const url = new URL(`${process.env.META_GRAPH_URL ?? "https://graph.facebook.com"}/${VERSION()}/${path.replace(/^\//, "")}`);
   const body = new URLSearchParams({ ...params, access_token: tok ?? token() });
   const res =
     method === "GET"

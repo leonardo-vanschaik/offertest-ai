@@ -175,7 +175,10 @@ npm run typecheck
 npm run dev -- check --help    # run the CLI from source
 (cd examples/demo-store && npm install && npm run dev)   # demo store on :3000
 npm run test:e2e               # browser tests (needs the demo store on :3000)
+npm run test:journeys          # 44 user journeys, about 7 minutes (needs the demo store on :3000)
 ```
+
+The journey tests (`test/journeys/`) run the real `offertest` command and `offertest serve`, a real browser, and the demo store. Only Meta is faked: a scripted shopper stands in for Muse Wonder and clicks where a hidden copy of the page says the button is, a rule-based judge quotes what the store really showed, and a fake Marketing API serves ads, accounts, lead forms, and pause calls. They cover store owners (codes, prices, shipping, sold-out sizes, fix and re-test, phone), agencies (Ads Manager, account sweeps, carousels, lead ads, pausing), trials and lead magnets, broken links and password walls, payment and form-submit safety, CI exit codes and JSON, `doctor`, the Chrome extension bridge, and AI-agent checkout (UCP and ACP). They test the wiring, not the real model's judgment: that is what `eval/` is for.
 
 Layout: `src/core` (agent, browser, judge), `src/meta` (Meta APIs), `src/report` (HTML report), `skills/` (agent skill), `extension/` (Ads Manager button), `eval/`, `examples/demo-store/`.
 

@@ -53,6 +53,7 @@ ${c.bold("Check options")}
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
   --headless            hide the browser (default when not in a terminal)
+  --headful             show the browser even when not in a terminal
   --limit <n>           with --account: test at most n ads (default 5)
   --confirm-safety-checks  ask before acknowledging Muse Wonder safety checks
   --max-turns <n>       agent turns per funnel (default 25)
@@ -70,7 +71,8 @@ async function agentCheckoutCmd(url: string | undefined, codes: string[]) {
     console.error(`Give --url <product page>.\n\n${HELP}`);
     process.exit(EXIT.usage);
   }
-  const r = await agentCheckout(url, codes.map((x) => x.toUpperCase()), new URL(url).pathname.split("/").pop()?.replace(/[-_]/g, " ") ?? "");
+  codes = codes.map((x) => x.toUpperCase());
+  const r = await agentCheckout(url, codes, new URL(url).pathname.split("/").pop()?.replace(/[-_]/g, " ") ?? "");
   if ("skipped" in r) {
     console.log(c.yellow(r.skipped));
     process.exit(EXIT.unresolved);
@@ -81,7 +83,7 @@ async function agentCheckoutCmd(url: string | undefined, codes: string[]) {
     console.log(c.yellow("\nThe store did not say whether the code works for agents."));
     process.exit(EXIT.unresolved);
   }
-  const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code.toUpperCase()}`));
+  const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
   console.log(failed.length ? c.red(`\nDoes not work in agent checkout: ${failed.join(", ")}`) : c.green("\nThe code works in agent checkout."));
   process.exit(failed.length ? EXIT.fail : EXIT.pass);
 }
@@ -264,8 +266,10 @@ async function main() {
         2,
       ),
     );
-  const worst = Math.max(...results.map(({ result }) => (result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"])));
-  process.exit(worst);
+  // Most serious first: a tool error, then a proven failure, then "could not check", then pass.
+  // A bot wall on one ad (2) must not hide a broken offer on another (1).
+  const codes = results.map(({ result }) => (result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"]));
+  process.exit([EXIT.error, EXIT.fail, EXIT.unresolved].find((c) => codes.includes(c)) ?? EXIT.pass);
 }
 
 function dest(ad: Ad): string {

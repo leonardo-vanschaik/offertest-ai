@@ -175,6 +175,12 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
       const urlBefore = driver.url();
       for (const action of actions) {
         const guard = await driver.guard(action);
+        if (guard?.kind === "submit") {
+          await log.event({ type: "submit_guard", label: guard.label, url: driver.url() });
+          await log.step({ kind: "note", summary: `Stopped before submitting a form ("${guard.label}"): --no-submit` });
+          stop = true;
+          break;
+        }
         if (guard) {
           const total = lastTotal(await driver.text());
           const ok =
@@ -195,6 +201,8 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
         }
         await log.event({ type: "action", action }); // written before it runs
         await driver.execute(action);
+        // A paid order takes a moment to confirm: capture the confirmation page, not the checkout.
+        if (guard) await driver.waitToLeave(urlBefore);
         done.push(action);
         if (driver.url() !== urlBefore) break; // page changed: look again before acting further
       }

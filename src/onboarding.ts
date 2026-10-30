@@ -35,7 +35,8 @@ const LINKS = {
   tokenDebugger: "https://developers.facebook.com/tools/debug/accesstoken/",
   adsManager: "https://adsmanager.facebook.com/adsmanager/manage/ads",
 };
-const GRAPH = () => `https://graph.facebook.com/${process.env.META_GRAPH_VERSION ?? "v24.0"}`;
+// META_GRAPH_URL points at a proxy or a test server; the default is Meta.
+const GRAPH = () => `${process.env.META_GRAPH_URL ?? "https://graph.facebook.com"}/${process.env.META_GRAPH_VERSION ?? "v24.0"}`;
 const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILL_DIR = path.join(PKG_ROOT, "skills", "offertest");
 
