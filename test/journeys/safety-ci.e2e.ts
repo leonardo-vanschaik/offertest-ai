@@ -70,6 +70,15 @@ test("CI: --json prints only JSON, and exit codes tell a broken offer from a bro
   assert.equal(noTarget.code, 4, why(noTarget));
 });
 
+test("Meta's API loses the conversation mid-run: the agent carries on in a new one and the verdict still holds", async () => {
+  await scenario("code_expired");
+  meta.set({ ...buy, shopper: { "ridge-trail-shoe": payWithCode("Size 9", "SAVE20").slice(0, 5) }, loseChain: 2 });
+  const run = await cli(["check", ...AD, "--json"], meta.env());
+  assert.equal(run.code, 1, why(run));
+  assert.equal(meta.calls.chainLost, 2, "the chain was lost, retried once, then replaced");
+  assert.match(run.json![0].verdicts[0].pageQuote, /This code has expired\./);
+});
+
 test("first-time setup: doctor says what is missing, then passes once keys work", async () => {
   const empty = await cli(["doctor"], { META_BASE_URL: `${meta.url}/v1`, META_GRAPH_URL: `${meta.url}/graph` });
   assert.equal(empty.code, 1, why(empty));

@@ -9,7 +9,7 @@ import { writeReport } from "./report/html.ts";
 import type { Ad, RunResult } from "./types.ts";
 
 // Local bridge for the "OfferTest for Ads Manager" Chrome extension. Binds to 127.0.0.1 only.
-// Payments are never allowed here and safety checks are declined automatically.
+// Payments are never allowed here.
 
 const OUT_DIR = "offertest-runs";
 // The extension's ID is fixed by the "key" in extension/manifest.json. Only it may call the server,

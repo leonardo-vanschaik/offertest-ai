@@ -1,0 +1,771 @@
+{
+  "ranAt": "2026-10-30T19:06:11.043Z",
+  "cases": [
+    {
+      "id": "save20a-baseline",
+      "scenario": "baseline",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030190611-7ece3b",
+        "usd": 0.17461775,
+        "ms": 81254
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030190732-dc4898",
+        "usd": 0.03943625,
+        "ms": 21217
+      }
+    },
+    {
+      "id": "save20a-size_sold_out",
+      "scenario": "size_sold_out",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030190753-eb05a6",
+        "usd": 0.18832175,
+        "ms": 86832
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030190920-44efa0",
+        "usd": 0.04900375,
+        "ms": 20114
+      }
+    },
+    {
+      "id": "save20a-shipping_charged",
+      "scenario": "shipping_charged",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030190940-fcd08b",
+        "usd": 0.11243675,
+        "ms": 79373
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030191100-94fa44",
+        "usd": 0.033959,
+        "ms": 14782
+      }
+    },
+    {
+      "id": "price-a-baseline",
+      "scenario": "baseline",
+      "adHeadline": "The Ridge trail shoe. $120.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030191114-5c3f05",
+        "usd": 0.14849525,
+        "ms": 72040
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030191226-1fa24a",
+        "usd": 0.07159675,
+        "ms": 41128
+      }
+    },
+    {
+      "id": "price-a-code_expired",
+      "scenario": "code_expired",
+      "adHeadline": "The Ridge trail shoe. $120.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030191308-4f0c6e",
+        "usd": 0.17303575000000002,
+        "ms": 101058
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030191449-3f3385",
+        "usd": 0.053831000000000004,
+        "ms": 26246
+      }
+    },
+    {
+      "id": "price-a-shipping_threshold_ok",
+      "scenario": "shipping_threshold_ok",
+      "adHeadline": "The Ridge trail shoe. $120.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030191515-4d014a",
+        "usd": 0.198126,
+        "ms": 98740
+      },
+      "baseline": {
+        "got": "pass",
+        "runId": "20261030191654-8dacba",
+        "usd": 0.0726385,
+        "ms": 37733
+      }
+    },
+    {
+      "id": "freeship-baseline",
+      "scenario": "baseline",
+      "adHeadline": "Free shipping on every order.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030191731-86789f",
+        "usd": 0.14448725,
+        "ms": 86876
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030191858-96bb4d",
+        "usd": 0.042385000000000006,
+        "ms": 19975
+      }
+    },
+    {
+      "id": "threshold-shipping_threshold_ok",
+      "scenario": "shipping_threshold_ok",
+      "adHeadline": "Free shipping on orders over $50.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030191918-77ab90",
+        "usd": 0.15169325,
+        "ms": 63718
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030192022-8ccd40",
+        "usd": 0.047880500000000006,
+        "ms": 16838
+      }
+    },
+    {
+      "id": "avail-a-baseline",
+      "scenario": "baseline",
+      "adHeadline": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030192039-a67bc5",
+        "usd": 1.2561465,
+        "ms": 418708
+      },
+      "baseline": {
+        "got": "pass",
+        "runId": "20261030192738-a64889",
+        "usd": 0.04346025,
+        "ms": 17084
+      }
+    },
+    {
+      "id": "trail10-baseline",
+      "scenario": "baseline",
+      "adHeadline": "$10 off the Summit rain jacket with code TRAIL10.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030192755-beedd5",
+        "usd": 0.17208525,
+        "ms": 79359
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030192914-ad48a5",
+        "usd": 0.031262,
+        "ms": 13813
+      }
+    },
+    {
+      "id": "trail10-shipping_charged",
+      "scenario": "shipping_charged",
+      "adHeadline": "$10 off the Summit rain jacket with code TRAIL10.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030192928-aa7e3c",
+        "usd": 0.1802915,
+        "ms": 68597
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193037-1349d1",
+        "usd": 0.0440015,
+        "ms": 18963
+      }
+    },
+    {
+      "id": "trail10-code_expired",
+      "scenario": "code_expired",
+      "adHeadline": "$10 off the Summit rain jacket with code TRAIL10.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030193056-b84374",
+        "usd": 0.181221,
+        "ms": 68176
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193204-bbea3b",
+        "usd": 0.03178,
+        "ms": 15080
+      }
+    },
+    {
+      "id": "save20a-code_expired",
+      "scenario": "code_expired",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030193219-ee7c7f",
+        "usd": 0.2196365,
+        "ms": 83831
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193343-b91e8f",
+        "usd": 0.02727175,
+        "ms": 12405
+      }
+    },
+    {
+      "id": "save20a-code_wrong_percent",
+      "scenario": "code_wrong_percent",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030193355-c5caed",
+        "usd": 0.17975175,
+        "ms": 72912
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193508-49b4b6",
+        "usd": 0.053323999999999996,
+        "ms": 22568
+      }
+    },
+    {
+      "id": "save20a-code_missing",
+      "scenario": "code_missing",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030193531-ba9135",
+        "usd": 0.1868885,
+        "ms": 90316
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193701-5fcaca",
+        "usd": 0.03070175,
+        "ms": 13202
+      }
+    },
+    {
+      "id": "save20a-code_excludes_product",
+      "scenario": "code_excludes_product",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030193714-f3fd12",
+        "usd": 0.17356375000000002,
+        "ms": 68150
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193822-bdaff3",
+        "usd": 0.031426499999999996,
+        "ms": 16431
+      }
+    },
+    {
+      "id": "save20a-code_min_spend",
+      "scenario": "code_min_spend",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030193839-70f942",
+        "usd": 0.182568,
+        "ms": 73717
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030193953-e8153b",
+        "usd": 0.042862000000000004,
+        "ms": 14776
+      }
+    },
+    {
+      "id": "save20b-code_expired",
+      "scenario": "code_expired",
+      "adHeadline": "Take 20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030194007-caaca4",
+        "usd": 0.179985,
+        "ms": 81411
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030194129-bfcb9d",
+        "usd": 0.040022749999999996,
+        "ms": 19752
+      }
+    },
+    {
+      "id": "save20b-code_wrong_percent",
+      "scenario": "code_wrong_percent",
+      "adHeadline": "Take 20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030194149-6b0589",
+        "usd": 0.18196474999999998,
+        "ms": 73390
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030194302-ae62db",
+        "usd": 0.0367175,
+        "ms": 14097
+      }
+    },
+    {
+      "id": "save20b-code_missing",
+      "scenario": "code_missing",
+      "adHeadline": "Take 20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030194316-3e017d",
+        "usd": 0.25414375,
+        "ms": 111130
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030194507-c6a439",
+        "usd": 0.037163749999999995,
+        "ms": 16141
+      }
+    },
+    {
+      "id": "save20b-code_excludes_product",
+      "scenario": "code_excludes_product",
+      "adHeadline": "Take 20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030194523-0e7899",
+        "usd": 0.17034075,
+        "ms": 76208
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030194640-0b7869",
+        "usd": 0.0404855,
+        "ms": 18863
+      }
+    },
+    {
+      "id": "save20b-code_min_spend",
+      "scenario": "code_min_spend",
+      "adHeadline": "Take 20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030194659-4f817c",
+        "usd": 0.14785949999999998,
+        "ms": 58553
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030194757-c3d67d",
+        "usd": 0.0478875,
+        "ms": 20690
+      }
+    },
+    {
+      "id": "price-a-price_raised",
+      "scenario": "price_raised",
+      "adHeadline": "The Ridge trail shoe. $120.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030194818-dd443a",
+        "usd": 0.17587250000000001,
+        "ms": 66568
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030194924-aa2996",
+        "usd": 0.10115625,
+        "ms": 43836
+      }
+    },
+    {
+      "id": "price-a-shipping_charged",
+      "scenario": "shipping_charged",
+      "adHeadline": "The Ridge trail shoe. $120.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030195008-e2f7f8",
+        "usd": 0.20919100000000002,
+        "ms": 94854
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030195143-6e7701",
+        "usd": 0.09030149999999999,
+        "ms": 38510
+      }
+    },
+    {
+      "id": "price-b-price_raised",
+      "scenario": "price_raised",
+      "adHeadline": "Meet the Ridge: $120, shipped free.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030195222-cf6a32",
+        "usd": 0.19142675,
+        "ms": 84517
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030195346-147ba0",
+        "usd": 0.06989125000000002,
+        "ms": 30035
+      }
+    },
+    {
+      "id": "price-b-shipping_charged",
+      "scenario": "shipping_charged",
+      "adHeadline": "Meet the Ridge: $120, shipped free.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030195416-1c3b86",
+        "usd": 0.2263945,
+        "ms": 102874
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030195559-a68529",
+        "usd": 0.079449,
+        "ms": 38300
+      }
+    },
+    {
+      "id": "freeship-shipping_charged",
+      "scenario": "shipping_charged",
+      "adHeadline": "Free shipping on every order.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030195638-ae4ec2",
+        "usd": 0.1981675,
+        "ms": 81170
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030195800-b47e05",
+        "usd": 0.07344125,
+        "ms": 31132
+      }
+    },
+    {
+      "id": "threshold-shipping_charged",
+      "scenario": "shipping_charged",
+      "adHeadline": "Free shipping on orders over $50.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030195831-303971",
+        "usd": 0.18935950000000001,
+        "ms": 74205
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030195946-1ec108",
+        "usd": 0.0622765,
+        "ms": 26052
+      }
+    },
+    {
+      "id": "avail-a-size_sold_out",
+      "scenario": "size_sold_out",
+      "adHeadline": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030200012-07be10",
+        "usd": 0.36656924999999996,
+        "ms": 133455
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030200225-8ef30d",
+        "usd": 0.06612025,
+        "ms": 36236
+      }
+    },
+    {
+      "id": "avail-b-size_sold_out",
+      "scenario": "size_sold_out",
+      "adHeadline": "Every size in stock.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030200301-55036f",
+        "usd": 0.20294050000000002,
+        "ms": 92715
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030200434-3920bf",
+        "usd": 0.0912165,
+        "ms": 39992
+      }
+    },
+    {
+      "id": "trial-baseline",
+      "scenario": "baseline",
+      "adHeadline": "Try Trail Club free for 30 days.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030200514-f204e9",
+        "usd": 1.47479725,
+        "ms": 310302
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030201025-ec1f84",
+        "usd": 0.112105,
+        "ms": 61558
+      }
+    },
+    {
+      "id": "trial-trial_requires_card",
+      "scenario": "trial_requires_card",
+      "adHeadline": "Try Trail Club free for 30 days.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030201126-d69d7b",
+        "usd": 0.18062475,
+        "ms": 104177
+      },
+      "baseline": {
+        "got": "pass",
+        "runId": "20261030201310-bc6050",
+        "usd": 0.08082125,
+        "ms": 38891
+      }
+    },
+    {
+      "id": "trial-trial_14_days",
+      "scenario": "trial_14_days",
+      "adHeadline": "Try Trail Club free for 30 days.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030201349-79c69e",
+        "usd": 0.8171287500000001,
+        "ms": 200464
+      },
+      "baseline": {
+        "got": "fail",
+        "runId": "20261030201710-c5a6ea",
+        "usd": 0.09010024999999999,
+        "ms": 43312
+      }
+    },
+    {
+      "id": "trial-code_expired",
+      "scenario": "code_expired",
+      "adHeadline": "Try Trail Club free for 30 days.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030201753-3f2eaa",
+        "usd": 2.3066872499999995,
+        "ms": 393317
+      },
+      "baseline": {
+        "got": "pass",
+        "runId": "20261030202427-af488b",
+        "usd": 0.118757,
+        "ms": 60163
+      }
+    },
+    {
+      "id": "guide-baseline",
+      "scenario": "baseline",
+      "adHeadline": "Free: The First Thru-Hike Guide",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030202527-65d0e0",
+        "usd": 0.14390825,
+        "ms": 56441
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030202623-dab587",
+        "usd": 0.08780375,
+        "ms": 49737
+      }
+    },
+    {
+      "id": "guide-guide_link_broken",
+      "scenario": "guide_link_broken",
+      "adHeadline": "Free: The First Thru-Hike Guide",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030202713-0a97c8",
+        "usd": 0.1369515,
+        "ms": 58767
+      },
+      "baseline": {
+        "got": "pass",
+        "runId": "20261030202812-fafaa1",
+        "usd": 0.0701045,
+        "ms": 37683
+      }
+    },
+    {
+      "id": "guide-guide_paywalled",
+      "scenario": "guide_paywalled",
+      "adHeadline": "Free: The First Thru-Hike Guide",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030202850-d7546f",
+        "usd": 0.14467925,
+        "ms": 59108
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030202949-717df8",
+        "usd": 0.05743775,
+        "ms": 23499
+      }
+    },
+    {
+      "id": "guide-price_raised",
+      "scenario": "price_raised",
+      "adHeadline": "Free: The First Thru-Hike Guide",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030203012-529e98",
+        "usd": 0.11523125000000001,
+        "ms": 52665
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030203105-aad6d9",
+        "usd": 0.039325,
+        "ms": 19257
+      }
+    },
+    {
+      "id": "save20a-agent_code_rejected",
+      "scenario": "agent_code_rejected",
+      "adHeadline": "20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030203124-eb47e7",
+        "usd": 0.16801375,
+        "ms": 67329
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030203232-7fd3cd",
+        "usd": 0.035054749999999996,
+        "ms": 17669
+      }
+    },
+    {
+      "id": "save20b-agent_code_rejected",
+      "scenario": "agent_code_rejected",
+      "adHeadline": "Take 20% off the Ridge trail shoe.",
+      "expected": "fail",
+      "agent": {
+        "got": "fail",
+        "runId": "20261030203249-951f34",
+        "usd": 0.22196575,
+        "ms": 89209
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030203419-83b46a",
+        "usd": 0.0425025,
+        "ms": 15078
+      }
+    },
+    {
+      "id": "price-a-agent_code_rejected",
+      "scenario": "agent_code_rejected",
+      "adHeadline": "The Ridge trail shoe. $120.",
+      "expected": "pass",
+      "agent": {
+        "got": "pass",
+        "runId": "20261030203434-56bd70",
+        "usd": 0.148126,
+        "ms": 55416
+      },
+      "baseline": {
+        "got": "unresolved",
+        "runId": "20261030203529-f44d66",
+        "usd": 0.0626185,
+        "ms": 27685
+      }
+    }
+  ],
+  "agent": {
+    "total": 41,
+    "hits": 41,
+    "misses": 0,
+    "falseAlarms": 0,
+    "unresolved": 0,
+    "completed": 41,
+    "usd": 12.5756955,
+    "ms": 4271902,
+    "accuracy95": [
+      0.9143295511310926,
+      1
+    ]
+  },
+  "baseline": {
+    "total": 41,
+    "hits": 12,
+    "misses": 15,
+    "falseAlarms": 0,
+    "unresolved": 27,
+    "completed": 41,
+    "usd": 2.3795802499999996,
+    "ms": 1110523,
+    "accuracy95": [
+      0.1760901763305888,
+      0.44479757076139725
+    ]
+  }
+}

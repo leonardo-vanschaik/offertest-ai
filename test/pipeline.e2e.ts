@@ -35,12 +35,14 @@ function fakeMeta(): Promise<{ url: string; close: () => void }> {
         return res.end("{}");
       }
       assert.ok(json.instructions, "instructions must be sent every turn");
-      assert.deepEqual(json.tools, [{ type: "computer" }]);
+      assert.deepEqual(json.tools.map((t: { name: string }) => t.name), ["computer.computer", "computer.stop"]);
+      if (json.previous_response_id)
+        assert.ok(json.input.some((i: { type?: string; call_id?: string }) => i.type === "function_call_output" && i.call_id === `call${turns}`), "the last tool call is answered");
       turns++;
       const usage = { input_tokens: 2000, output_tokens: 50 };
-      if (turns < 3)
-        return send({ id: `r${turns}`, output: [{ type: "computer_call", id: `cc${turns}`, call_id: `call${turns}`, actions: [{ type: "scroll", x: 600, y: 400, scroll_x: 0, scroll_y: 300 }], pending_safety_checks: [], status: "completed" }], usage });
-      return send({ id: `r${turns}`, output: [{ type: "message", content: [{ type: "output_text", text: "The cart said: This code has expired." }] }], output_text: "The cart said: This code has expired.", usage });
+      const call = (name: string, args: object) => send({ id: `r${turns}`, output: [{ type: "function_call", id: `fc${turns}`, call_id: `call${turns}`, name, arguments: JSON.stringify(args), status: "completed" }], usage });
+      if (turns < 3) return call("computer.computer", { actions: [{ action: "scroll", coordinate: [500, 500], scroll_direction: "down", scroll_amount: 3 }] });
+      return call("computer.stop", { answer: "The cart said: This code has expired." });
     }
     res.writeHead(404);
     res.end();

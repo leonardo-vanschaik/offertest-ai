@@ -11,7 +11,6 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { Driver } from "../../src/core/driver.ts";
-import type { ComputerAction } from "../../src/types.ts";
 
 export const STORE = process.env.DEMO_STORE ?? "http://localhost:3000";
 export const ROOT = path.resolve(import.meta.dirname, "../..");
@@ -44,19 +43,22 @@ export type Journey = {
   graph?: GraphData;
   // Several ads in one run (account sweep): promises and rules per ad, found by a headline substring.
   byAd?: Record<string, { promises: Promise_[]; rules: Rule[] }>;
+  // The API loses the stored chain this many times in a row, after the first shopper step.
+  loseChain?: number;
 };
 
 // ---------- fake Meta (Model API + Graph) ----------
 
-type Calls = { pauses: string[]; graphPaths: string[]; turns: number; judged: number };
+type Calls = { pauses: string[]; graphPaths: string[]; turns: number; judged: number; chainLost: number };
 
 export class FakeMeta {
   url = "";
   journey: Journey = {};
-  calls: Calls = { pauses: [], graphPaths: [], turns: 0, judged: 0 };
+  calls: Calls = { pauses: [], graphPaths: [], turns: 0, judged: 0, chainLost: 0 };
   private server?: http.Server;
   private shadow?: Driver;
   private steps: ShopStep[] = [];
+  private openCall?: string; // the last tool call the agent must answer
 
   async start() {
     this.server = http.createServer((req, res) => this.handle(req, res).catch((e) => this.send(res, 500, { error: { message: String(e) } })));
@@ -72,7 +74,7 @@ export class FakeMeta {
   // A new journey: new script, fresh call log.
   set(j: Journey) {
     this.journey = j;
-    this.calls = { pauses: [], graphPaths: [], turns: 0, judged: 0 };
+    this.calls = { pauses: [], graphPaths: [], turns: 0, judged: 0, chainLost: 0 };
   }
 
   env(extra: Record<string, string> = {}): Record<string, string> {
@@ -94,7 +96,8 @@ export class FakeMeta {
     if (url.pathname === "/v1/chat/completions") return this.send(res, 200, this.chat(body));
     if (url.pathname === "/v1/responses") {
       if (body.model === "sam-3.1") return this.send(res, 500, {});
-      return this.send(res, 200, await this.computer(body));
+      const out = await this.computer(body);
+      return "status" in out ? this.send(res, out.status, out.body) : this.send(res, 200, out);
     }
     this.send(res, 404, {});
   }
@@ -150,10 +153,24 @@ export class FakeMeta {
 
   // ----- Model API: the scripted shopper (computer use) -----
 
-  private async computer(body: { input?: unknown; previous_response_id?: string }) {
+  private async computer(body: { input?: unknown; previous_response_id?: string; tools?: { name?: string }[]; parallel_tool_calls?: boolean }) {
     this.calls.turns++;
     const usage = { input_tokens: 1500, output_tokens: 40 };
-    const landing = !body.previous_response_id ? textOf(body.input).match(/Landing page: (\S+)/)?.[1] : undefined;
+    // Hold the agent to the real API contract (dev.meta.ai/docs/computer-use).
+    const names = (body.tools ?? []).map((t) => t.name).join(",");
+    if (names !== "computer.computer,computer.stop" || body.parallel_tool_calls !== false) return apiError(`tools must be computer.computer and computer.stop, got ${names}`);
+    if (body.previous_response_id) {
+      const items = (Array.isArray(body.input) ? body.input : []) as { type?: string; call_id?: string; role?: string; content?: { type: string }[] }[];
+      if (!items.some((i) => i.type === "function_call_output" && i.call_id === this.openCall)) return apiError(`No tool output found for function call ${this.openCall}`);
+      if (!items.some((i) => i.role === "user" && i.content?.some((c) => c.type === "input_image"))) return apiError("each turn must send a fresh screenshot");
+      if (this.calls.chainLost < (this.journey.loseChain ?? 0)) {
+        this.calls.chainLost++;
+        return apiError("referenced response not found or expired");
+      }
+    }
+    // A fresh chain that carries progress notes continues the same funnel.
+    const text = textOf(body.input);
+    const landing = !body.previous_response_id && !text.includes("PROGRESS SO FAR") ? text.match(/Landing page: (\S+)/)?.[1] : undefined;
     if (landing) {
       // A new funnel: open the same page in the shadow browser and load this funnel's script.
       await this.shadow?.close().catch(() => {});
@@ -163,34 +180,49 @@ export class FakeMeta {
       this.steps = [...(key ? this.journey.shopper![key] : [])];
     }
     const step = this.steps.shift();
-    if (!step || "say" in step) {
-      const text = step && "say" in step ? step.say : "I checked every promise.";
-      return { id: `r${this.calls.turns}`, output: [{ type: "message", content: [{ type: "output_text", text }] }], output_text: text, usage };
+    const call = (name: string, args: object) => {
+      this.openCall = `call${this.calls.turns}`;
+      return { id: `r${this.calls.turns}`, output: [{ type: "function_call", id: `fc${this.calls.turns}`, call_id: this.openCall, name, arguments: JSON.stringify(args), status: "completed" }], usage };
+    };
+    if (!step || "say" in step) return call("computer.stop", { answer: step && "say" in step ? step.say : "I checked every promise." });
+    try {
+      return call("computer.computer", { actions: await this.act(step) });
+    } catch {
+      // The button is not on the page (a paywall, a broken link): the shopper stops and says so.
+      return call("computer.stop", { answer: `I could not find ${"click" in step ? step.click : "fill" in step ? step.fill : step.press}.` });
     }
-    const actions = await this.act(step);
-    return { id: `r${this.calls.turns}`, output: [{ type: "computer_call", id: `cc${this.calls.turns}`, call_id: `call${this.calls.turns}`, actions, pending_safety_checks: [], status: "completed" }], usage };
   }
 
-  // Find the element in the shadow page, mirror the action there, and return the same action for the agent.
-  private async act(step: Exclude<ShopStep, { say: string }>): Promise<ComputerAction[]> {
+  // Find the element in the shadow page, mirror the action there, and return the same action for the agent
+  // on the model's 0-1000 grid.
+  private async act(step: Exclude<ShopStep, { say: string }>): Promise<MetaAction[]> {
     const page = this.shadow!.page;
+    const { width, height } = this.shadow!.viewport;
+    const grid = (x: number, y: number) => [Math.round((x * 1000) / width), Math.round((y * 1000) / height)];
     if ("press" in step) {
       if (!step.guarded) await page.keyboard.press(step.press);
-      return [{ type: "keypress", keys: [step.press] }];
+      return [{ action: "key", text: step.press }];
     }
     const sel = "click" in step ? step.click : step.fill;
     const loc = page.locator(sel).first();
     await loc.waitFor({ state: "visible", timeout: 10_000 });
+    const actions: MetaAction[] = [];
+    // Scroll in whole steps of 100 px, as the agent's executor does.
     const before = await page.evaluate(() => window.scrollY);
     await loc.scrollIntoViewIfNeeded();
-    const after = await page.evaluate(() => window.scrollY);
+    const units = Math.round(((await page.evaluate(() => window.scrollY)) - before) / 100);
+    await page.evaluate((y) => window.scrollTo(0, y), before);
+    if (units) {
+      await page.evaluate((dy) => window.scrollBy(0, dy), units * 100);
+      actions.push({ action: "scroll", coordinate: grid(width / 2, height / 2), scroll_direction: units > 0 ? "down" : "up", scroll_amount: Math.abs(units) });
+    }
     const box = (await loc.boundingBox())!;
-    const x = Math.round(box.x + box.width / 2);
-    const y = Math.round(box.y + box.height / 2);
-    const actions: ComputerAction[] = [];
-    if (after !== before) actions.push({ type: "scroll", x, y, scroll_x: 0, scroll_y: after - before });
-    actions.push({ type: "click", button: "left", x, y });
-    if ("fill" in step) actions.push({ type: "type", text: step.text });
+    // Aim where the agent's executor will land after mapping the grid back to pixels.
+    const [gx, gy] = grid(box.x + box.width / 2, box.y + box.height / 2);
+    const x = Math.round((gx * width) / 1000);
+    const y = Math.round((gy * height) / 1000);
+    actions.push({ action: "left_click", coordinate: [gx, gy] });
+    if ("fill" in step) actions.push({ action: "type", text: step.text });
     // Mirror it in the shadow (never press a pay button there).
     if (!("click" in step && step.guarded)) {
       await page.mouse.click(x, y);
@@ -229,6 +261,12 @@ export class FakeMeta {
     if (g.forms?.[p]) return this.send(res, 200, g.forms[p]);
     return this.send(res, 404, { error: { message: `Unsupported get request. Object with ID '${p}' does not exist`, code: 100 } });
   }
+}
+
+type MetaAction = { action: string; coordinate?: number[]; text?: string; scroll_direction?: string; scroll_amount?: number };
+
+function apiError(message: string) {
+  return { status: 400, body: { error: { code: null, message, param: "input", type: "invalid_request_error" } } };
 }
 
 function textOf(v: unknown): string {

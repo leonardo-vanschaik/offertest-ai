@@ -139,7 +139,7 @@ Then ask: *"Check the ads I'm about to launch."* The agent runs OfferTest, reads
 
 | Model | Job |
 |---|---|
-| **Muse Wonder** (`muse-wonder-1.0`) | Computer use: follows the funnel from screenshots with the native `computer` tool. Judges each promise. Writes the fix. |
+| **Muse Wonder** (`muse-wonder-1.0`) | Computer use: follows the funnel from screenshots through the `computer.computer` and `computer.stop` tools (0 to 1000 coordinates). Judges each promise. Writes the fix. |
 | **Muse Spark** (`muse-spark-1.3`) | Turns the ad (text and image) into typed, testable promises. |
 | **SAM 3.1** (`sam-3.1`) | Boxes the advertised product and the button in a screenshot for the report. |
 | **Meta Marketing API** | Pulls the real ad, its destination, and Instant Forms from Ads Manager; pauses failing ads. |
@@ -158,7 +158,19 @@ Then ask: *"Check the ads I'm about to launch."* The agent runs OfferTest, reads
 We built a small store, **Alder Trail Co.** ([examples/demo-store](examples/demo-store)), with switchable offer bugs: expired code, wrong percent, missing code, code that excludes the product, hidden minimum spend, raised price, shipping charged, sold-out size, trial that demands a card, broken download link, and a code that works on the website but not in agent checkout. Labels were frozen before the scored run.
 
 <!-- EVAL_TABLE -->
-_Scored run pending._
+Scored run on 30 Oct 2026, real Meta models (Muse Wonder and Muse Spark), 41 cases: 17 working offers and 24 broken ones.
+
+| | OfferTest agent | Landing-page baseline (one model call, no clicking) |
+|---|---|---|
+| Correct verdicts | **41 / 41** (95% CI 91 to 100%) | 12 / 41 (95% CI 18 to 44%) |
+| Broken offers caught | **24 / 24** | 9 / 24 |
+| Broken offers passed as fine | **0** | 2 |
+| Working offers failed (false alarms) | **0** | 0 |
+| Unresolved | 0 | 27 |
+| Cost | $12.58 ($0.31 per ad) | $2.38 ($0.06 per ad) |
+| Time | 71 min (about 1.7 min per ad) | 18.5 min |
+
+The baseline cannot see the cart, the checkout, the sign-up, or the download, so most broken offers stay invisible to it: an expired code, a hidden minimum spend, a trial that asks for a card. The two it passed as fine were a trial that demands a card and a broken download link. Results: [eval/results/latest.json](eval/results/latest.json).
 
 Run it yourself: [eval/README.md](eval/README.md).
 

@@ -125,13 +125,12 @@ export type RunOptions = {
   agentCheckout?: boolean; // also test the offer in the store's agent checkout (UCP); default true
   retryHeadful?: boolean; // a blocked headless run retries once in a visible browser
   acp?: { endpoint: string; key: string; item?: string; stripeTestKey?: string; buy?: boolean }; // the store's ACP checkout (stores you own); buys only with pay
-  confirmSafetyChecks?: boolean; // ask a human for Muse Wonder safety checks (default: acknowledge and log)
   mobile?: boolean;
   maxTurns?: number;
   maxUsd?: number;
   retestOf?: string;
   baseline?: boolean; // eval only: one look at the landing page, no agent
-  approve?: (req: { kind: "payment" | "safety_check"; title: string; detail: string }) => Promise<boolean>;
+  approve?: (req: { kind: "payment"; title: string; detail: string }) => Promise<boolean>;
   onStep?: (step: Step, result: RunResult) => void;
   onPhase?: (phase: string) => void;
 };
