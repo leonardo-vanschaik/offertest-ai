@@ -100,6 +100,25 @@ Does not work in agent checkout: SAVE20
 
 Skip it with `--no-agent-checkout`.
 
+### Agent purchase (ACP): a full AI-agent buy, in test mode
+
+The [Agentic Commerce Protocol](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol) (ACP, by Stripe, OpenAI, and Meta) is the checkout API AI agents such as ChatGPT use to buy. The store owner gives the agent a key, so this runs on stores you own. OfferTest acts as the agent: it opens a checkout session with the ad's codes, reads which codes the store applied or rejected, and finishes a test purchase. It never uses real money: the store's demo token, or a Stripe test-mode payment token (set `STRIPE_TEST_KEY` to your store's `sk_test_` key).
+
+```
+$ npx offertest acp --acp-url https://yourstore.com/api/acp --acp-key <key> --item ridge-trail-shoe --code SAVE20
+Agent checkout session (ACP: the checkout API AI agents such as ChatGPT buy through)
+Item: Ridge trail shoe - Size 7 x1: $120.00
+Discount codes sent: SAVE20
+Discounts applied: none
+Discount rejected: SAVE20 (discount_code_invalid): This code is not valid.
+Total: $120.00
+Test purchase: completed, order AT-10428, paid $120.00 in test mode
+
+Does not work in ACP checkout: SAVE20
+```
+
+Add `--acp-url` and `--acp-key` (or `OFFERTEST_ACP_URL` and `OFFERTEST_ACP_KEY`) to `check`, and every website ad also gets an ACP purchase. `--item` sets the store's item id; the default is the last part of the landing page path. `--no-buy` stops before payment. The demo store has an ACP checkout at `http://localhost:3000/api/acp` (key `alder-trail-demo`), and it passes the [`acp-check`](https://www.npmjs.com/package/acp-check) conformance tool.
+
 ### Payments
 
 It never pays real money. Without `--pay` it stops at the payment step. With `--pay` (test-mode stores only, for example a Shopify Bogus Gateway or Stripe test mode) it asks you before the final click.

@@ -24,3 +24,11 @@ Test card: 4242 4242 4242 4242. Orders appear at `/store/admin`.
 ## Agent checkout (UCP)
 
 The store also has an agent checkout, like every Shopify store: `/.well-known/ucp` points AI shopping agents to `/api/ucp/mcp` (`search_catalog`, `create_cart`, `get_cart`). Carts there are priced for the "agent" sales channel. In the `agent_code_rejected` scenario SAVE20 works on the website but is rejected in agent checkout.
+
+## Agent purchase (ACP)
+
+The store also sells through the Agentic Commerce Protocol (spec 2026-04-17), the checkout API AI agents such as ChatGPT use: `POST /api/acp/checkout_sessions`, `GET` and `POST /api/acp/checkout_sessions/{id}`, `.../complete`, `.../cancel`. Send `Authorization: Bearer alder-trail-demo` (change it with `ACP_API_KEY`) and an `Idempotency-Key` on every POST. Sessions use the same "agent" pricing as UCP, so `agent_code_rejected` rejects SAVE20 here too, in `discounts.rejected` with `discount_code_invalid`.
+
+Payment never uses real money. With no Stripe key, any `spt_` test token pays (`spt_declined` is always declined). Set `STRIPE_SECRET_KEY=sk_test_...` to charge real Stripe test-mode Shared Payment Tokens instead. A completed session creates a normal store order.
+
+Check it with `npx acp-check endpoints http://localhost:3000/api/acp --auth-token alder-trail-demo --item ridge-trail-shoe --allow-complete`.

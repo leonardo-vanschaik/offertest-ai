@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as CONFIG_ENV, f as loadEnv, i as listAdIds, l as agentCheckout, n as getAd, o as pauseAd, s as VERSION, t as writeReport, u as CONFIG_DIR } from "./html-yPVoa-wT.mjs";
+import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html-CpYkrdxT.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -692,6 +692,8 @@ ${c.bold("Usage")}
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
   offertest agent-checkout --url <product url> [--code SAVE20]
                                                test a code in the store's AI-agent checkout (no keys, free)
+  offertest acp --acp-url <endpoint> --item <id> [--code SAVE20]
+                                               buy through your store's ACP agent checkout in test mode
   offertest ads [--account <act_123>] [--live] list ads and where they send people
   offertest serve [--port 7777]                local server for the Ads Manager Chrome extension
   offertest init                               guided setup: Meta API key, Ads Manager, browser, agent skill
@@ -704,6 +706,8 @@ ${c.bold("Check options")}
   --pay                 allow a test-mode payment (asks before paying; test stores only)
   --no-submit           do not submit forms (sign-up, lead, booking)
   --no-agent-checkout   skip the agent checkout (UCP) check of the offer
+  --acp-url <url>       also buy through your store's ACP checkout (test mode); key in --acp-key or OFFERTEST_ACP_KEY
+  --item <id>           ACP item id (default: the last part of the landing page path)
   --pause-failing       pause a failing ad in Ads Manager (asks first)
   --mobile              phone viewport and Facebook in-app browser user agent
   --headless            hide the browser (default when not in a terminal)
@@ -716,7 +720,8 @@ ${c.bold("Check options")}
   --yes                 answer yes to approval prompts (payment, safety checks, pause)
 
 ${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved or blocked · 3 error · 4 usage
-${c.bold("Env")}  META_API_KEY (Meta Model API) · META_ACCESS_TOKEN (Marketing API, ads_read) · META_AD_ACCOUNT_ID`;
+${c.bold("Env")}  META_API_KEY (Meta Model API) · META_ACCESS_TOKEN (Marketing API, ads_read) · META_AD_ACCOUNT_ID
+     OFFERTEST_ACP_URL · OFFERTEST_ACP_KEY (your store's ACP checkout) · STRIPE_TEST_KEY (sk_test_, for ACP test payments)`;
 async function agentCheckoutCmd(url, codes) {
 	if (!url) {
 		console.error(`Give --url <product page>.\n\n${HELP}`);
@@ -736,6 +741,48 @@ async function agentCheckoutCmd(url, codes) {
 	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code.toUpperCase()}`));
 	console.log(failed.length ? c.red(`\nDoes not work in agent checkout: ${failed.join(", ")}`) : c.green("\nThe code works in agent checkout."));
 	process.exit(failed.length ? EXIT.fail : EXIT.pass);
+}
+function acpOptions(v) {
+	const endpoint = v["acp-url"] ?? process.env.OFFERTEST_ACP_URL;
+	if (!endpoint) return void 0;
+	const key = v["acp-key"] ?? process.env.OFFERTEST_ACP_KEY;
+	if (!key) {
+		console.error(`Give your store's ACP API key: --acp-key <key> or OFFERTEST_ACP_KEY.`);
+		process.exit(EXIT.usage);
+	}
+	return {
+		endpoint,
+		key,
+		item: v.item,
+		stripeTestKey: process.env.STRIPE_TEST_KEY
+	};
+}
+async function acpCmd(v, codes) {
+	loadEnv();
+	const o = acpOptions(v);
+	const item = v.item ?? (v.url ? itemFromUrl(v.url) : void 0);
+	if (!o || !item) {
+		console.error(`Give --acp-url <your store's ACP endpoint> and --item <id> (or --url <product page>).\n\n${HELP}`);
+		process.exit(EXIT.usage);
+	}
+	codes = codes.map((x) => x.toUpperCase());
+	const r = await acpCheckout({
+		...o,
+		item,
+		codes,
+		buy: !v["no-buy"]
+	});
+	if ("skipped" in r) {
+		console.log(c.yellow(r.skipped));
+		process.exit(EXIT.unresolved);
+	}
+	console.log(r.text);
+	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
+	if (failed.length) console.log(c.red(`\nDoes not work in ACP checkout: ${failed.join(", ")}`));
+	else if (codes.length) console.log(c.green("\nThe code works in ACP checkout."));
+	const bought = /Test purchase: completed/.test(r.text);
+	if (!v["no-buy"]) console.log(bought ? c.green("The test purchase went through.") : c.yellow(r.text.split("\n").pop()));
+	process.exit(failed.length ? EXIT.fail : bought || v["no-buy"] ? EXIT.pass : EXIT.unresolved);
 }
 async function main() {
 	const [cmd, ...rest] = process.argv.slice(2);
@@ -767,6 +814,10 @@ async function main() {
 				type: "string",
 				multiple: true
 			},
+			"acp-url": { type: "string" },
+			"acp-key": { type: "string" },
+			item: { type: "string" },
+			"no-buy": { type: "boolean" },
 			"pause-failing": { type: "boolean" },
 			mobile: { type: "boolean" },
 			headful: { type: "boolean" },
@@ -795,6 +846,7 @@ async function main() {
 	if (cmd === "install-browser") return installBrowser();
 	if (cmd === "ads") return await ads(values.account, values.live);
 	if (cmd === "agent-checkout") return await agentCheckoutCmd(values.url, values.code ?? []);
+	if (cmd === "acp") return await acpCmd(values, values.code ?? []);
 	if (cmd === "serve") return await serve(values.port ? Number(values.port) : void 0);
 	if (cmd !== "check") {
 		console.error(`Unknown command "${cmd}".\n\n${HELP}`);
@@ -855,6 +907,7 @@ async function main() {
 		pay: values.pay,
 		submit: !values["no-submit"],
 		agentCheckout: !values["no-agent-checkout"],
+		acp: acpOptions(values),
 		headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
 		retryHeadful: !values.headless && !!process.stdout.isTTY,
 		confirmSafetyChecks: values["confirm-safety-checks"],

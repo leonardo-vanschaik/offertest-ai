@@ -194,6 +194,12 @@ type RunOptions = {
   headful?: boolean;
   agentCheckout?: boolean;
   retryHeadful?: boolean;
+  acp?: {
+    endpoint: string;
+    key: string;
+    item?: string;
+    stripeTestKey?: string;
+  };
   confirmSafetyChecks?: boolean;
   mobile?: boolean;
   maxTurns?: number;
@@ -226,4 +232,24 @@ declare function getLeadForm(formId: string, pageId?: string): Promise<LeadForm 
 //#region src/report/html.d.ts
 declare function writeReport(result: RunResult, dir: string): string;
 //#endregion
-export { Ad, AdCard, Assertion, ComputerAction, Destination, Fix, LeadForm, Overall, RunOptions, RunResult, SamBox, Step, VERSION, Verdict, VerdictStatus, getAd, getLeadForm, listAds, pauseAd, runTest, writeReport };
+//#region src/core/ucp.d.ts
+type AgentCheckout = {
+  url: string;
+  text: string;
+} | {
+  skipped: string;
+};
+declare function agentCheckout(landing: string, codes: string[], query: string): Promise<AgentCheckout>;
+//#endregion
+//#region src/core/acp.d.ts
+type AcpOptions = {
+  endpoint: string;
+  key: string;
+  item: string;
+  codes: string[];
+  buy?: boolean;
+  stripeTestKey?: string;
+};
+declare function acpCheckout(o: AcpOptions): Promise<AgentCheckout>;
+//#endregion
+export { Ad, AdCard, Assertion, ComputerAction, Destination, Fix, LeadForm, Overall, RunOptions, RunResult, SamBox, Step, VERSION, Verdict, VerdictStatus, acpCheckout, agentCheckout, getAd, getLeadForm, listAds, pauseAd, runTest, writeReport };

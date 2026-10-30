@@ -109,3 +109,26 @@ test("agent checkout (UCP) rejects a web-only code that the website accepts", as
     await set("baseline");
   }
 });
+
+test("ACP checkout buys in test mode and catches a web-only code", async () => {
+  const { acpCheckout } = await import("../src/core/acp.ts");
+  const set = (scenario: string) =>
+    fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scenario }) });
+  const o = { endpoint: `${STORE}/api/acp`, key: "alder-trail-demo", item: "ridge-trail-shoe", codes: ["SAVE20"] };
+  try {
+    await set("baseline");
+    const ok = await acpCheckout(o);
+    assert.ok("text" in ok, JSON.stringify(ok));
+    assert.match(ok.text, /Discount applied: SAVE20/);
+    assert.match(ok.text, /Test purchase: completed, order AT-\d+, paid \$96\.00 in test mode/);
+    await set("agent_code_rejected");
+    const bad = await acpCheckout({ ...o, buy: false });
+    assert.ok("text" in bad);
+    assert.match(bad.text, /Discount rejected: SAVE20 \(discount_code_invalid\)/);
+    assert.match(bad.text, /Total: \$120\.00/);
+    const locked = await acpCheckout({ ...o, key: "wrong" });
+    assert.ok("skipped" in locked && /401/.test(locked.skipped));
+  } finally {
+    await set("baseline");
+  }
+});

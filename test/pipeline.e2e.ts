@@ -79,16 +79,17 @@ test("pipeline: promises -> funnel -> verdict with quote check -> fix -> report"
   await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
 });
 
-test("pipeline: the agent checkout (UCP) supplies the proof the web pages lacked", async () => {
+test("pipeline: the agent checkouts (UCP and ACP) supply the proof the web pages lacked", async () => {
   await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"code_expired"}' });
   const { runTest } = await import("../src/core/run.ts");
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "offertest-"));
   try {
     const { result } = await runTest(
       { source: "manual", headline: "20% off the Ridge trail shoe.", text: "This week only. Use code SAVE20 at checkout.", cta: "Shop now", destination: { type: "website", url: `${STORE}/store/products/ridge-trail-shoe` } },
-      { outDir: out, maxTurns: 6 },
+      { outDir: out, maxTurns: 6, acp: { endpoint: `${STORE}/api/acp`, key: "alder-trail-demo" } },
     );
     assert.ok(result.steps.some((s) => s.url?.startsWith("ucp://")), "agent checkout step recorded");
+    assert.ok(result.steps.some((s) => s.url?.startsWith("acp://")), "ACP checkout step recorded");
     assert.equal(result.verdicts[0].status, "contradicted");
     assert.equal(result.overall, "fail");
   } finally {

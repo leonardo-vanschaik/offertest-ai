@@ -79,7 +79,7 @@ async function findItem(endpoint: string, url: URL, query: string): Promise<{ id
   return v?.id ? { id: v.id, title: [p?.title, v.title].filter(Boolean).join(" - ") } : null;
 }
 
-function money(amount: Money | undefined, currency = "USD"): string {
+export function money(amount: Money | undefined, currency = "USD"): string {
   const n = typeof amount === "object" ? Number(amount?.amount) : Number(amount);
   const cur = (typeof amount === "object" && amount?.currency) || currency;
   if (!Number.isFinite(n)) return "?";

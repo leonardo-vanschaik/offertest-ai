@@ -9,6 +9,7 @@ import { judge } from "./judge.ts";
 import { RunLog } from "./log.ts";
 import { overallOf, type Evidence } from "./quotes.ts";
 import { samBoxes } from "./sam.ts";
+import { acpCheckout, itemFromUrl } from "./acp.ts";
 import { agentCheckout, codesFrom } from "./ucp.ts";
 
 export const VERSION = "0.1.0";
@@ -88,11 +89,21 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
       if (d.type === "website" || d.type === "app") await follow(d.url, target.card);
       if (d.type === "website" && opts.agentCheckout !== false && !opts.baseline) {
         // The same offer through the store's agent checkout, where AI shopping agents buy.
-        const ac = await agentCheckout(d.url, codesFrom(r.assertions.map((a) => a.conditions)), subject || ad.headline);
+        const codes = codesFrom(r.assertions.map((a) => a.conditions));
+        const ac = await agentCheckout(d.url, codes, subject || ad.headline);
         if ("skipped" in ac) await log.step({ kind: "note", summary: ac.skipped });
         else {
           const step = await log.step({ kind: "source", summary: "Built a cart in the store's agent checkout (UCP) with the ad's codes", url: ac.url }, undefined, ac.text);
           evidence.push({ step: step.n, url: ac.url, text: ac.text });
+        }
+        // The store's ACP checkout, when you gave its endpoint and key: a full agent purchase in test mode.
+        if (opts.acp) {
+          const p = await acpCheckout({ ...opts.acp, item: opts.acp.item ?? itemFromUrl(d.url), codes, buy: opts.submit !== false });
+          if ("skipped" in p) await log.step({ kind: "note", summary: p.skipped });
+          else {
+            const step = await log.step({ kind: "source", summary: "Bought through the store's ACP agent checkout with the ad's codes (test mode)", url: p.url }, undefined, p.text);
+            evidence.push({ step: step.n, url: p.url, text: p.text });
+          }
         }
       }
       else if (d.type === "lead_form") {
