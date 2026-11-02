@@ -160,6 +160,17 @@ test("--no-submit: a Subscribe link may open its page, but its script cannot sen
     await d.page.waitForTimeout(300);
     assert.deepEqual(site.posts, ["/cart"]);
     site.posts.length = 0;
+    // A Subscribe link that opens a new tab: the new tab may shop, the opener's late send is blocked.
+    const tab = await at(d, "#t");
+    assert.equal(await d.guard(tab), null);
+    await d.execute(tab);
+    assert.notEqual(d.page.url(), "about:blank");
+    await d.execute(await at(d, "#k"));
+    await d.page.waitForTimeout(2000);
+    assert.deepEqual(site.posts, ["/cart"]);
+    site.posts.length = 0;
+    await d.page.close();
+    d.page = d.page.context().pages()[0];
     // The same by keyboard.
     await d.page.locator("#s").focus();
     const enterKey: ComputerAction = { type: "keypress", keys: ["Enter"] };
@@ -192,6 +203,7 @@ async function sendsSite() {
 <a href="/subscribe" id="p" onclick="event.preventDefault(); fetch('/signup',{method:'POST'})">Subscribe now</a>
 <a href="/subscribe" id="d" onclick="event.preventDefault(); setTimeout(() => fetch('/signup',{method:'POST'}), 3500)">Join the club</a>
 <button type="button" id="k" onclick="fetch('/cart',{method:'POST'})">Add to bag</button>
+<a href="/" target="_blank" id="t" onclick="setTimeout(() => fetch('/signup',{method:'POST'}), 1500)">Subscribe in a new tab</a>
 <button type="button" id="c">Add to cart</button>
 <button type="button" id="g">Get 20% off</button>`;
   const srv = http.createServer((req, res) => {

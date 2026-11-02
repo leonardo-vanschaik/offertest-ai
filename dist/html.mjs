@@ -255,7 +255,7 @@ var Driver = class {
 	allowSubmit = true;
 	blockedRequests = [];
 	sendLinks = /* @__PURE__ */ new WeakSet();
-	sendBlock = false;
+	sendBlocked = /* @__PURE__ */ new WeakSet();
 	downloads = [];
 	async start(url, opts = {}) {
 		this.allowPayment = !!opts.allowPayment;
@@ -279,7 +279,7 @@ var Driver = class {
 				this.blockedRequests.push(req.url());
 				return route.abort("blockedbyclient");
 			}
-			if (!this.allowSubmit && req.method() !== "GET" && this.sendBlock) {
+			if (!this.allowSubmit && req.method() !== "GET" && this.sendBlocked.has(pageOf(req))) {
 				this.blockedRequests.push(req.url());
 				return route.abort("blockedbyclient");
 			}
@@ -288,16 +288,19 @@ var Driver = class {
 		this.context.on("page", async (p) => {
 			if (!this.allowPayment && /paypal|shop\.app|pay\.google|apple\.com\/apple-pay|klarna|afterpay/i.test(p.url() || "")) await p.close();
 		});
-		this.context.on("page", (p) => this.watchDownloads(p));
+		this.context.on("page", (p) => this.watchPage(p));
 		this.page = await this.context.newPage();
-		this.watchDownloads(this.page);
-		this.page.on("domcontentloaded", () => this.sendBlock = false);
+		this.watchPage(this.page);
 		await this.page.goto(url, {
 			waitUntil: "domcontentloaded",
 			timeout: 45e3
 		});
 		await this.settle();
 		await this.dismissOverlays();
+	}
+	watchPage(p) {
+		this.watchDownloads(p);
+		p.on("domcontentloaded", () => this.sendBlocked.delete(p));
 	}
 	watchDownloads(p) {
 		p.on("download", async (d) => {
@@ -584,7 +587,7 @@ var Driver = class {
 	}
 	async execute(action) {
 		const p = this.page;
-		if (this.sendLinks.has(action)) this.sendBlock = true;
+		if (this.sendLinks.has(action)) this.sendBlocked.add(p);
 		switch (action.type) {
 			case "click":
 				if (action.button === "back") await p.goBack().catch(() => {});
@@ -630,6 +633,7 @@ var Driver = class {
 		await this.settle();
 	}
 	async settle() {
+		await this.page.waitForTimeout(300);
 		const pages = this.context?.pages() ?? [];
 		const newest = pages[pages.length - 1];
 		if (newest && newest !== this.page && !newest.isClosed()) this.page = newest;
@@ -638,6 +642,14 @@ var Driver = class {
 		await this.page.waitForTimeout(250);
 	}
 };
+const NO_PAGE = {};
+function pageOf(req) {
+	try {
+		return req.frame().page();
+	} catch {
+		return NO_PAGE;
+	}
+}
 async function launch(headless) {
 	const channels = [
 		process.env.OFFERTEST_BROWSER_CHANNEL,

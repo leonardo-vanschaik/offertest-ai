@@ -1,4 +1,4 @@
-import { chromium, type Browser, type BrowserContext, type Frame, type Page } from "playwright-core";
+import { chromium, type Browser, type BrowserContext, type Frame, type Page, type Request } from "playwright-core";
 import type { ComputerAction } from "../types.ts";
 
 export const DESKTOP = { width: 1280, height: 800 };
@@ -56,10 +56,10 @@ export class Driver {
   allowSubmit = true;
   blockedRequests: string[] = [];
   // --no-submit: a link whose words say it sends (Subscribe) may open its page, but its scripts must not
-  // POST anything. Activating one blocks every non-GET request until a new document loads, so a handler
-  // that prevents navigation or sends later is blocked too.
+  // POST anything. Activating one blocks every non-GET request from that tab until a new document loads
+  // there, so a handler that prevents navigation or sends later is blocked too. A tab it opens is not blocked.
   private sendLinks = new WeakSet<ComputerAction>();
-  private sendBlock = false;
+  private sendBlocked = new WeakSet<Page>();
   downloads: string[] = []; // a download leaves the page unchanged, so the agent would not see it
 
   async start(url: string, opts: { headful?: boolean; mobile?: boolean; allowPayment?: boolean; allowSubmit?: boolean } = {}) {
@@ -81,7 +81,7 @@ export class Driver {
         this.blockedRequests.push(req.url());
         return route.abort("blockedbyclient");
       }
-      if (!this.allowSubmit && req.method() !== "GET" && this.sendBlock) {
+      if (!this.allowSubmit && req.method() !== "GET" && this.sendBlocked.has(pageOf(req))) {
         this.blockedRequests.push(req.url());
         return route.abort("blockedbyclient");
       }
@@ -91,13 +91,17 @@ export class Driver {
     this.context.on("page", async (p) => {
       if (!this.allowPayment && /paypal|shop\.app|pay\.google|apple\.com\/apple-pay|klarna|afterpay/i.test(p.url() || "")) await p.close();
     });
-    this.context.on("page", (p) => this.watchDownloads(p));
+    this.context.on("page", (p) => this.watchPage(p));
     this.page = await this.context.newPage();
-    this.watchDownloads(this.page);
-    this.page.on("domcontentloaded", () => (this.sendBlock = false)); // a new document: the old page's scripts are gone
+    this.watchPage(this.page);
     await this.page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await this.settle();
     await this.dismissOverlays();
+  }
+
+  private watchPage(p: Page) {
+    this.watchDownloads(p);
+    p.on("domcontentloaded", () => this.sendBlocked.delete(p)); // a new document: the old page's scripts are gone
   }
 
   private watchDownloads(p: Page) {
@@ -361,7 +365,7 @@ export class Driver {
 
   async execute(action: ComputerAction) {
     const p = this.page;
-    if (this.sendLinks.has(action)) this.sendBlock = true;
+    if (this.sendLinks.has(action)) this.sendBlocked.add(p);
     switch (action.type) {
       case "click":
         if (action.button === "back") await p.goBack().catch(() => {});
@@ -411,13 +415,24 @@ export class Driver {
   }
 
   private async settle() {
-    // The agent may have opened a new tab (target=_blank): follow it.
+    // The agent may have opened a new tab (target=_blank): follow it. The tab shows up a moment after the click.
+    await this.page.waitForTimeout(300);
     const pages = this.context?.pages() ?? [];
     const newest = pages[pages.length - 1];
     if (newest && newest !== this.page && !newest.isClosed()) this.page = newest;
     await this.page.waitForLoadState("domcontentloaded", { timeout: 8000 }).catch(() => {});
     await this.page.waitForLoadState("networkidle", { timeout: 2500 }).catch(() => {});
     await this.page.waitForTimeout(250);
+  }
+}
+
+// The tab a request comes from. Requests with no frame (none here: service workers are blocked) count as none.
+const NO_PAGE = {} as Page;
+function pageOf(req: Request): Page {
+  try {
+    return req.frame().page();
+  } catch {
+    return NO_PAGE;
   }
 }
 
