@@ -121,27 +121,27 @@ Each check writes a folder with a one-file `report.html`, a `result.json` for sc
 
 ## Accuracy
 
-We tested OfferTest on 41 ads: 17 with working offers and 24 with broken ones, across 13 failure types. We compared it with a landing-page check that uses the same Meta models and the same judge, but reads only the page the ad links to and does not click.
+We tested OfferTest on 41 ads: 17 with working offers and 24 with broken ones, across 13 failure types. We compared it with a landing-page check that uses the same Meta models and the same judge, but reads only the page the ad links to and does not click. Muse Spark Open read the promises in this run (2 Nov 2026).
 
 | | OfferTest | Landing-page check |
 |---|---|---|
-| Correct verdicts | **41 / 41** (95% CI 91 to 100%) | 12 / 41 (95% CI 18 to 44%) |
+| Correct verdicts | **41 / 41** (95% CI 91 to 100%) | 15 / 41 (95% CI 24 to 52%) |
 | Broken offers caught | **24 / 24** | 9 / 24 |
 | Broken offers passed as fine | **0** | 2 |
 | Working offers failed (false alarms) | **0** | 0 |
-| Unresolved | 0 | 27 |
-| Model cost per ad | $0.31 | $0.06 |
-| Time per ad | about 1.7 min | about 0.5 min |
+| Unresolved | 0 | 24 |
+| Model cost per ad | $0.28 | $0.06 |
+| Time per ad | about 1.5 min | about 0.3 min |
 
 Most broken offers only show up in the cart, at checkout, after a sign-up, or behind a download link. A check that does not click cannot see them. OfferTest costs more per ad because it drives a real browser through the funnel.
 
-**How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the scored run on 30 Oct 2026. Muse Spark read the promises in this run. Results: [eval/results/latest.json](eval/results/latest.json). Run it yourself: [eval/README.md](eval/README.md).
+**How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the first scored run on 30 Oct 2026. In that first run, with Muse Spark reading the promises, OfferTest also got 41 of 41, and the landing-page check got 12 of 41 ([eval/results/2026-10-30-muse-spark.json](eval/results/2026-10-30-muse-spark.json)). In the 2 Nov run, one case stopped on a 503 error from the Meta Model API and was run again; `latest.json` keeps both tries. Results: [eval/results/latest.json](eval/results/latest.json). Run it yourself: [eval/README.md](eval/README.md).
 
 ## Open weights
 
 The promise step runs on **Muse Spark Open**, Meta's open-weight model, through [OpenRouter](https://openrouter.ai/meta/muse-spark-open). OfferTest sends it only to the hackathon's inference partners: Baseten first, then Fireworks, then Modal. Set `OPENROUTER_API_KEY` to use it. Without the key, Muse Spark on the Meta Model API does this step, so a Meta key is all you need.
 
-Every run records the model that read the promises, the provider, its quantization, and OpenRouter's request ids: in `result.json` (`openWeights`), in `log.jsonl`, and in the report. The two runs in `offertest demo` ran on Baseten at fp4.
+Every run records the model that read the promises, the provider, its quantization, and OpenRouter's request ids: in `result.json` (`openWeights`), in `log.jsonl`, and in the report. The two runs in `offertest demo` ran on Baseten at fp4. So did all 82 runs of the [41-ad benchmark](#accuracy) (41 OfferTest runs and 41 landing-page checks), with no fallback to another model.
 
 We scored both models on the 11 ads of the benchmark. A promise counts only when the model states its facts (a code and its amount, a trial length, "no credit card") in its own claim or conditions, not only in the ad quote it copies, and does not state them as untrue.
 
