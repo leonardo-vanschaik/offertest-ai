@@ -26,7 +26,7 @@ Run these commands in `examples/demo-store`.
    npx wrangler d1 create offertest-demo
    ```
 
-   The command prints a `database_id`. Open `wrangler.jsonc` and replace `00000000-0000-0000-0000-000000000000` with it.
+   The command prints a `database_id`. Open `wrangler.jsonc` and replace the `database_id` there (the one for demo.offertest.ai) with it.
    If wrangler asks to add the binding to your config, answer no. The binding is already there.
 
 4. Create the tables in the remote database.

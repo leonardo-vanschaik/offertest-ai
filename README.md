@@ -66,12 +66,19 @@ npm install
 npx offertest demo
 ```
 
-The demo replays two real runs that OfferTest recorded with Meta's models on our sample store: the ad fails because the code SAVE20 expired, and after the fix the re-test passes with a test-mode purchase. It checks every recorded file against its SHA-256, runs the quote check again on the recorded pages, and opens the report. No key, no cost. The recordings and how they were made: [examples/recordings](examples/recordings).
+The demo replays two real runs that OfferTest recorded with Meta's models on our sample store: the ad fails because the code SAVE20 expired, and after the fix the re-test passes with a test-mode purchase. It checks every recorded file against its SHA-256, runs the quote check again on the recorded pages, and opens the report. No key, no cost. The recordings and how they were made: [examples/recordings](examples/recordings). The same report online: [offertest.ai/report](https://offertest.ai/report/20261102204739-63bdba/report.html).
 
-**Run it live on the sample store.** Needs a [Meta Model API key](docs/SETUP.md#1-meta-model-api-key-required-1-minute).
+**Run it live on the hosted sample store.** Needs a [Meta Model API key](docs/SETUP.md#1-meta-model-api-key-required-1-minute). The store at [demo.offertest.ai](https://demo.offertest.ai/store) is set to the case in the film: SAVE20 expired yesterday.
 
 ```bash
-npx offertest init                                        # guided setup: API key, browser, agent skill
+npx offertest init        # guided setup: API key, browser, agent skill
+npx offertest check --url https://demo.offertest.ai/store/products/ridge-trail-shoe \
+  --headline "20% off the Ridge." --text "Use code SAVE20 at checkout. Free shipping."
+```
+
+**Or run the store yourself,** with all 15 store scenarios you can switch between:
+
+```bash
 (cd examples/demo-store && npm install && npm run dev)    # in a second terminal: the store on :3000
 curl -X POST localhost:3000/api/store/scenario -H 'content-type: application/json' -d '{"scenario":"code_expired"}'
 npx offertest check --url http://localhost:3000/store/products/ridge-trail-shoe \
