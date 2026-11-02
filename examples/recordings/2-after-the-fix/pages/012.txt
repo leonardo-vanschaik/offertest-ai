@@ -91,10 +91,11 @@ Free First Thru-Hike Guide
     - text: 100 Test Street, Columbus, OH 43215, United States
   - heading "Payment" [level=2]
   - text: Card number
-  - textbox "Card number"
+  - textbox "Card number": 4242 4242 4242 4242
   - text: Expiry (MM/YY)
   - textbox "Expiry (MM/YY)":
     - /placeholder: MM/YY
+    - text: 12/30
   - text: CVC
   - textbox "CVC":
     - /placeholder: 3 digits

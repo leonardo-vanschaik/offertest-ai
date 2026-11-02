@@ -7,7 +7,8 @@ OfferTest turns an ad into tests, runs a computer-use agent through the funnel, 
 | Meta tool | Job |
 |---|---|
 | **Muse Wonder** (`muse-wonder-1.0`) | Computer use: follows the funnel from screenshots. Judges each promise. Writes the fix. |
-| **Muse Spark** (`muse-spark-1.3`) | Reads the ad's text and image and turns them into typed, testable promises, each with a word-for-word quote from the ad. |
+| **Muse Spark Open** (`meta/muse-spark-open`, open weights) | Reads the ad's text and image and turns them into typed, testable promises, each with a word-for-word quote from the ad. Runs through OpenRouter on Baseten, Fireworks, or Modal when `OPENROUTER_API_KEY` is set. See [Open weights](#open-weights). |
+| **Muse Spark** (`muse-spark-1.3`) | The same job on the Meta Model API, when no OpenRouter key is set or Muse Spark Open fails. |
 | **SAM 3.1** (`sam-3.1`) | Boxes the advertised product and the buttons in a screenshot for the report. |
 | **Meta Marketing API** | Pulls the real ad, its destination, and Instant Forms from Ads Manager. Pauses failing ads. |
 | **Muse Code** | Runs OfferTest through the skill in [`skills/offertest`](../skills/offertest). |
@@ -15,7 +16,7 @@ OfferTest turns an ad into tests, runs a computer-use agent through the funnel, 
 ## How a verdict is made
 
 1. **Read the ad.** From the Marketing API: headline, primary text, image, button, URL parameters, and the destination type. Or from `--url`, `--headline`, and `--text`.
-2. **Promises.** Muse Spark writes each promise as a typed test (discount, price, free shipping, trial, download, availability) with a quote from the ad.
+2. **Promises.** Muse Spark Open (or Muse Spark) writes each promise as a typed test (discount, price, free shipping, trial, download, availability) with a quote from the ad.
 3. **Funnel.** Muse Wonder drives a fresh Chrome session with no cookies, like a new customer. OfferTest runs its actions with Playwright and saves the screenshot and the text of every page.
 4. **Agent checkout.** For store ads, OfferTest also builds a cart in the store's AI-agent checkout (UCP, and ACP when configured) with the ad's codes. See [AGENT-CHECKOUT.md](AGENT-CHECKOUT.md).
 5. **Judge.** Muse Wonder judges each promise as `supported`, `contradicted`, or `unresolved`. It sees only the ad, the promises, and the captured page text. It never sees the agent's own opinion of how the run went.
@@ -28,6 +29,15 @@ OfferTest turns an ad into tests, runs a computer-use agent through the funnel, 
 - **Forms.** The agent fills sign-up and lead forms the way a customer would, because the promise (a trial, a download) is often behind them. `--no-submit` stops it before it sends a sign-up, lead, or booking form, also when a script button sends it. It can still apply a code, open a link, or move to the next step.
 - **Ads.** OfferTest pauses an ad only with `--pause-failing` or a click in the extension, and asks first.
 - **Cost.** `--max-usd` stops a run above a model cost. `--max-turns` limits the agent's turns.
+
+## Open weights
+
+`src/meta/open.ts` sends the promise step to Muse Spark Open through OpenRouter, with `provider.order` set to Baseten, Fireworks, and Modal and `allow_fallbacks: false`, so no other host can serve it.
+
+- **Structured output.** Baseten does not take `response_format`, so the JSON schema goes in the system prompt. Zod checks the answer. One more request covers an answer that does not parse.
+- **Proof.** The run records `openWeights` in `result.json`: the model, the provider that served it, that provider's quantization as OpenRouter lists it (Baseten: `fp4`), OpenRouter's request ids, the tokens, and the cost. `log.jsonl` has the same record as an `open_weights` event, and the report shows it under Models.
+- **Fallback.** If Muse Spark Open fails twice, Muse Spark reads the promises. `openWeights.fallback` says why, and `models` names the model that did the job.
+- **Measured.** `eval/promises.ts` scores both models on the 11 benchmark ads. Results are in the [README](../README.md#open-weights).
 
 ## The computer-use loop
 
@@ -64,11 +74,11 @@ sequenceDiagram
 | Folder | What is in it |
 |---|---|
 | `src/core` | The agent loop (`funnel.ts`), the browser driver and guards (`driver.ts`), promises, judge, quote check, fix, UCP and ACP |
-| `src/meta` | Marketing API and Model API clients |
+| `src/meta` | Marketing API and Model API clients, and Muse Spark Open through OpenRouter (`open.ts`) |
 | `src/report` | The one-file HTML report |
 | `skills/offertest` | The skill for Muse Code, Claude Code, and Codex |
 | `extension/` | The Ads Manager Chrome extension |
-| `eval/` | The scored benchmark |
+| `eval/` | The scored benchmark, and the promise-reading score for Muse Spark Open and Muse Spark (`promises.ts`) |
 | `examples/demo-store` | The sample store with switchable offer bugs |
 | `test/` | Unit, browser, and journey tests |
 

@@ -4,28 +4,35 @@ Shop all
 Footwear
 Outerwear
 Packs
-Cart (0)
-Home/Shop all/Ridge trail shoe
+Cart (1)
+Your cart
 Ridge trail shoe
 
-Color: Slate
+Slate · Size 9
+
+$120.00 each
 
 $120.00
 
-Free shipping on every order
-
-Size: 10
-7
-8
-9
-10
-11
-12
-Add to cart
-Details
-
-A light, grippy trail shoe for long days on mixed ground. Recycled mesh upper, cushioned midsole, and 4 mm lugs that hold on wet rock.
-
+−
+1
++
+Remove
+Order summary
+Discount code
+Apply
+This code has expired.
+Remove code
+Subtotal
+$120.00
+Discount
+$0.00
+Shipping
+Free
+Total
+$120.00
+Checkout
+Continue shopping
 Alder Trail Co.
 
 Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
@@ -58,33 +65,47 @@ Free First Thru-Hike Guide
       - /url: /store/products/summit-rain-jacket
     - link "Packs":
       - /url: /store/products/switchback-daypack
-    - link "Cart, 0 items":
+    - link "Cart, 1 item":
       - /url: /store/cart
-      - text: Cart (0)
+      - text: Cart (1)
 - main:
-  - navigation "Breadcrumb":
-    - link "Home":
-      - /url: /store
-    - text: /
-    - link "Shop all":
+  - heading "Your cart" [level=1]
+  - list:
+    - listitem:
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+        - img "Ridge trail shoe"
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+      - paragraph: Slate · Size 9
+      - paragraph: $120.00 each
+      - paragraph: $120.00
+      - button "Decrease quantity of Ridge trail shoe": −
+      - text: "1"
+      - button "Increase quantity of Ridge trail shoe": +
+      - button "Remove"
+  - complementary:
+    - heading "Order summary" [level=2]
+    - text: Discount code
+    - textbox "Discount code":
+      - /placeholder: Enter code
+      - text: SAVE20
+    - button "Apply"
+    - status:
+      - text: This code has expired.
+      - button "Remove code"
+    - term: Subtotal
+    - definition: $120.00
+    - term: Discount
+    - definition: $0.00
+    - term: Shipping
+    - definition: Free
+    - term: Total
+    - definition: $120.00
+    - link "Checkout":
+      - /url: /store/checkout
+    - link "Continue shopping":
       - /url: /store#shop
-    - text: /Ridge trail shoe
-  - img "Ridge trail shoe in Slate"
-  - heading "Ridge trail shoe" [level=1]
-  - paragraph: "Color: Slate"
-  - paragraph: $120.00
-  - paragraph: Free shipping on every order
-  - 'group "Size: 10"':
-    - text: "Size: 10"
-    - button "Size 7": "7"
-    - button "Size 8": "8"
-    - button "Size 9": "9"
-    - button "Size 10" [pressed]: "10"
-    - button "Size 11": "11"
-    - button "Size 12": "12"
-  - button "Add to cart"
-  - heading "Details" [level=2]
-  - paragraph: A light, grippy trail shoe for long days on mixed ground. Recycled mesh upper, cushioned midsole, and 4 mm lugs that hold on wet rock.
 - contentinfo:
   - text: Alder Trail Co.
   - paragraph: Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
@@ -114,4 +135,4 @@ Free First Thru-Hike Guide
       - link "Free First Thru-Hike Guide":
         - /url: /store/guides/first-thru-hike
   - text: © 2026 Alder Trail Co. All rights reserved.
-- alert
+- alert: Cart | Alder Trail Co.

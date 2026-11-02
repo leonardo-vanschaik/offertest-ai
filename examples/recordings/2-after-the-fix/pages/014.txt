@@ -39,7 +39,7 @@ Card ending in 4242 (test mode)
 
 Placed
 
-Nov 2, 2026, 10:29 AM
+Nov 2, 2026, 3:28 PM
 
 Continue shopping
 Alder Trail Co.
@@ -99,7 +99,7 @@ Free First Thru-Hike Guide
   - heading "Payment" [level=3]
   - paragraph: Card ending in 4242 (test mode)
   - heading "Placed" [level=3]
-  - paragraph: Nov 2, 2026, 10:29 AM
+  - paragraph: Nov 2, 2026, 3:28 PM
   - link "Continue shopping":
     - /url: /store#shop
 - contentinfo:

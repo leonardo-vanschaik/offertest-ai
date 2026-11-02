@@ -14,7 +14,7 @@ $120.00
 
 Free shipping on every order
 
-Size: 10
+Size: 11
 7
 8
 9
@@ -74,13 +74,13 @@ Free First Thru-Hike Guide
   - paragraph: "Color: Slate"
   - paragraph: $120.00
   - paragraph: Free shipping on every order
-  - 'group "Size: 10"':
-    - text: "Size: 10"
+  - 'group "Size: 11"':
+    - text: "Size: 11"
     - button "Size 7": "7"
     - button "Size 8": "8"
     - button "Size 9": "9"
-    - button "Size 10" [pressed]: "10"
-    - button "Size 11": "11"
+    - button "Size 10": "10"
+    - button "Size 11" [pressed]: "11"
     - button "Size 12": "12"
   - button "Add to cart"
   - heading "Details" [level=2]

@@ -79,16 +79,19 @@ Free First Thru-Hike Guide
   - text: Email
   - textbox "Email":
     - /placeholder: you@example.com
+    - text: test@offertest.ai
   - heading "Shipping" [level=2]
   - text: Full name
   - textbox "Full name":
     - /placeholder: First and last name
+    - text: Test Shopper
   - text: Address
   - textbox "Address":
     - /placeholder: Street, city, state, ZIP
+    - text: 100 Test Street, Columbus, OH 43215, United States
   - heading "Payment" [level=2]
   - text: Card number
-  - textbox "Card number"
+  - textbox "Card number": 4242 4242 4242 4242
   - text: Expiry (MM/YY)
   - textbox "Expiry (MM/YY)":
     - /placeholder: MM/YY

@@ -5,12 +5,12 @@
 <h3 align="center">An AI agent that clicks through your ad's funnel like a customer<br>and proves whether every promise in the ad holds.</h3>
 
 <p align="center">
-  Discount codes, prices, free shipping, free trials, free downloads. OfferTest reads your Meta ad, tests each promise in the real funnel up to the payment step, and backs every verdict with word-for-word quotes and screenshots. Built on Meta's <b>Muse Wonder</b> computer-use model.
+  Discount codes, prices, free shipping, free trials, free downloads. OfferTest reads your Meta ad, tests each promise in the real funnel up to the payment step, and backs every verdict with word-for-word quotes and screenshots. Built on Meta's <b>Muse Wonder</b> computer-use model and the open-weight <b>Muse Spark Open</b>.
 </p>
 
 <p align="center">
   <img alt="Muse Wonder" src="https://img.shields.io/badge/Muse_Wonder-computer_use-0866FF">
-  <img alt="Muse Spark" src="https://img.shields.io/badge/Muse_Spark-ad_reading-0866FF">
+  <img alt="Muse Spark Open" src="https://img.shields.io/badge/Muse_Spark_Open-open_weights-0866FF">
   <img alt="SAM 3.1" src="https://img.shields.io/badge/SAM_3.1-segmentation-0866FF">
   <img alt="Benchmark" src="https://img.shields.io/badge/benchmark-41%2F41_correct-2EA44F">
   <a href="https://github.com/leonardo-vanschaik/offertest-ai/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/leonardo-vanschaik/offertest-ai/actions/workflows/ci.yml/badge.svg"></a>
@@ -22,6 +22,7 @@
   <a href="#quickstart">Quickstart</a> ·
   <a href="#what-it-catches">What it catches</a> ·
   <a href="#accuracy">Accuracy</a> ·
+  <a href="#open-weights">Open weights</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#use-it-where-you-work">Ads Manager, CI, agents</a> ·
   <a href="docs/ARCHITECTURE.md">Architecture</a>
@@ -77,31 +78,36 @@ npx offertest check --url http://localhost:3000/store/products/ridge-trail-shoe 
   --headline "20% off the Ridge." --text "Use code SAVE20 at checkout. Free shipping."
 ```
 
-This is the first recorded run, as the terminal showed it (steps 2 to 9 select each size, then add one pair to the cart):
+With `OPENROUTER_API_KEY` set, Muse Spark Open reads the promises, as in the recordings ([Open weights](#open-weights)). Without it, Muse Spark does that step.
+
+This is the first recorded run, as the terminal showed it:
 
 ```
-● Reading the ad's promises (Muse Spark)
+● Reading the ad's promises (Muse Spark Open, open weights)
 ● Following the funnel like a customer (Muse Wonder · computer use)
    1 Open localhost:3000/store/products/ridge-trail-shoe
-   ...
-  10 Click (936, 345)
-  11 Type "SAVE20"
-  12 Click (1115, 346)
-  13 Click (987, 637)
+   2 Click (897, 412)
+   3 Click (940, 494)
+   4 Click (936, 345) · Type "SAVE20"
+   5 Click (1115, 345)
+   6 Click (987, 635)
+   7 Agent's note
+   8 Built a cart in the store's agent checkout (UCP) with the ad's codes
 ● Judging each promise against word-for-word evidence (Muse Wonder + quote check)
 ● Proposing one fix (Muse Wonder)
 
-FAIL  Followed the funnel to localhost:3000/store/checkout  $0.74
-  ✗ Code SAVE20 gives 20% off the Ridge.
+FAIL  Followed the funnel to localhost:3000/store/checkout  $0.29
+  Promises read by Muse Spark Open (open weights) on BaseTen, fp4
+  ✗ Code SAVE20 gives 20% off the Ridge
       ad: "20% off the Ridge."   funnel: "This code has expired."
-  ✓ Free shipping is offered.
-      ad: "Free shipping."   funnel: "Shipping: $0.00"
+  ✓ Free shipping is available
+      ad: "Free shipping."   funnel: "Shipping Free"
 
-  Fix: Reactivate SAVE20 so it again gives 20% off the Ridge at checkout.
-    - Store admin > Discounts: open the SAVE20 coupon.
-    - SAVE20 > Active dates / Status: set to Active and extend the end date beyond today, 2026-11-02.
-    - SAVE20 > Value: confirm 20% off applies to the Ridge Trail Shoe, then save.
-    - Check: add the Ridge ($120) to cart, apply SAVE20 at checkout, and verify the $24.00 discount appears with no expired-code message.
+  Fix: Reactivate SAVE20 in Discounts so it again gives 20% off the Ridge.
+    - Open Store Admin > Discounts > SAVE20.
+    - In SAVE20 > Active dates, clear the past end date, set Status to Active, and keep 20% off the Ridge.
+    - Save SAVE20.
+    - Check it: add the Ridge to cart, apply SAVE20 at checkout, and confirm a $24.00 discount on $120.00.
 ```
 
 **Check your own ads.**
@@ -129,7 +135,24 @@ We tested OfferTest on 41 ads: 17 with working offers and 24 with broken ones, a
 
 Most broken offers only show up in the cart, at checkout, after a sign-up, or behind a download link. A check that does not click cannot see them. OfferTest costs more per ad because it drives a real browser through the funnel.
 
-**How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the scored run on 30 Oct 2026. Results: [eval/results/latest.json](eval/results/latest.json). Run it yourself: [eval/README.md](eval/README.md).
+**How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the scored run on 30 Oct 2026. Muse Spark read the promises in this run. Results: [eval/results/latest.json](eval/results/latest.json). Run it yourself: [eval/README.md](eval/README.md).
+
+## Open weights
+
+The promise step runs on **Muse Spark Open**, Meta's open-weight model, through [OpenRouter](https://openrouter.ai/meta/muse-spark-open). OfferTest sends it only to the hackathon's inference partners: Baseten first, then Fireworks, then Modal. Set `OPENROUTER_API_KEY` to use it. Without the key, Muse Spark on the Meta Model API does this step, so a Meta key is all you need.
+
+Every run records the model that read the promises, the provider, its quantization, and OpenRouter's request ids: in `result.json` (`openWeights`), in `log.jsonl`, and in the report. The two runs in `offertest demo` ran on Baseten at fp4.
+
+We scored both models on the 11 ads of the benchmark. The labels were fixed before the scored run.
+
+| | Muse Spark Open | Muse Spark |
+|---|---|---|
+| Promises found | **14 / 14** | 14 / 14 |
+| Ad quotes found word for word | **16 / 16** | 14 / 14 |
+| Time for all 11 ads | **53 s** | 84 s |
+| Cost for all 11 ads | **$0.04** | $0.13 |
+
+Results: [eval/results/promises.json](eval/results/promises.json). Run it: `npx tsx eval/promises.ts`.
 
 ## How it works
 
@@ -139,7 +162,7 @@ flowchart TD
     CLI["CLI or CI<br/>offertest check"]
     SKILL["Coding agent<br/>OfferTest skill"]
     MKT["Meta Marketing API<br/>headline, text, image,<br/>link, Instant Form"]
-    SPARK["Muse Spark<br/>turns the ad into<br/>testable promises"]
+    SPARK["Muse Spark Open<br/>open weights: turns the ad<br/>into testable promises"]
     WONDER["Muse Wonder<br/>computer use: clicks<br/>through the funnel"]
     UCP["Agent checkout<br/>UCP / ACP cart<br/>with the ad's codes"]
     JUDGE["Muse Wonder judge<br/>sees only the ad and<br/>the captured pages"]
@@ -153,7 +176,7 @@ flowchart TD
 ```
 
 1. **Read the ad.** OfferTest pulls the real ad from Ads Manager: headline, text, image, button, link, and destination type.
-2. **Find the promises.** Muse Spark turns each promise into a test, with a word-for-word quote from the ad.
+2. **Find the promises.** Muse Spark Open, Meta's open-weight model, turns each promise into a test, with a word-for-word quote from the ad. Without an OpenRouter key, Muse Spark does this.
 3. **Follow the funnel.** Muse Wonder drives a fresh browser with no cookies, like a new customer. It picks options, adds to cart, types codes, and signs up. For stores, OfferTest also builds a cart in the store's AI-agent checkout ([UCP and ACP](docs/AGENT-CHECKOUT.md)).
 4. **Judge with proof.** Muse Wonder judges each promise from the captured pages only. Code then checks that both quotes exist word for word. A verdict without proof becomes `unresolved`, never a guess.
 5. **Fix.** For each broken promise you get one change, where to make it, and the command to re-test.
@@ -214,7 +237,8 @@ Then ask: *"Check the ads I'm about to launch."* The agent runs OfferTest, reads
 | Meta tool | Job in OfferTest |
 |---|---|
 | **Muse Wonder** (`muse-wonder-1.0`) | Computer use through the funnel, the judge, and the fix |
-| **Muse Spark** (`muse-spark-1.3`) | Reads the ad's text and image and writes the promises |
+| **Muse Spark Open** (`meta/muse-spark-open`, open weights) | Reads the ad's text and image and writes the promises, through OpenRouter on Baseten, Fireworks, or Modal |
+| **Muse Spark** (`muse-spark-1.3`) | Does the same job on the Meta Model API when no OpenRouter key is set |
 | **SAM 3.1** (`sam-3.1`) | Boxes the advertised product and buttons in the report |
 | **Meta Marketing API** | Reads ads, destinations, and Instant Forms. Pauses failing ads. |
 | **Muse Code** | Runs OfferTest through the skill |

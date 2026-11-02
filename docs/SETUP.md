@@ -16,7 +16,7 @@ This page explains the same steps, if you prefer to read first.
 
 ## 1. Meta Model API key (required, 1 minute)
 
-OfferTest's AI runs on Meta's models: **Muse Wonder** (the agent that clicks through your funnel), **Muse Spark** (reads your ad), and **SAM 3.1** (marks the product in screenshots).
+OfferTest's AI runs on Meta's models: **Muse Wonder** (the agent that clicks through your funnel), **Muse Spark** (reads your ad), and **SAM 3.1** (marks the product in screenshots). To read your ad with the open-weight **Muse Spark Open** instead, see [step 6](#6-muse-spark-open-optional-2-minutes).
 
 1. Open [dev.meta.ai](https://dev.meta.ai) and sign in.
 2. Create an API key. Hackathon participants: claim your $150 credits on the same site.
@@ -78,6 +78,14 @@ Then ask your agent: *"Check the ads I'm about to launch."*
 ## 5. The Chrome extension for Ads Manager (optional)
 
 Adds a **Test offer** button inside Ads Manager. See [extension/README.md](../extension/README.md).
+
+## 6. Muse Spark Open (optional, 2 minutes)
+
+With an OpenRouter key, **Muse Spark Open**, Meta's open-weight model, reads your ad's promises instead of Muse Spark. It runs on Baseten, Fireworks, or Modal, never on another host. Reading one ad costs about half a cent.
+
+1. Create a key at [openrouter.ai/keys](https://openrouter.ai/keys) and add a little credit.
+2. Add it to `~/.offertest/.env` or a `.env` file: `OPENROUTER_API_KEY=...`
+3. Check: `offertest doctor` says "Muse Spark Open (open weights) reads the promises".
 
 ---
 

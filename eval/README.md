@@ -11,3 +11,16 @@ npx tsx eval/run.ts --mode both                           # terminal 2
 - **agent** is OfferTest. **baseline** is one model call on the landing page, no clicking.
 - Accuracy comes with a 95% Wilson interval, because 41 cases is a small sample.
 - Results: `eval/results/latest.json`. Run folders with screenshots: `eval/results/runs/`.
+
+## Reading the promises
+
+`eval/promises.ts` scores only the first step: Muse Spark Open (open weights, through OpenRouter) and Muse Spark each read the 11 ads above and write their promises. No store or browser is needed. It needs `META_API_KEY` and `OPENROUTER_API_KEY`.
+
+```bash
+npx tsx eval/promises.ts                       # both models
+npx tsx eval/promises.ts --models spark-open    # one model
+```
+
+- **Promises found**: each ad has labeled promises (for example, a discount with "SAVE20" and "20"). One is found when an extracted promise has the right kind and names every term.
+- **Quotes word for word**: every extracted promise's ad quote must be in the ad, checked by the same quote check as the verdicts.
+- Results: `eval/results/promises.json`, with each model's promises per ad, the provider, and its quantization.

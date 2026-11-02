@@ -71,6 +71,8 @@ The recordings are in [examples/recordings](../examples/recordings). The demo ch
 | `META_AD_ACCOUNT_ID` | Default ad account |
 | `OFFERTEST_ACP_URL`, `OFFERTEST_ACP_KEY` | Your store's ACP checkout |
 | `STRIPE_TEST_KEY` | `sk_test_` key for ACP test payments |
+| `OPENROUTER_API_KEY` | Muse Spark Open reads the promises (open weights). Without it, Muse Spark does |
+| `OFFERTEST_SPARK_OPEN_PROVIDERS` | Inference partners for Muse Spark Open, in order (default `baseten,fireworks,modal`) |
 
 ## Output
 

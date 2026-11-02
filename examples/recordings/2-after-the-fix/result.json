@@ -4,9 +4,9 @@
     "name": "offertest",
     "version": "0.1.0"
   },
-  "id": "20261102152659-5753e0",
-  "createdAt": "2026-11-02T15:26:59.288Z",
-  "retestOf": "20261102152130-05c402",
+  "id": "20261102202618-76dfe6",
+  "createdAt": "2026-11-02T20:26:18.636Z",
+  "retestOf": "20261102202349-f51bd5",
   "ad": {
     "source": "manual",
     "headline": "20% off the Ridge.",
@@ -32,7 +32,7 @@
     {
       "id": "a2",
       "kind": "free_shipping",
-      "claim": "Free shipping is offered",
+      "claim": "The Ridge ships for free",
       "adQuote": "Free shipping.",
       "conditions": {}
     }
@@ -40,7 +40,7 @@
   "steps": [
     {
       "n": 1,
-      "at": "2026-11-02T15:27:25.183Z",
+      "at": "2026-11-02T20:26:23.792Z",
       "kind": "action",
       "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
       "url": "http://localhost:3000/store/products/ridge-trail-shoe",
@@ -48,28 +48,7 @@
     },
     {
       "n": 2,
-      "at": "2026-11-02T15:27:27.751Z",
-      "kind": "action",
-      "summary": "Click (897, 413)",
-      "actions": [
-        {
-          "type": "click",
-          "button": "left",
-          "x": 897,
-          "y": 413
-        }
-      ],
-      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
-      "modelText": "Testing your Ridge ad: I'll add the shoe to cart and apply SAVE20 to verify the 20% discount and free shipping.",
-      "click": {
-        "x": 897,
-        "y": 413
-      },
-      "screenshot": "shots/002.jpg"
-    },
-    {
-      "n": 3,
-      "at": "2026-11-02T15:27:40.256Z",
+      "at": "2026-11-02T20:26:27.531Z",
       "kind": "action",
       "summary": "Click (728, 412)",
       "actions": [
@@ -81,36 +60,36 @@
         }
       ],
       "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Testing your ad promises — checking the Ridge shoe sizes, then applying SAVE20 to verify the discount and free shipping.",
       "click": {
         "x": 728,
         "y": 412
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T20:26:40.768Z",
+      "kind": "action",
+      "summary": "Click (810, 414)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 810,
+          "y": 414
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 810,
+        "y": 414
       },
       "screenshot": "shots/003.jpg"
     },
     {
       "n": 4,
-      "at": "2026-11-02T15:27:49.259Z",
-      "kind": "action",
-      "summary": "Click (813, 412)",
-      "actions": [
-        {
-          "type": "click",
-          "button": "left",
-          "x": 813,
-          "y": 412
-        }
-      ],
-      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
-      "modelText": "Found the Ridge at $120 with free shipping noted. I'll check each size, then add to cart and test SAVE20.",
-      "click": {
-        "x": 813,
-        "y": 412
-      },
-      "screenshot": "shots/004.jpg"
-    },
-    {
-      "n": 5,
-      "at": "2026-11-02T15:28:00.002Z",
+      "at": "2026-11-02T20:26:48.614Z",
       "kind": "action",
       "summary": "Click (899, 413)",
       "actions": [
@@ -126,31 +105,31 @@
         "x": 899,
         "y": 413
       },
-      "screenshot": "shots/005.jpg"
+      "screenshot": "shots/004.jpg"
     },
     {
-      "n": 6,
-      "at": "2026-11-02T15:28:11.692Z",
+      "n": 5,
+      "at": "2026-11-02T20:26:56.752Z",
       "kind": "action",
-      "summary": "Click (982, 413)",
+      "summary": "Click (980, 412)",
       "actions": [
         {
           "type": "click",
           "button": "left",
-          "x": 982,
-          "y": 413
+          "x": 980,
+          "y": 412
         }
       ],
       "url": "http://localhost:3000/store/products/ridge-trail-shoe",
       "click": {
-        "x": 982,
-        "y": 413
+        "x": 980,
+        "y": 412
       },
-      "screenshot": "shots/006.jpg"
+      "screenshot": "shots/005.jpg"
     },
     {
-      "n": 7,
-      "at": "2026-11-02T15:28:20.908Z",
+      "n": 6,
+      "at": "2026-11-02T20:27:06.787Z",
       "kind": "action",
       "summary": "Click (1065, 413)",
       "actions": [
@@ -166,11 +145,11 @@
         "x": 1065,
         "y": 413
       },
-      "screenshot": "shots/007.jpg"
+      "screenshot": "shots/006.jpg"
     },
     {
-      "n": 8,
-      "at": "2026-11-02T15:28:30.640Z",
+      "n": 7,
+      "at": "2026-11-02T20:27:14.852Z",
       "kind": "action",
       "summary": "Click (1149, 412)",
       "actions": [
@@ -186,11 +165,11 @@
         "x": 1149,
         "y": 412
       },
-      "screenshot": "shots/008.jpg"
+      "screenshot": "shots/007.jpg"
     },
     {
-      "n": 9,
-      "at": "2026-11-02T15:28:45.650Z",
+      "n": 8,
+      "at": "2026-11-02T20:27:26.473Z",
       "kind": "action",
       "summary": "Click (938, 494)",
       "actions": [
@@ -202,24 +181,24 @@
         }
       ],
       "url": "http://localhost:3000/store/cart",
-      "modelText": "All sizes 7–12 are selectable with Add to cart enabled. I'll add one pair and go to checkout.",
+      "modelText": "All sizes 7–12 are selectable. I'll add one pair to the cart and head to checkout.",
       "click": {
         "x": 938,
         "y": 494
       },
-      "screenshot": "shots/009.jpg"
+      "screenshot": "shots/008.jpg"
     },
     {
-      "n": 10,
-      "at": "2026-11-02T15:28:56.050Z",
+      "n": 9,
+      "at": "2026-11-02T20:27:37.653Z",
       "kind": "action",
-      "summary": "Click (936, 345) · Type \"SAVE20\" · Click (1116, 346)",
+      "summary": "Click (933, 346) · Type \"SAVE20\" · Click (1115, 346)",
       "actions": [
         {
           "type": "click",
           "button": "left",
-          "x": 936,
-          "y": 345
+          "x": 933,
+          "y": 346
         },
         {
           "type": "type",
@@ -228,20 +207,20 @@
         {
           "type": "click",
           "button": "left",
-          "x": 1116,
+          "x": 1115,
           "y": 346
         }
       ],
       "url": "http://localhost:3000/store/cart",
       "click": {
-        "x": 1116,
+        "x": 1115,
         "y": 346
       },
-      "screenshot": "shots/010.jpg"
+      "screenshot": "shots/009.jpg"
     },
     {
-      "n": 11,
-      "at": "2026-11-02T15:29:07.903Z",
+      "n": 10,
+      "at": "2026-11-02T20:27:51.123Z",
       "kind": "action",
       "summary": "Click (987, 637)",
       "actions": [
@@ -253,22 +232,23 @@
         }
       ],
       "url": "http://localhost:3000/store/checkout",
+      "modelText": "SAVE20 gave $24 off (20% of $120) with free shipping, total $96. Now I'll complete the test checkout to confirm the final charge.",
       "click": {
         "x": 987,
         "y": 637
       },
-      "screenshot": "shots/011.jpg"
+      "screenshot": "shots/010.jpg"
     },
     {
-      "n": 12,
-      "at": "2026-11-02T15:29:23.129Z",
+      "n": 11,
+      "at": "2026-11-02T20:28:13.440Z",
       "kind": "action",
-      "summary": "Click (412, 362) · Type \"test@offertest.ai\" · Click (260, 489) · Type \"Test Shopper\" · Click (575, 489) · Type \"100 Test Street, Columbus, OH 43215, Uni…\"",
+      "summary": "Click (419, 362) · Type \"test@offertest.ai\" · Click (264, 490) · Type \"Test Shopper\" · Click (575, 490) · Type \"100 Test Street, Columbus, OH 43215, Uni…\" · Click (283, 617) · Type \"4242 4242 4242 4242\"",
       "actions": [
         {
           "type": "click",
           "button": "left",
-          "x": 412,
+          "x": 419,
           "y": 362
         },
         {
@@ -278,8 +258,8 @@
         {
           "type": "click",
           "button": "left",
-          "x": 260,
-          "y": 489
+          "x": 264,
+          "y": 490
         },
         {
           "type": "type",
@@ -289,51 +269,64 @@
           "type": "click",
           "button": "left",
           "x": 575,
-          "y": 489
+          "y": 490
         },
         {
           "type": "type",
           "text": "100 Test Street, Columbus, OH 43215, United States"
-        }
-      ],
-      "url": "http://localhost:3000/store/checkout",
-      "modelText": "SAVE20 correctly gave $24 off — $120 to $96, with shipping free. Now I'll complete test checkout with the supplied identity.",
-      "click": {
-        "x": 575,
-        "y": 489
-      },
-      "screenshot": "shots/012.jpg"
-    },
-    {
-      "n": 13,
-      "at": "2026-11-02T15:29:36.569Z",
-      "kind": "action",
-      "summary": "Click (284, 618) · Type \"4242 4242 4242 4242\" · Click (530, 618) · Type \"12/30\" · Click (664, 618) · Type \"123\"",
-      "actions": [
+        },
         {
           "type": "click",
           "button": "left",
-          "x": 284,
-          "y": 618
+          "x": 283,
+          "y": 617
         },
         {
           "type": "type",
           "text": "4242 4242 4242 4242"
-        },
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "click": {
+        "x": 283,
+        "y": 617
+      },
+      "screenshot": "shots/011.jpg"
+    },
+    {
+      "n": 12,
+      "at": "2026-11-02T20:28:29.706Z",
+      "kind": "action",
+      "summary": "Click (527, 618) · Type \"12/30\"",
+      "actions": [
         {
           "type": "click",
           "button": "left",
-          "x": 530,
+          "x": 527,
           "y": 618
         },
         {
           "type": "type",
           "text": "12/30"
-        },
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "click": {
+        "x": 527,
+        "y": 618
+      },
+      "screenshot": "shots/012.jpg"
+    },
+    {
+      "n": 13,
+      "at": "2026-11-02T20:28:49.618Z",
+      "kind": "action",
+      "summary": "Click (666, 618) · Type \"123\"",
+      "actions": [
         {
           "type": "click",
           "button": "left",
-          "x": 664,
+          "x": 666,
           "y": 618
         },
         {
@@ -343,14 +336,14 @@
       ],
       "url": "http://localhost:3000/store/checkout",
       "click": {
-        "x": 664,
+        "x": 666,
         "y": 618
       },
       "screenshot": "shots/013.jpg"
     },
     {
       "n": 14,
-      "at": "2026-11-02T15:29:46.807Z",
+      "at": "2026-11-02T20:28:57.881Z",
       "kind": "action",
       "summary": "Click (419, 694)",
       "actions": [
@@ -370,14 +363,14 @@
     },
     {
       "n": 15,
-      "at": "2026-11-02T15:29:59.782Z",
+      "at": "2026-11-02T20:29:24.228Z",
       "kind": "model",
       "summary": "Agent's note",
-      "modelText": "Order AT-10427 confirmed (test mode). Ridge trail shoe $120.00, Size 12 (sizes 7-12 all selectable with Add to cart enabled). Code SAVE20 applied: -$24.00 (20% of $120), shipping Free, total charged $96.00. Both promises verified in cart, checkout, and confirmation."
+      "modelText": "Ridge trail shoe $120, Slate, sizes 7-12 selectable. Added Size 12 (1 item) to cart. Code SAVE20 applied: -$24.00 (20% of $120). Shipping shown Free in cart, checkout and confirmation. Completed test-mode order AT-10427 confirmed with Total $96.00, Discount (SAVE20) -$24.00, Shipping Free."
     },
     {
       "n": 16,
-      "at": "2026-11-02T15:29:59.869Z",
+      "at": "2026-11-02T20:29:24.313Z",
       "kind": "source",
       "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
       "url": "ucp://localhost:3000/cart"
@@ -389,8 +382,8 @@
       "status": "supported",
       "adQuote": "20% off the Ridge.",
       "pageQuote": "SAVE20 applied: -$24.00",
-      "evidenceStep": 10,
-      "reason": "20% of the $120.00 Ridge subtotal is $24.00; SAVE20 was applied for -$24.00, for a $96.00 total, and the same result appears in agent checkout.",
+      "evidenceStep": 9,
+      "reason": "SAVE20 was applied to the $120.00 Ridge for -$24.00, which is exactly 20%, for a $96.00 total.",
       "quoteCheck": {
         "adQuoteFound": true,
         "pageQuoteFound": true
@@ -402,7 +395,7 @@
       "adQuote": "Free shipping.",
       "pageQuote": "Shipping: $0.00",
       "evidenceStep": 16,
-      "reason": "The tested Ridge order in agent checkout shows $0.00 shipping, consistent with the website showing shipping as Free.",
+      "reason": "The tested Ridge order shows $0.00 shipping in agent checkout, matching the website order showing free shipping.",
       "quoteCheck": {
         "adQuoteFound": true,
         "pageQuoteFound": true
@@ -412,14 +405,29 @@
   "boundary": "Full test-mode purchase, confirmation page reached",
   "models": {
     "computer use, judge, fix": "muse-wonder-1.0",
-    "ad to promises": "muse-spark-1.3",
+    "ad to promises": "meta/muse-spark-open",
     "product boxes": "sam-3.1"
   },
   "usage": {
-    "inputTokens": 147409,
-    "outputTokens": 5586,
+    "inputTokens": 180942,
+    "outputTokens": 4706,
     "images": 16,
-    "usd": 0.6714239999999998
+    "usd": 0.8071592499999999
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      "gen-1793651178-ZphuOebVhKVcu8Ckvf2r"
+    ],
+    "calls": 1,
+    "ms": 3748,
+    "inputTokens": 687,
+    "outputTokens": 834,
+    "usd": 0.00369925
   },
   "confirmation": {
     "url": "http://localhost:3000/store/order/AT-10427",
@@ -458,5 +466,5 @@
     ]
   },
   "overall": "pass",
-  "finishedAt": "2026-11-02T15:30:07.700Z"
+  "finishedAt": "2026-11-02T20:29:37.590Z"
 }

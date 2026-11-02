@@ -4,10 +4,10 @@
 
 | Folder | What happened |
 |---|---|
-| `1-before-launch` | The Ridge ad ("20% off the Ridge. Use code SAVE20 at checkout. Free shipping.") on the sample store, with SAVE20 expired. Muse Wonder selects every size, adds one pair to the cart, applies SAVE20, and reaches checkout. Verdict: FAIL, "This code has expired." It proposes a fix. |
+| `1-before-launch` | The Ridge ad ("20% off the Ridge. Use code SAVE20 at checkout. Free shipping.") on the sample store, with SAVE20 expired. Muse Wonder picks a size, adds the pair to the cart, applies SAVE20, and reaches checkout. Verdict: FAIL, "This code has expired." It proposes a fix. |
 | `2-after-the-fix` | The owner extends SAVE20. The re-test (`--retest-of` the first run) applies SAVE20, pays with the test card, and reaches the order confirmation. Verdict: PASS. |
 
-Both were recorded on 2 Nov 2026 with `muse-wonder-1.0`, `muse-spark-1.3`, and `sam-3.1`, against [the sample store](../demo-store) on `localhost:3000`.
+Both were recorded on 2 Nov 2026 with `muse-wonder-1.0`, `meta/muse-spark-open` (open weights, through OpenRouter on Baseten at fp4), and `sam-3.1`, against [the sample store](../demo-store) on `localhost:3000`. Each `result.json` has the OpenRouter request id of its Muse Spark Open call under `openWeights`.
 
 ## What is in a recording
 

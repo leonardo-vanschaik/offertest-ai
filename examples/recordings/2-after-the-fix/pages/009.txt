@@ -21,14 +21,16 @@ Remove
 Order summary
 Discount code
 Apply
+SAVE20 applied: -$24.00
+Remove code
 Subtotal
 $120.00
-Discount
-$0.00
+Discount (SAVE20)
+-$24.00
 Shipping
 Free
 Total
-$120.00
+$96.00
 Checkout
 Continue shopping
 Alder Trail Co.
@@ -87,15 +89,19 @@ Free First Thru-Hike Guide
     - text: Discount code
     - textbox "Discount code":
       - /placeholder: Enter code
+      - text: SAVE20
     - button "Apply"
+    - status:
+      - text: "SAVE20 applied: -$24.00"
+      - button "Remove code"
     - term: Subtotal
     - definition: $120.00
-    - term: Discount
-    - definition: $0.00
+    - term: Discount (SAVE20)
+    - definition: "-$24.00"
     - term: Shipping
     - definition: Free
     - term: Total
-    - definition: $120.00
+    - definition: $96.00
     - link "Checkout":
       - /url: /store/checkout
     - link "Continue shopping":
@@ -129,4 +135,4 @@ Free First Thru-Hike Guide
       - link "Free First Thru-Hike Guide":
         - /url: /store/guides/first-thru-hike
   - text: © 2026 Alder Trail Co. All rights reserved.
-- alert: Your cart
+- alert: Cart | Alder Trail Co.

@@ -19,7 +19,7 @@ offertest doctor      # checks the setup; prints the fix for anything wrong
 
 If a command fails with a setup error, run `offertest doctor` and tell the user the fix it prints. `init` is interactive: ask the user to run it themselves (in Muse Code or Claude Code they can type `! offertest init`).
 
-Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (Ads Manager; `offertest init` lists the permissions), `META_AD_ACCOUNT_ID`.
+Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (Ads Manager; `offertest init` lists the permissions), `META_AD_ACCOUNT_ID`, and `OPENROUTER_API_KEY` (optional: Muse Spark Open, Meta's open-weight model, reads the promises).
 
 ## Pick the command
 
