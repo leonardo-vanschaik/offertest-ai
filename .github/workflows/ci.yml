@@ -18,3 +18,5 @@ jobs:
       - run: npm run build
       # dist/ is committed (npx runs it): it must match the source.
       - run: test -z "$(git status --porcelain -- dist)" || (git status --short -- dist; exit 1)
+      # The built CLI replays the recorded runs, as a judge would run it.
+      - run: node dist/cli.mjs demo --json

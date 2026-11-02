@@ -1,0 +1,2 @@
+# Recordings are checked byte for byte (SHA-256): never change their line endings.
+examples/recordings/*/** -text

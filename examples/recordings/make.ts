@@ -1,5 +1,6 @@
 // Turn a run folder that `offertest check` wrote into a recording for `offertest demo`.
-// node --import tsx examples/recordings/make.ts <run dir> <name> --intro "..." --command "..." --store "..." [--out <dir>]
+// node --import tsx examples/recordings/make.ts <run dir> <name> --intro "..." --command "..." --store "..." [--commit <sha>] [--out <dir>]
+// --commit: the commit whose code made the run (default: HEAD).
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -9,7 +10,7 @@ import type { RunResult } from "../../src/types.ts";
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
-  options: { intro: { type: "string" }, command: { type: "string" }, store: { type: "string" }, out: { type: "string" } },
+  options: { intro: { type: "string" }, command: { type: "string" }, store: { type: "string" }, commit: { type: "string" }, out: { type: "string" } },
 });
 const [run, name] = positionals;
 if (!run || !name || !values.intro || !values.command || !values.store) {
@@ -38,7 +39,7 @@ const m: Manifest = {
   command: values.command,
   store: values.store,
   recordedAt: r.createdAt,
-  commit: execSync("git rev-parse HEAD", { encoding: "utf8" }).trim(),
+  commit: execSync(`git rev-parse ${values.commit ?? "HEAD"}`, { encoding: "utf8" }).trim(),
   files,
 };
 fs.writeFileSync(path.join(to, "recording.json"), JSON.stringify(m, null, 2) + "\n");
