@@ -201,14 +201,13 @@ type RunOptions = {
     stripeTestKey?: string;
     buy?: boolean;
   };
-  confirmSafetyChecks?: boolean;
   mobile?: boolean;
   maxTurns?: number;
   maxUsd?: number;
   retestOf?: string;
   baseline?: boolean;
   approve?: (req: {
-    kind: "payment" | "safety_check";
+    kind: "payment";
     title: string;
     detail: string;
   }) => Promise<boolean>;

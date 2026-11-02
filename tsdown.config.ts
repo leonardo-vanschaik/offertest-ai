@@ -7,4 +7,5 @@ export default defineConfig({
   target: "node22",
   dts: true,
   clean: true,
+  hash: false, // stable file names, so CI can check that dist/ matches src/
 });

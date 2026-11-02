@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html-C6nIi5rL.mjs";
+import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -715,12 +715,11 @@ ${c.bold("Check options")}
   --headless            hide the browser (default when not in a terminal)
   --headful             show the browser even when not in a terminal
   --limit <n>           with --account: test at most n ads (default 5)
-  --confirm-safety-checks  ask before acknowledging Muse Wonder safety checks
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop a run above this model cost
   --out <dir>           run folders go here (default ./offertest-runs)
   --json                print result.json paths and verdicts as JSON
-  --yes                 answer yes to approval prompts (payment, safety checks, pause)
+  --yes                 answer yes to approval prompts (payment, pause)
 
 ${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved or blocked · 3 error · 4 usage
 ${c.bold("Env")}  META_API_KEY (Meta Model API) · META_ACCESS_TOKEN (Marketing API, ads_read) · META_AD_ACCOUNT_ID
@@ -828,7 +827,6 @@ async function main() {
 			headful: { type: "boolean" },
 			headless: { type: "boolean" },
 			limit: { type: "string" },
-			"confirm-safety-checks": { type: "boolean" },
 			"max-turns": { type: "string" },
 			"max-usd": { type: "string" },
 			out: {
@@ -915,7 +913,6 @@ async function main() {
 		acp: acpOptions(values),
 		headful: values.headful ?? (!values.headless && !values.json && !!process.stdout.isTTY),
 		retryHeadful: !values.headless && !!process.stdout.isTTY,
-		confirmSafetyChecks: values["confirm-safety-checks"],
 		mobile: values.mobile,
 		maxTurns: values["max-turns"] ? Number(values["max-turns"]) : void 0,
 		maxUsd: values["max-usd"] ? Number(values["max-usd"]) : void 0,
@@ -983,7 +980,7 @@ function printResult(r, report) {
 		const a = r.assertions.find((x) => x.id === v.assertionId);
 		const mark = v.status === "supported" ? c.green("✓") : v.status === "contradicted" ? c.red("✗") : c.yellow("?");
 		console.log(`  ${mark} ${a?.claim ?? v.assertionId}`);
-		console.log(c.dim(`      ad: "${v.adQuote}"${v.pageQuote ? `   funnel: "${v.pageQuote}"` : ""}`));
+		console.log(c.dim(`      ad: "${v.adQuote}"${v.pageQuote ? `   funnel: "${v.pageQuote.replace(/\s+/g, " ")}"` : ""}`));
 	}
 	if (r.fix) console.log(`\n  ${c.bold("Fix:")} ${r.fix.summary}${r.fix.steps.map((s) => `\n    - ${s}`).join("")}`);
 	console.log(`\n  Report: ${report}`);

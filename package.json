@@ -13,6 +13,7 @@
   "keywords": ["meta", "ads", "agent", "computer-use", "playwright", "muse", "funnel", "testing"],
   "scripts": {
     "build": "tsdown",
+    "prepack": "npm run build",
     "dev": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
