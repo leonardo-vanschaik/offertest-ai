@@ -10,12 +10,14 @@ OfferTest reads an ad, turns it into promises ("Code SAVE20 gives 20% off"), fol
 
 ## Setup (once)
 
+The `offertest` command comes from the OfferTest repo. In that folder, run `npm install && npm link` once; then `offertest` works from any folder. If the shell says `offertest: command not found`, ask the user to do this.
+
 ```bash
-npx offertest init        # guided: Meta Model API key, Ads Manager, browser (the user runs this in a terminal)
-npx offertest doctor      # checks the setup; prints the fix for anything wrong
+offertest init        # guided: Meta Model API key, Ads Manager, browser (the user runs this in a terminal)
+offertest doctor      # checks the setup; prints the fix for anything wrong
 ```
 
-If a command fails with a setup error, run `npx offertest doctor` and tell the user the fix it prints. `init` is interactive: ask the user to run it themselves (in Muse Code or Claude Code they can type `! npx offertest init`).
+If a command fails with a setup error, run `offertest doctor` and tell the user the fix it prints. `init` is interactive: ask the user to run it themselves (in Muse Code or Claude Code they can type `! offertest init`).
 
 Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (Ads Manager; `offertest init` lists the permissions), `META_AD_ACCOUNT_ID`.
 
@@ -23,13 +25,13 @@ Keys can also come from env: `META_API_KEY` (required), `META_ACCESS_TOKEN` (Ads
 
 | The user has | Run |
 |---|---|
-| Ads in Ads Manager, wants to check what is about to launch | `npx offertest check --account act_<id>` |
-| Live ads to audit | `npx offertest check --account act_<id> --live` |
-| One ad id | `npx offertest check --ad <ad id>` |
-| No ad id, only ad text and a URL | `npx offertest check --url <landing url> --headline "<headline>" --text "<primary text>" [--image <file>]` |
-| Not sure which ads exist | `npx offertest ads [--account act_<id>]` |
-| A discount code, and wants to know if AI shopping agents (Meta Muse, ChatGPT) can use it | `npx offertest agent-checkout --url <product url> --code <CODE>` (no keys, free, no order) |
-| Their own store with an ACP checkout, and wants an AI agent to really buy (test mode) | `npx offertest acp --acp-url <endpoint> --acp-key <key> --item <id> --code <CODE>` (no real money) |
+| Ads in Ads Manager, wants to check what is about to launch | `offertest check --account act_<id>` |
+| Live ads to audit | `offertest check --account act_<id> --live` |
+| One ad id | `offertest check --ad <ad id>` |
+| No ad id, only ad text and a URL | `offertest check --url <landing url> --headline "<headline>" --text "<primary text>" [--image <file>]` |
+| Not sure which ads exist | `offertest ads [--account act_<id>]` |
+| A discount code, and wants to know if AI shopping agents (Meta Muse, ChatGPT) can use it | `offertest agent-checkout --url <product url> --code <CODE>` (no keys, free, no order) |
+| Their own store with an ACP checkout, and wants an AI agent to really buy (test mode) | `offertest acp --acp-url <endpoint> --acp-key <key> --item <id> --code <CODE>` (no real money) |
 
 Add `--json` when you need to parse the output. Add `--mobile` to test as a phone in the Facebook in-app browser.
 

@@ -7,7 +7,7 @@ Shoppers now buy through AI agents such as Meta Muse, ChatGPT, and Gemini. Those
 Every Shopify store publishes a [UCP](https://ucp.dev) agent checkout at `/.well-known/ucp`. For every website ad, OfferTest also builds a cart there with the ad's codes and reads the real totals. A code that fails there fails the test, and the report quotes the store's message. This needs no keys, costs nothing, and never places an order. Try it on any Shopify store:
 
 ```
-$ npx offertest agent-checkout --url https://yourstore.com/products/ridge --code SAVE20
+$ offertest agent-checkout --url https://yourstore.com/products/ridge --code SAVE20
 Agent checkout cart (UCP: the channel AI shopping agents such as Meta Muse buy through)
 Item: Ridge trail shoe - Size 7 x1: $120.00
 Discount codes sent: SAVE20
@@ -25,7 +25,7 @@ Skip it with `--no-agent-checkout`.
 The [Agentic Commerce Protocol](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol) (ACP, by Stripe, OpenAI, and Meta) is the checkout API AI agents such as ChatGPT use to buy. The store owner gives the agent a key, so this runs on stores you own. OfferTest acts as the agent: it opens a checkout session with the ad's codes, reads which codes the store applied or rejected, and finishes a test purchase. It never uses real money: it uses the store's demo token, or a Stripe test-mode payment token (set `STRIPE_TEST_KEY` to your store's `sk_test_` key).
 
 ```
-$ npx offertest acp --acp-url https://yourstore.com/api/acp --acp-key <key> --item ridge-trail-shoe --code SAVE20
+$ offertest acp --acp-url https://yourstore.com/api/acp --acp-key <key> --item ridge-trail-shoe --code SAVE20
 Agent checkout session (ACP: the checkout API AI agents such as ChatGPT buy through)
 Item: Ridge trail shoe - Size 7 x1: $120.00
 Discount codes sent: SAVE20

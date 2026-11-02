@@ -1,6 +1,9 @@
 # CLI reference
 
+Run these in the OfferTest folder with `npx offertest ...`, or from any folder after `npm link`.
+
 ```
+offertest demo                               replay a real recorded run: no key, no cost
 offertest check --ad <ad id>                 test one ad from Meta Ads Manager
 offertest check --account <act_123>          test every ad about to launch (paused or in review)
 offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
@@ -34,8 +37,20 @@ offertest install-browser                    download Chromium if you have no Ch
 | `--max-turns <n>` | Agent turns per funnel (default 25) |
 | `--max-usd <n>` | Stop a run above this model cost |
 | `--out <dir>` | Where run folders go (default `./offertest-runs`) |
+| `--retest-of <run id>` | Mark this run as the re-test of an earlier run, after a fix |
 | `--json` | Print result paths and verdicts as JSON |
 | `--yes` | Answer yes to approval prompts (payment, pause) |
+
+## Demo options
+
+| Option | What it does |
+|---|---|
+| `--fast` | Print the recorded runs at once, without the pauses between steps |
+| `--no-open` | Do not open the first report in the browser |
+| `--json` | Print the report paths and results as JSON |
+| `--out <dir>` | Where the replayed run folders go (default `./offertest-runs/demo`) |
+
+The recordings are in [examples/recordings](../examples/recordings). The demo checks each file against its SHA-256 and runs the quote check again before it writes a report.
 
 ## Exit codes
 

@@ -6,9 +6,11 @@ The extension only reads `act` and `selected_ad_ids` from the Ads Manager URL. I
 
 ## 1. Start the local server
 
+In the OfferTest folder, run `npm install && npm link` once, so `offertest` works from any folder.
+
 ```sh
-npx offertest init     # once: saves META_API_KEY and META_ACCESS_TOKEN (permissions: see ../docs/SETUP.md)
-npx offertest serve    # keep this terminal open; listens on http://127.0.0.1:7777
+offertest init     # once: saves META_API_KEY and META_ACCESS_TOKEN (permissions: see ../docs/SETUP.md)
+offertest serve    # keep this terminal open; listens on http://127.0.0.1:7777
 ```
 
 ## 2. Load the extension

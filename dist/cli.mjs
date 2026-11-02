@@ -592,8 +592,9 @@ async function init() {
 	const browser = await browserReady();
 	if (browser) ok(`Using ${browser}.`);
 	else if (await yes("No browser found. Download Chromium now? (about 150 MB)")) if (installChromium()) ok("Chromium installed.");
-	else bad("The download failed. Install Google Chrome, or run `npx offertest install-browser` later.");
+	else bad("The download failed. Install Google Chrome, or run `offertest install-browser` later.");
 	console.log(`\n${c$1.bold("Step 4 of 4: Use it from your coding agent")}  ${c$1.dim("optional")}`);
+	if (spawnSync("offertest", ["--version"], { stdio: "ignore" }).status !== 0) info(`Agents run \`offertest\` from any folder: run \`npm link\` once in ${PKG_ROOT}.`);
 	const found = SKILL_TARGETS.filter((t) => t.detect());
 	if (!found.length) info("No Muse Code, Claude Code, or Codex found. You can install the skill later: see docs/SETUP.md.");
 	for (const t of found) {
@@ -660,7 +661,7 @@ async function doctor() {
 	}
 	const browser = await browserReady();
 	if (browser) ok(`Browser: ${browser}`);
-	else fail("No browser found", "install Google Chrome, or run `npx offertest install-browser`");
+	else fail("No browser found", "install Google Chrome, or run `offertest install-browser`");
 	const skills = SKILL_TARGETS.filter((t) => t.detect());
 	for (const t of skills) (t.installed() ? ok : warn)(`${t.name}: skill ${t.installed() ? "installed" : "not installed (optional): run `offertest init` (step 4)"}`);
 	console.log(problems ? `\n${c$1.red(`${problems} problem(s).`)} Fix them, then run \`offertest doctor\` again.\n` : `\n${c$1.green("All good.")}\n`);
@@ -835,7 +836,7 @@ const EXIT = {
 const HELP = `${c.bold("offertest")} ${VERSION}: an AI agent follows your Meta ad's funnel like a customer and checks the offer holds.
 
 ${c.bold("Usage")}
-  offertest demo                               replay a real recorded run: no key, no cost (start here)
+  offertest demo [--fast] [--no-open]          replay real recorded runs: no key, no cost (start here)
   offertest check --ad <ad id>                 test one ad from Meta Ads Manager
   offertest check --account <act_123>          test every ad about to launch (paused / in review)
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
@@ -1017,7 +1018,7 @@ async function main() {
 	loadEnv();
 	if (!process.env.META_API_KEY) {
 		console.error(c.red("OfferTest is not set up yet: no Meta Model API key."));
-		console.error(`Run ${c.bold("npx offertest init")}: a 3-minute guided setup that opens the right pages and tests each key.`);
+		console.error(`Run ${c.bold("offertest init")}: a 3-minute guided setup that opens the right pages and tests each key.`);
 		process.exit(EXIT.error);
 	}
 	const tty = process.stdin.isTTY && !values.json;

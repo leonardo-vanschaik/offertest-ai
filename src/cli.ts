@@ -20,7 +20,7 @@ const EXIT: Record<Overall | "error" | "usage", number> = { pass: 0, fail: 1, un
 const HELP = `${c.bold("offertest")} ${VERSION}: an AI agent follows your Meta ad's funnel like a customer and checks the offer holds.
 
 ${c.bold("Usage")}
-  offertest demo                               replay a real recorded run: no key, no cost (start here)
+  offertest demo [--fast] [--no-open]          replay real recorded runs: no key, no cost (start here)
   offertest check --ad <ad id>                 test one ad from Meta Ads Manager
   offertest check --account <act_123>          test every ad about to launch (paused / in review)
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
@@ -174,7 +174,7 @@ async function main() {
   loadEnv();
   if (!process.env.META_API_KEY) {
     console.error(c.red("OfferTest is not set up yet: no Meta Model API key."));
-    console.error(`Run ${c.bold("npx offertest init")}: a 3-minute guided setup that opens the right pages and tests each key.`);
+    console.error(`Run ${c.bold("offertest init")}: a 3-minute guided setup that opens the right pages and tests each key.`);
     process.exit(EXIT.error);
   }
   const tty = process.stdin.isTTY && !values.json;

@@ -1,11 +1,14 @@
 # Set up OfferTest
 
-**Fastest way:** run the guided setup. It opens each page for you, tests every key as you paste it, and tells you exactly what to fix.
+**Fastest way:** run the guided setup in the OfferTest folder. It opens each page for you, tests every key as you paste it, and tells you exactly what to fix.
 
 ```bash
+npm install
 npx offertest init
 npx offertest doctor     # check everything, any time
 ```
+
+To use `offertest` from any folder (your coding agent and the Chrome extension need this), run `npm link` once in the OfferTest folder. The rest of this page writes `offertest` for either form.
 
 This page explains the same steps, if you prefer to read first.
 
@@ -57,7 +60,7 @@ Explorer tokens expire after about an hour. `offertest init` notices this and of
 OfferTest uses Google Chrome if you have it, otherwise Microsoft Edge, otherwise Playwright's Chromium. If none is found, `offertest init` offers to download Chromium (about 150 MB), or run:
 
 ```bash
-npx offertest install-browser
+offertest install-browser
 ```
 
 ## 4. Use it from your coding agent (optional)
@@ -93,5 +96,5 @@ Adds a **Test offer** button inside Ads Manager. See [extension/README.md](../ex
 | Report: "Instant Form: Meta did not return the form", or doctor: "No pages_..." | If the error names a permission: run `offertest init`, answer **n** at "Keep this token?", and generate a new token with `pages_show_list`, `pages_read_engagement`, `pages_manage_ads`. Other errors (expired token, deleted form) are shown in the report |
 | No paused or in-review ads found | By default OfferTest tests ads that are paused, in a paused campaign or ad set, in review, or with issues. Add `--live` for active ads |
 | This token cannot see ad account act_... | Use the Facebook profile that has access to that ad account, or pick another account in `offertest init` |
-| No browser found | Install Google Chrome, or `npx offertest install-browser` |
+| No browser found | Install Google Chrome, or `offertest install-browser` |
 | Blocked: bot check | The site blocks automated browsers. Run with `--headful`, or test a staging copy |

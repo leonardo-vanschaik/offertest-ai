@@ -55,48 +55,59 @@ It works on any funnel a Meta ad can send people to: a store, a landing page, a 
 
 ## Quickstart
 
-Needs Node 22+ and a [Meta Model API key](docs/SETUP.md#1-meta-model-api-key-required-1-minute).
+**See it work in one minute, with no key.** Needs Node 22.12 or later.
 
 ```bash
-npx offertest init      # guided setup, about 3 minutes: API key, Ads Manager, browser, agent skill
-npx offertest check     # test every ad about to launch in your ad account
+git clone https://github.com/leonardo-vanschaik/offertest-ai.git
+cd offertest-ai
+npm install
+npx offertest demo
 ```
 
-No ad account connected yet? Give it the ad's link and words:
+The demo replays two real runs that OfferTest recorded with Meta's models on our sample store: the ad fails because the code SAVE20 expired, and after the fix the re-test passes with a test-mode purchase. It checks every recorded file against its SHA-256, runs the quote check again on the recorded pages, and opens the report. No key, no cost. The recordings and how they were made: [examples/recordings](examples/recordings).
+
+**Run it live on the sample store.** Needs a [Meta Model API key](docs/SETUP.md#1-meta-model-api-key-required-1-minute).
 
 ```bash
-npx offertest check --url https://yourstore.com/products/x --headline "20% off" --text "Use code SAVE20"
+npx offertest init                                        # guided setup: API key, browser, agent skill
+(cd examples/demo-store && npm install && npm run dev)    # in a second terminal: the store on :3000
+curl -X POST localhost:3000/api/store/scenario -H 'content-type: application/json' -d '{"scenario":"code_expired"}'
+npx offertest check --url http://localhost:3000/store/products/ridge-trail-shoe \
+  --headline "20% off the Ridge." --text "Use code SAVE20 at checkout. Free shipping."
 ```
 
-Try it now on our sample store, where the code SAVE20 has expired. This is real output:
+This is the first recorded run, as the terminal showed it (steps 2 to 9 select each size, then add one pair to the cart):
 
-<!-- Re-run this example on demo.offertest.ai after the sample store is deployed. -->
 ```
-$ npx offertest check --url https://demo.offertest.ai/store/products/ridge-trail-shoe \
-    --headline "20% off the Ridge." --text "Use code SAVE20 at checkout. Free shipping."
-
 ● Reading the ad's promises (Muse Spark)
 ● Following the funnel like a customer (Muse Wonder · computer use)
-   1 Open demo.offertest.ai/store/products/ridge-trail-shoe
-   ...                                   checks sizes 7 to 12, adds size 9 to the cart
-  10 Click (936, 345) · Type "SAVE20"
-  11 Click (1114, 345)                   Apply
-  12 Click (987, 634)                    Checkout
+   1 Open localhost:3000/store/products/ridge-trail-shoe
+   ...
+  10 Click (936, 345)
+  11 Type "SAVE20"
+  12 Click (1115, 346)
+  13 Click (987, 637)
 ● Judging each promise against word-for-word evidence (Muse Wonder + quote check)
 ● Proposing one fix (Muse Wonder)
 
-FAIL  Followed the funnel to demo.offertest.ai/store/checkout  $0.67
-  ✗ Code SAVE20 gives 20% off the Ridge
-      ad: "20% off the Ridge"   funnel: "This code has expired."
-  ✓ Free shipping is available
-      ad: "Free shipping"   funnel: "Shipping: $0.00"
+FAIL  Followed the funnel to localhost:3000/store/checkout  $0.74
+  ✗ Code SAVE20 gives 20% off the Ridge.
+      ad: "20% off the Ridge."   funnel: "This code has expired."
+  ✓ Free shipping is offered.
+      ad: "Free shipping."   funnel: "Shipping: $0.00"
 
-  Fix: Reactivate SAVE20 with no expiry so it gives 20% off the Ridge at checkout.
-    - Store Admin > Discounts > open SAVE20.
-    - Set Status to Active and remove the expiry/end date.
-    - Test checkout: $120 Ridge with SAVE20 shows a $24 discount.
+  Fix: Reactivate SAVE20 so it again gives 20% off the Ridge at checkout.
+    - Store admin > Discounts: open the SAVE20 coupon.
+    - SAVE20 > Active dates / Status: set to Active and extend the end date beyond today, 2026-11-02.
+    - SAVE20 > Value: confirm 20% off applies to the Ridge Trail Shoe, then save.
+    - Check: add the Ridge ($120) to cart, apply SAVE20 at checkout, and verify the $24.00 discount appears with no expired-code message.
+```
 
-  Report: offertest-runs/20261031004532-8d40c3/report.html
+**Check your own ads.**
+
+```bash
+npx offertest check                    # every ad about to launch in your ad account
+npx offertest check --url https://yourstore.com/products/x --headline "20% off" --text "Use code SAVE20"
 ```
 
 Each check writes a folder with a one-file `report.html`, a `result.json` for scripts and agents, a step-by-step `log.jsonl`, and every screenshot. `offertest doctor` checks your setup and prints the fix for anything wrong. Full setup, with every Meta permission and what it is for: [docs/SETUP.md](docs/SETUP.md).
@@ -173,9 +184,12 @@ jobs:
   offertest:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with: { repository: leonardo-vanschaik/offertest-ai, path: offertest }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: npx offertest check --account ${{ vars.META_AD_ACCOUNT_ID }} --live --json
+      - run: npm ci --prefix offertest
+      - run: node offertest/dist/cli.mjs check --account ${{ vars.META_AD_ACCOUNT_ID }} --live --json
         env:
           META_API_KEY: ${{ secrets.META_API_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
@@ -184,7 +198,7 @@ jobs:
         with: { name: offertest-reports, path: offertest-runs }
 ```
 
-**From a coding agent.** The same skill works in Muse Code, Claude Code, and Codex:
+**From an agent.** Muse, or any agent, uses OfferTest through the skill. The CLI is the same engine. The skill works in Muse Code, Claude Code, and Codex. Run `npm link` once in this folder, so the agent can run `offertest` from any folder, then install the skill:
 
 ```bash
 muse skills install ./skills/offertest            # Muse Code

@@ -640,7 +640,7 @@ async function launch(headless) {
 	} catch (err) {
 		last = err;
 	}
-	throw new Error(`No browser found. Install Chrome, or run: npx offertest install-browser\n${String(last).split("\n")[0]}`);
+	throw new Error(`No browser found. Install Chrome, or run: offertest install-browser\n${String(last).split("\n")[0]}`);
 }
 function describeAction(a) {
 	switch (a.type) {
@@ -2000,7 +2000,7 @@ const VERSION = () => process.env.META_GRAPH_VERSION ?? "v24.0";
 function token() {
 	loadEnv();
 	const t = process.env.META_ACCESS_TOKEN;
-	if (!t) throw new Error("Ads Manager is not connected. Run `npx offertest init` (step 2 connects Ads Manager in about 3 minutes).");
+	if (!t) throw new Error("Ads Manager is not connected. Run `offertest init` (step 2 connects Ads Manager in about 3 minutes).");
 	return t;
 }
 function accountId(id) {
@@ -2023,7 +2023,7 @@ async function graph(path$1, params = {}, method = "GET", tok) {
 	const json = await res.json().catch(() => ({}));
 	if (!res.ok || json.error) {
 		const msg = json.error?.message ?? res.statusText;
-		const hint = json.error?.code === 190 ? " Your Ads Manager token expired or was revoked: run `npx offertest init` to connect again." : json.error?.code === 200 || json.error?.code === 10 ? " The token lacks a permission (ads_read, or ads_management to pause): run `npx offertest doctor`." : "";
+		const hint = json.error?.code === 190 ? " Your Ads Manager token expired or was revoked: run `offertest init` to connect again." : json.error?.code === 200 || json.error?.code === 10 ? " The token lacks a permission (ads_read, or ads_management to pause): run `offertest doctor`." : "";
 		throw new Error(`Meta Graph API: ${msg}.${hint}`);
 	}
 	return json;

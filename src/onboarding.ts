@@ -338,10 +338,13 @@ export async function init() {
   if (browser) ok(`Using ${browser}.`);
   else if (await yes("No browser found. Download Chromium now? (about 150 MB)")) {
     if (installChromium()) ok("Chromium installed.");
-    else bad("The download failed. Install Google Chrome, or run `npx offertest install-browser` later.");
+    else bad("The download failed. Install Google Chrome, or run `offertest install-browser` later.");
   }
 
   console.log(`\n${c.bold("Step 4 of 4: Use it from your coding agent")}  ${c.dim("optional")}`);
+  // The skill runs `offertest` in the user's own project, so the command must be on PATH.
+  if (spawnSync("offertest", ["--version"], { stdio: "ignore" }).status !== 0)
+    info(`Agents run \`offertest\` from any folder: run \`npm link\` once in ${PKG_ROOT}.`);
   const found = SKILL_TARGETS.filter((t) => t.detect());
   if (!found.length) info("No Muse Code, Claude Code, or Codex found. You can install the skill later: see docs/SETUP.md.");
   for (const t of found) {
@@ -419,7 +422,7 @@ export async function doctor(): Promise<number> {
 
   const browser = await browserReady();
   if (browser) ok(`Browser: ${browser}`);
-  else fail("No browser found", "install Google Chrome, or run `npx offertest install-browser`");
+  else fail("No browser found", "install Google Chrome, or run `offertest install-browser`");
 
   const skills = SKILL_TARGETS.filter((t) => t.detect());
   for (const t of skills) (t.installed() ? ok : warn)(`${t.name}: skill ${t.installed() ? "installed" : "not installed (optional): run `offertest init` (step 4)"}`);

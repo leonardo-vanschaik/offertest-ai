@@ -66,7 +66,7 @@ async function checkHealth() {
   if (state.online && !state.health.hasAdsToken) missing.push("<b>META_ACCESS_TOKEN</b> (ads_read) to read ads from Ads Manager");
   $("keys").hidden = !missing.length;
   if (missing.length)
-    $("keys").innerHTML = `Missing keys on the server:<ul>${missing.map((m) => `<li>${m}</li>`).join("")}</ul><div style="margin-top:6px">Run <code>npx offertest init</code>, then restart <code>offertest serve</code>.</div>`;
+    $("keys").innerHTML = `Missing keys on the server:<ul>${missing.map((m) => `<li>${m}</li>`).join("")}</ul><div style="margin-top:6px">Run <code>offertest init</code>, then restart <code>offertest serve</code>.</div>`;
   renderSelection();
   if (state.online && !restored) {
     restored = true;
@@ -75,7 +75,7 @@ async function checkHealth() {
 }
 
 $("copy").addEventListener("click", async () => {
-  await navigator.clipboard.writeText("npx offertest serve").catch(() => {});
+  await navigator.clipboard.writeText("offertest serve").catch(() => {});
   const b = $("copy");
   b.textContent = "Copied";
   b.classList.add("done");
@@ -306,7 +306,7 @@ function resultHtml(card) {
 function errorHtml(t) {
   const msg = t.error || t.result?.error || "The test stopped.";
   const hint = /META_API_KEY|META_ACCESS_TOKEN/.test(msg)
-    ? "<br><br>Run <code>npx offertest init</code> to save your keys, then restart <code>offertest serve</code>."
+    ? "<br><br>Run <code>offertest init</code> to save your keys, then restart <code>offertest serve</code>."
     : "";
   return `<div class="verdict error"><div class="big">ERROR</div><div class="meta"><b>The test could not finish</b><span>No verdict for this ad</span></div></div>
     <div class="err">${esc(msg)}${hint}</div>

@@ -417,7 +417,7 @@ async function launch(headless: boolean): Promise<Browser> {
       last = err;
     }
   }
-  throw new Error(`No browser found. Install Chrome, or run: npx offertest install-browser\n${String(last).split("\n")[0]}`);
+  throw new Error(`No browser found. Install Chrome, or run: offertest install-browser\n${String(last).split("\n")[0]}`);
 }
 
 export function describeAction(a: ComputerAction): string {
