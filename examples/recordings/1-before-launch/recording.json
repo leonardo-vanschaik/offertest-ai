@@ -2,23 +2,21 @@
   "intro": "1 of 2. The ad, before launch. In the sample store, the code SAVE20 expired yesterday.",
   "command": "offertest check --url http://localhost:3000/store/products/ridge-trail-shoe --headline \"20% off the Ridge.\" --text \"Use code SAVE20 at checkout. Free shipping.\" --headless",
   "store": "examples/demo-store on localhost:3000, scenario code_expired",
-  "recordedAt": "2026-11-02T20:23:49.071Z",
-  "commit": "13b1222901d336d0967c497989b2a23c4f275f0e",
+  "recordedAt": "2026-11-02T20:47:39.679Z",
+  "commit": "1cf1b70746dc3502aa72f8528e78218069537135",
   "files": {
-    "log.jsonl": "a1b16cc6abe18d0072ccadf595620d92e47308f73cd0f6ad860d079baae47f3e",
+    "log.jsonl": "a73a8a330db2d902a4c9e28d426a2618f8842eb6616cb62c68cd44dbb54a0ba7",
     "pages/001.txt": "f1581e9e2c15c267153a6613ea3bea4cdbc1da45e845f885d03f32e2d1502fbb",
     "pages/002.txt": "a9ebc3118081a648943550da5af0ac442f20a428d36b646aa58cefd97e470a07",
     "pages/003.txt": "9e7dc6c6a046e6010fbf228e331aa85432eec0fbdae77c5db225a46501a69e66",
-    "pages/004.txt": "322c1c4aff02d3711b6625bdf7df3786ada073650fad7a4ae66c7a95aaf8938a",
-    "pages/005.txt": "edc8bd8f987ab66b00a02a2c37d259ef79d96665c4a31fd138246a7d134f9803",
-    "pages/006.txt": "9ddb73eb754ab6cdabb2e40dc413cd458ac8cf3e98007ba5c72a457c77ba6053",
-    "pages/008.txt": "2b902cb066d99c2965dccfd1486e1bbaf1d383fd3b91fd245ec5cfa39e4bac58",
-    "result.json": "01dfd80ddb3f1028a37d011768096afbc1f5572c6a610aa40c23fe1bf3cce566",
+    "pages/004.txt": "edc8bd8f987ab66b00a02a2c37d259ef79d96665c4a31fd138246a7d134f9803",
+    "pages/005.txt": "9ddb73eb754ab6cdabb2e40dc413cd458ac8cf3e98007ba5c72a457c77ba6053",
+    "pages/007.txt": "2b902cb066d99c2965dccfd1486e1bbaf1d383fd3b91fd245ec5cfa39e4bac58",
+    "result.json": "1e320a8cc5a9cf531e1327130dc702caf89d16c07cce0ec91025db266eb4de73",
     "shots/001.jpg": "4dbe173a397f8955c80de46c2bd800a7a67826c4a7183d38db75861b27f3f88f",
     "shots/002.jpg": "85113055c84bfda4cf779f59171d8090ed12dbe0e7cfc9ef87be8a8fe404ad59",
     "shots/003.jpg": "8b4274bed8788ec663e32892fd9974b291b1559a05d019b0c36abd095e142a7b",
-    "shots/004.jpg": "ba3a30b4b45ebb6ed3a471851468cc48b33d5a75b983461dec82aaed66ce54a8",
-    "shots/005.jpg": "c66b705c29031742d67adf2e31a4d7276bf62798eb29e1b5aa5fa2393145595d",
-    "shots/006.jpg": "331a4089125aff133d31992c3750f102090ca543c86c60801d1a57f781791811"
+    "shots/004.jpg": "70eab4c22b3a4c42ce18a283265b684b7ab576e4fa1fd203ae2187b93bf48e4a",
+    "shots/005.jpg": "331a4089125aff133d31992c3750f102090ca543c86c60801d1a57f781791811"
   }
 }

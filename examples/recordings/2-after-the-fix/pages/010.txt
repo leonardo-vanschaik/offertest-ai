@@ -4,25 +4,14 @@ Shop all
 Footwear
 Outerwear
 Packs
-Cart (1)
+Cart (0)
+Thank you! Order AT-10427 is confirmed.
 
-Test mode. Use card 4242 4242 4242 4242. No real money moves.
+We sent a receipt to t***@offertest.ai. Test mode order: no real money moved.
 
-Checkout
-Back to cart
-Contact
-Email
-Shipping
-Full name
-Address
-Payment
-Card number
-Expiry (MM/YY)
-CVC
-Place order
-Order summary
+Items
 Ridge trail shoe
-Size 12 · Qty 1
+Size 9 · Qty 1 · $120.00 each
 $120.00
 
 SAVE20 applied: -$24.00
@@ -35,6 +24,24 @@ Shipping
 Free
 Total
 $96.00
+Order number
+
+AT-10427
+
+Ship to
+
+Test S.
+Not kept (demo store)
+
+Payment
+
+Card ending in 4242 (test mode)
+
+Placed
+
+Nov 2, 2026, 3:50 PM
+
+Continue shopping
 Alder Trail Co.
 
 Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
@@ -67,48 +74,34 @@ Free First Thru-Hike Guide
       - /url: /store/products/summit-rain-jacket
     - link "Packs":
       - /url: /store/products/switchback-daypack
-    - link "Cart, 1 item":
+    - link "Cart, 0 items":
       - /url: /store/cart
-      - text: Cart (1)
+      - text: Cart (0)
 - main:
-  - paragraph: Test mode. Use card 4242 4242 4242 4242. No real money moves.
-  - heading "Checkout" [level=1]
-  - link "Back to cart":
-    - /url: /store/cart
-  - heading "Contact" [level=2]
-  - text: Email
-  - textbox "Email":
-    - /placeholder: you@example.com
-  - heading "Shipping" [level=2]
-  - text: Full name
-  - textbox "Full name":
-    - /placeholder: First and last name
-  - text: Address
-  - textbox "Address":
-    - /placeholder: Street, city, state, ZIP
-  - heading "Payment" [level=2]
-  - text: Card number
-  - textbox "Card number"
-  - text: Expiry (MM/YY)
-  - textbox "Expiry (MM/YY)":
-    - /placeholder: MM/YY
-  - text: CVC
-  - textbox "CVC":
-    - /placeholder: 3 digits
-  - button "Place order"
-  - complementary:
-    - heading "Order summary" [level=2]
-    - list:
-      - listitem: Ridge trail shoe Size 12 · Qty 1 $120.00
-    - paragraph: "SAVE20 applied: -$24.00"
-    - term: Subtotal
-    - definition: $120.00
-    - term: Discount (SAVE20)
-    - definition: "-$24.00"
-    - term: Shipping
-    - definition: Free
-    - term: Total
-    - definition: $96.00
+  - heading "Thank you! Order AT-10427 is confirmed." [level=1]
+  - paragraph: "We sent a receipt to t***@offertest.ai. Test mode order: no real money moved."
+  - heading "Items" [level=2]
+  - list:
+    - listitem: Ridge trail shoe Size 9 · Qty 1 · $120.00 each $120.00
+  - paragraph: "SAVE20 applied: -$24.00"
+  - term: Subtotal
+  - definition: $120.00
+  - term: Discount (SAVE20)
+  - definition: "-$24.00"
+  - term: Shipping
+  - definition: Free
+  - term: Total
+  - definition: $96.00
+  - heading "Order number" [level=3]
+  - paragraph: AT-10427
+  - heading "Ship to" [level=3]
+  - paragraph: Test S. Not kept (demo store)
+  - heading "Payment" [level=3]
+  - paragraph: Card ending in 4242 (test mode)
+  - heading "Placed" [level=3]
+  - paragraph: Nov 2, 2026, 3:50 PM
+  - link "Continue shopping":
+    - /url: /store#shop
 - contentinfo:
   - text: Alder Trail Co.
   - paragraph: Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
@@ -138,4 +131,4 @@ Free First Thru-Hike Guide
       - link "Free First Thru-Hike Guide":
         - /url: /store/guides/first-thru-hike
   - text: © 2026 Alder Trail Co. All rights reserved.
-- alert: Checkout
+- alert: Thank you! Order AT-10427 is confirmed.

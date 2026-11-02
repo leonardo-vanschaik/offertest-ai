@@ -4,28 +4,37 @@ Shop all
 Footwear
 Outerwear
 Packs
-Cart (0)
-Home/Shop all/Ridge trail shoe
+Cart (1)
+
+Test mode. Use card 4242 4242 4242 4242. No real money moves.
+
+Checkout
+Back to cart
+Contact
+Email
+Shipping
+Full name
+Address
+Payment
+Card number
+Expiry (MM/YY)
+CVC
+Place order
+Order summary
 Ridge trail shoe
-
-Color: Slate
-
+Size 9 · Qty 1
 $120.00
 
-Free shipping on every order
+SAVE20 applied: -$24.00
 
-Size: 12
-7
-8
-9
-10
-11
-12
-Add to cart
-Details
-
-A light, grippy trail shoe for long days on mixed ground. Recycled mesh upper, cushioned midsole, and 4 mm lugs that hold on wet rock.
-
+Subtotal
+$120.00
+Discount (SAVE20)
+-$24.00
+Shipping
+Free
+Total
+$96.00
 Alder Trail Co.
 
 Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
@@ -58,33 +67,48 @@ Free First Thru-Hike Guide
       - /url: /store/products/summit-rain-jacket
     - link "Packs":
       - /url: /store/products/switchback-daypack
-    - link "Cart, 0 items":
+    - link "Cart, 1 item":
       - /url: /store/cart
-      - text: Cart (0)
+      - text: Cart (1)
 - main:
-  - navigation "Breadcrumb":
-    - link "Home":
-      - /url: /store
-    - text: /
-    - link "Shop all":
-      - /url: /store#shop
-    - text: /Ridge trail shoe
-  - img "Ridge trail shoe in Slate"
-  - heading "Ridge trail shoe" [level=1]
-  - paragraph: "Color: Slate"
-  - paragraph: $120.00
-  - paragraph: Free shipping on every order
-  - 'group "Size: 12"':
-    - text: "Size: 12"
-    - button "Size 7": "7"
-    - button "Size 8": "8"
-    - button "Size 9": "9"
-    - button "Size 10": "10"
-    - button "Size 11": "11"
-    - button "Size 12" [pressed]: "12"
-  - button "Add to cart"
-  - heading "Details" [level=2]
-  - paragraph: A light, grippy trail shoe for long days on mixed ground. Recycled mesh upper, cushioned midsole, and 4 mm lugs that hold on wet rock.
+  - paragraph: Test mode. Use card 4242 4242 4242 4242. No real money moves.
+  - heading "Checkout" [level=1]
+  - link "Back to cart":
+    - /url: /store/cart
+  - heading "Contact" [level=2]
+  - text: Email
+  - textbox "Email":
+    - /placeholder: you@example.com
+  - heading "Shipping" [level=2]
+  - text: Full name
+  - textbox "Full name":
+    - /placeholder: First and last name
+  - text: Address
+  - textbox "Address":
+    - /placeholder: Street, city, state, ZIP
+  - heading "Payment" [level=2]
+  - text: Card number
+  - textbox "Card number"
+  - text: Expiry (MM/YY)
+  - textbox "Expiry (MM/YY)":
+    - /placeholder: MM/YY
+  - text: CVC
+  - textbox "CVC":
+    - /placeholder: 3 digits
+  - button "Place order"
+  - complementary:
+    - heading "Order summary" [level=2]
+    - list:
+      - listitem: Ridge trail shoe Size 9 · Qty 1 $120.00
+    - paragraph: "SAVE20 applied: -$24.00"
+    - term: Subtotal
+    - definition: $120.00
+    - term: Discount (SAVE20)
+    - definition: "-$24.00"
+    - term: Shipping
+    - definition: Free
+    - term: Total
+    - definition: $96.00
 - contentinfo:
   - text: Alder Trail Co.
   - paragraph: Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
@@ -114,4 +138,4 @@ Free First Thru-Hike Guide
       - link "Free First Thru-Hike Guide":
         - /url: /store/guides/first-thru-hike
   - text: © 2026 Alder Trail Co. All rights reserved.
-- alert
+- alert: Checkout

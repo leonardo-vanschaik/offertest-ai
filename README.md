@@ -86,28 +86,28 @@ This is the first recorded run, as the terminal showed it:
 ● Reading the ad's promises (Muse Spark Open, open weights)
 ● Following the funnel like a customer (Muse Wonder · computer use)
    1 Open localhost:3000/store/products/ridge-trail-shoe
-   2 Click (897, 412)
+   2 Click (899, 412)
    3 Click (940, 494)
-   4 Click (936, 345) · Type "SAVE20"
-   5 Click (1115, 345)
-   6 Click (987, 635)
-   7 Agent's note
-   8 Built a cart in the store's agent checkout (UCP) with the ad's codes
+   4 Click (936, 346) · Type "SAVE20" · Click (1115, 346)
+   5 Click (987, 635)
+   6 Agent's note
+   7 Built a cart in the store's agent checkout (UCP) with the ad's codes
 ● Judging each promise against word-for-word evidence (Muse Wonder + quote check)
 ● Proposing one fix (Muse Wonder)
 
-FAIL  Followed the funnel to localhost:3000/store/checkout  $0.29
+FAIL  Followed the funnel to localhost:3000/store/checkout  $0.27
   Promises read by Muse Spark Open (open weights) on BaseTen, fp4
   ✗ Code SAVE20 gives 20% off the Ridge
       ad: "20% off the Ridge."   funnel: "This code has expired."
+  ✗ Code SAVE20 gives 20% off at checkout
+      ad: "Use code SAVE20 at checkout."   funnel: "This code has expired."
   ✓ Free shipping is available
-      ad: "Free shipping."   funnel: "Shipping Free"
+      ad: "Free shipping."   funnel: "Shipping: $0.00"
 
-  Fix: Reactivate SAVE20 in Discounts so it again gives 20% off the Ridge.
-    - Open Store Admin > Discounts > SAVE20.
-    - In SAVE20 > Active dates, clear the past end date, set Status to Active, and keep 20% off the Ridge.
-    - Save SAVE20.
-    - Check it: add the Ridge to cart, apply SAVE20 at checkout, and confirm a $24.00 discount on $120.00.
+  Fix: Remove the expiry date from SAVE20 so it again gives 20% off the Ridge.
+    - Store admin > Discounts > SAVE20: open the code and confirm Discount is set to 20%.
+    - Store admin > Discounts > SAVE20 > Active dates: clear the end date, set Status to Active, and save.
+    - Check at checkout: add the $120.00 Ridge, enter SAVE20, and confirm a $24.00 discount applies instead of 'This code has expired.'
 ```
 
 **Check your own ads.**
@@ -143,14 +143,14 @@ The promise step runs on **Muse Spark Open**, Meta's open-weight model, through 
 
 Every run records the model that read the promises, the provider, its quantization, and OpenRouter's request ids: in `result.json` (`openWeights`), in `log.jsonl`, and in the report. The two runs in `offertest demo` ran on Baseten at fp4.
 
-We scored both models on the 11 ads of the benchmark. The labels were fixed before the scored run.
+We scored both models on the 11 ads of the benchmark. A promise counts only when the model states its facts (a code and its amount, a trial length, "no credit card") in its own claim, not only in the ad quote it copies.
 
 | | Muse Spark Open | Muse Spark |
 |---|---|---|
 | Promises found | **14 / 14** | 14 / 14 |
-| Ad quotes found word for word | **16 / 16** | 14 / 14 |
-| Time for all 11 ads | **53 s** | 84 s |
-| Cost for all 11 ads | **$0.04** | $0.13 |
+| Ad quotes found word for word | **15 / 15** | 14 / 14 |
+| Time for all 11 ads | **29 s** | 77 s |
+| Cost for all 11 ads | **$0.03** | $0.12 |
 
 Results: [eval/results/promises.json](eval/results/promises.json). Run it: `npx tsx eval/promises.ts`.
 

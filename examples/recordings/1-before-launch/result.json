@@ -4,8 +4,8 @@
     "name": "offertest",
     "version": "0.1.0"
   },
-  "id": "20261102202349-f51bd5",
-  "createdAt": "2026-11-02T20:23:49.071Z",
+  "id": "20261102204739-63bdba",
+  "createdAt": "2026-11-02T20:47:39.679Z",
   "ad": {
     "source": "manual",
     "headline": "20% off the Ridge.",
@@ -30,6 +30,17 @@
     },
     {
       "id": "a2",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off at checkout",
+      "adQuote": "Use code SAVE20 at checkout.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge"
+      }
+    },
+    {
+      "id": "a3",
       "kind": "free_shipping",
       "claim": "Free shipping is available",
       "adQuote": "Free shipping.",
@@ -39,7 +50,7 @@
   "steps": [
     {
       "n": 1,
-      "at": "2026-11-02T20:23:53.003Z",
+      "at": "2026-11-02T20:47:45.063Z",
       "kind": "action",
       "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
       "url": "http://localhost:3000/store/products/ridge-trail-shoe",
@@ -47,28 +58,28 @@
     },
     {
       "n": 2,
-      "at": "2026-11-02T20:23:56.711Z",
+      "at": "2026-11-02T20:47:48.406Z",
       "kind": "action",
-      "summary": "Click (897, 412)",
+      "summary": "Click (899, 412)",
       "actions": [
         {
           "type": "click",
           "button": "left",
-          "x": 897,
+          "x": 899,
           "y": 412
         }
       ],
       "url": "http://localhost:3000/store/products/ridge-trail-shoe",
-      "modelText": "Testing your Ridge ad — checking the SAVE20 discount and free shipping on the $120 shoe.",
+      "modelText": "Testing the Ridge offer — adding the shoe to cart and checking SAVE20 and free shipping at checkout.",
       "click": {
-        "x": 897,
+        "x": 899,
         "y": 412
       },
       "screenshot": "shots/002.jpg"
     },
     {
       "n": 3,
-      "at": "2026-11-02T20:24:09.692Z",
+      "at": "2026-11-02T20:48:01.250Z",
       "kind": "action",
       "summary": "Click (940, 494)",
       "actions": [
@@ -88,51 +99,37 @@
     },
     {
       "n": 4,
-      "at": "2026-11-02T20:24:20.846Z",
+      "at": "2026-11-02T20:48:14.335Z",
       "kind": "action",
-      "summary": "Click (936, 345) · Type \"SAVE20\"",
+      "summary": "Click (936, 346) · Type \"SAVE20\" · Click (1115, 346)",
       "actions": [
         {
           "type": "click",
           "button": "left",
           "x": 936,
-          "y": 345
+          "y": 346
         },
         {
           "type": "type",
           "text": "SAVE20"
-        }
-      ],
-      "url": "http://localhost:3000/store/cart",
-      "click": {
-        "x": 936,
-        "y": 345
-      },
-      "screenshot": "shots/004.jpg"
-    },
-    {
-      "n": 5,
-      "at": "2026-11-02T20:24:30.327Z",
-      "kind": "action",
-      "summary": "Click (1115, 345)",
-      "actions": [
+        },
         {
           "type": "click",
           "button": "left",
           "x": 1115,
-          "y": 345
+          "y": 346
         }
       ],
       "url": "http://localhost:3000/store/cart",
       "click": {
         "x": 1115,
-        "y": 345
+        "y": 346
       },
-      "screenshot": "shots/005.jpg"
+      "screenshot": "shots/004.jpg"
     },
     {
-      "n": 6,
-      "at": "2026-11-02T20:24:42.823Z",
+      "n": 5,
+      "at": "2026-11-02T20:48:23.948Z",
       "kind": "action",
       "summary": "Click (987, 635)",
       "actions": [
@@ -144,23 +141,23 @@
         }
       ],
       "url": "http://localhost:3000/store/checkout",
-      "modelText": "The SAVE20 code came back expired with $0 off — now I'll verify free shipping through checkout.",
+      "modelText": "SAVE20 was rejected as expired, leaving the total at $120. I'll proceed to checkout to verify the free shipping there.",
       "click": {
         "x": 987,
         "y": 635
       },
-      "screenshot": "shots/006.jpg"
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T20:48:33.629Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked Ridge trail shoe ($120.00, Slate, Size 9 selected and added to cart). Free shipping confirmed: banner/product page says 'Free shipping on every order', cart and checkout show Shipping: Free. Entered code SAVE20 exactly at cart and clicked Apply: message 'This code has expired.' Discount stayed $0.00, Subtotal $120.00, Total $120.00. Same expired message and totals shown at checkout payment step (no 20% discount applied; expected discounted total would be $96). Did not enter payment details."
     },
     {
       "n": 7,
-      "at": "2026-11-02T20:25:39.202Z",
-      "kind": "model",
-      "summary": "Agent's note",
-      "modelText": "Checked Ridge trail shoe (Slate, size 9, $120.00) — added 1 to cart. a1 discount FAIL: entered SAVE20 exactly as advertised and clicked Apply; site showed 'This code has expired.', Discount $0.00, Total remained $120.00 in both cart and checkout. a2 free shipping PASS: product page, cart, and checkout all showed 'Free shipping on every order' / Shipping: Free, with Total $120.00 (Subtotal $120.00, Discount $0.00, Shipping Free). Stopped at payment step without entering card details."
-    },
-    {
-      "n": 8,
-      "at": "2026-11-02T20:25:39.306Z",
+      "at": "2026-11-02T20:48:33.741Z",
       "kind": "source",
       "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
       "url": "ucp://localhost:3000/cart"
@@ -172,8 +169,8 @@
       "status": "contradicted",
       "adQuote": "20% off the Ridge.",
       "pageQuote": "This code has expired.",
-      "evidenceStep": 5,
-      "reason": "Code SAVE20 was rejected as expired in the cart, leaving a $0.00 discount instead of the promised 20% ($24.00) off the $120.00 Ridge.",
+      "evidenceStep": 4,
+      "reason": "SAVE20 was entered for the $120.00 Ridge in the cart, but it expired and gave $0.00 discount, not the promised 20% ($24.00).",
       "quoteCheck": {
         "adQuoteFound": true,
         "pageQuoteFound": true
@@ -181,11 +178,23 @@
     },
     {
       "assertionId": "a2",
+      "status": "contradicted",
+      "adQuote": "Use code SAVE20 at checkout.",
+      "pageQuote": "This code has expired.",
+      "evidenceStep": 4,
+      "reason": "SAVE20 was entered for the $120.00 Ridge in the cart, but it expired and gave $0.00 discount, not the promised 20% ($24.00).",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a3",
       "status": "supported",
       "adQuote": "Free shipping.",
-      "pageQuote": "Shipping\nFree",
-      "evidenceStep": 6,
-      "reason": "The checkout order summary for the tested Ridge order shows shipping as Free, i.e. $0 shipping.",
+      "pageQuote": "Shipping: $0.00",
+      "evidenceStep": 7,
+      "reason": "The tested Ridge order shows $0.00 shipping in agent checkout, and the web cart also shows Shipping: Free.",
       "quoteCheck": {
         "adQuoteFound": true,
         "pageQuoteFound": true
@@ -199,10 +208,10 @@
     "product boxes": "sam-3.1"
   },
   "usage": {
-    "inputTokens": 44965,
-    "outputTokens": 5667,
-    "images": 8,
-    "usd": 0.28590475000000004
+    "inputTokens": 34765,
+    "outputTokens": 7150,
+    "images": 7,
+    "usd": 0.27111075
   },
   "openWeights": {
     "job": "ad to promises",
@@ -211,17 +220,33 @@
     "provider": "BaseTen",
     "quantization": "fp4",
     "requests": [
-      "gen-1793651029-768ALX14RNS6k9CYjfLg"
+      {
+        "id": "gen-1793652459-vJO3qAoFsrvMMFSx6N13",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 687,
+        "outputTokens": 848,
+        "usd": 0.00375875,
+        "accepted": true
+      }
     ],
-    "calls": 1,
-    "ms": 2485,
+    "ms": 3962,
     "inputTokens": 687,
-    "outputTokens": 616,
-    "usd": 0.00277275
+    "outputTokens": 848,
+    "usd": 0.00375875
   },
   "sam": {
     "screenshot": "shots/001.jpg",
     "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
       {
         "label": "button",
         "left": 1066,
@@ -245,14 +270,13 @@
   "overall": "fail",
   "fix": {
     "target": "funnel",
-    "summary": "Reactivate SAVE20 in Discounts so it again gives 20% off the Ridge.",
-    "rationale": "The cart rejected SAVE20 as expired, giving $0.00 instead of the promised $24.00 off the $120.00 Ridge, so the expired code is the failure.",
+    "summary": "Remove the expiry date from SAVE20 so it again gives 20% off the Ridge.",
+    "rationale": "The ad states the intended offer, but checkout rejects SAVE20 as expired and gives $0.00 on the $120.00 Ridge instead of the promised $24.00, so the discount code is what is wrong.",
     "steps": [
-      "Open Store Admin > Discounts > SAVE20.",
-      "In SAVE20 > Active dates, clear the past end date, set Status to Active, and keep 20% off the Ridge.",
-      "Save SAVE20.",
-      "Check it: add the Ridge to cart, apply SAVE20 at checkout, and confirm a $24.00 discount on $120.00."
+      "Store admin > Discounts > SAVE20: open the code and confirm Discount is set to 20%.",
+      "Store admin > Discounts > SAVE20 > Active dates: clear the end date, set Status to Active, and save.",
+      "Check at checkout: add the $120.00 Ridge, enter SAVE20, and confirm a $24.00 discount applies instead of 'This code has expired.'"
     ]
   },
-  "finishedAt": "2026-11-02T20:26:09.341Z"
+  "finishedAt": "2026-11-02T20:49:12.474Z"
 }

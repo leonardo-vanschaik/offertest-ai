@@ -21,6 +21,8 @@ Remove
 Order summary
 Discount code
 Apply
+This code has expired.
+Remove code
 Subtotal
 $120.00
 Discount
@@ -89,6 +91,9 @@ Free First Thru-Hike Guide
       - /placeholder: Enter code
       - text: SAVE20
     - button "Apply"
+    - status:
+      - text: This code has expired.
+      - button "Remove code"
     - term: Subtotal
     - definition: $120.00
     - term: Discount
@@ -130,4 +135,4 @@ Free First Thru-Hike Guide
       - link "Free First Thru-Hike Guide":
         - /url: /store/guides/first-thru-hike
   - text: © 2026 Alder Trail Co. All rights reserved.
-- alert: Your cart
+- alert: Cart | Alder Trail Co.
