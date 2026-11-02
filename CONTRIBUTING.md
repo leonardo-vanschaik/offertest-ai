@@ -19,7 +19,7 @@ To run real checks you need a Meta Model API key: `npx offertest init`.
 |---|---|---|
 | `npm run typecheck` | TypeScript | nothing |
 | `npm test` | Unit tests, the demo replay, the tamper checks | nothing |
-| `npm run test:e2e` | The browser guard and the agent checkouts | the sample store on `:3000` |
+| `npm run test:e2e` | The browser guard, the agent checkouts, and the store's privacy rules | the sample store installed and running on `:3000` |
 | `npm run test:journeys` | 46 user journeys through the real CLI, with Meta faked | the sample store on `:3000` |
 
 Start the sample store in a second terminal: `(cd examples/demo-store && npm install && npm run dev)`. The journeys switch its scenario, so do not use it for anything else while they run.
