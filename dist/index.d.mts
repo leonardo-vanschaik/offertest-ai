@@ -186,6 +186,13 @@ type RunResult = {
     usd: number;
   };
   error?: string;
+  replay?: {
+    recordedAt: string;
+    command: string;
+    commit: string;
+    files: number;
+    quoteCheck: string;
+  };
 };
 type RunOptions = {
   outDir: string;

@@ -11,22 +11,16 @@ import { serve } from "./server.ts";
 import { doctor, init } from "./onboarding.ts";
 import { acpCheckout, itemFromUrl } from "./core/acp.ts";
 import { agentCheckout } from "./core/ucp.ts";
+import { demo } from "./demo.ts";
+import { c, dest, printResult } from "./print.ts";
 import type { Ad, Overall, RunOptions, RunResult } from "./types.ts";
-
-const c = {
-  dim: (s: string) => `\x1b[2m${s}\x1b[0m`,
-  bold: (s: string) => `\x1b[1m${s}\x1b[0m`,
-  green: (s: string) => `\x1b[32m${s}\x1b[0m`,
-  red: (s: string) => `\x1b[31m${s}\x1b[0m`,
-  yellow: (s: string) => `\x1b[33m${s}\x1b[0m`,
-  blue: (s: string) => `\x1b[34m${s}\x1b[0m`,
-};
 
 const EXIT: Record<Overall | "error" | "usage", number> = { pass: 0, fail: 1, unresolved: 2, error: 3, usage: 4 };
 
 const HELP = `${c.bold("offertest")} ${VERSION}: an AI agent follows your Meta ad's funnel like a customer and checks the offer holds.
 
 ${c.bold("Usage")}
+  offertest demo                               replay a real recorded run: no key, no cost (start here)
   offertest check --ad <ad id>                 test one ad from Meta Ads Manager
   offertest check --account <act_123>          test every ad about to launch (paused / in review)
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
@@ -58,6 +52,7 @@ ${c.bold("Check options")}
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop a run above this model cost
   --out <dir>           run folders go here (default ./offertest-runs)
+  --retest-of <run id>  mark this run as the re-test of an earlier run (after a fix)
   --json                print result.json paths and verdicts as JSON
   --yes                 answer yes to approval prompts (payment, pause)
 
@@ -153,6 +148,9 @@ async function main() {
       out: { type: "string", default: "offertest-runs" },
       json: { type: "boolean" },
       yes: { type: "boolean" },
+      "retest-of": { type: "string" },
+      fast: { type: "boolean" },
+      "no-open": { type: "boolean" },
       port: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
@@ -160,6 +158,7 @@ async function main() {
 
   if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h" || values.help) return void console.log(HELP);
   if (cmd === "--version" || cmd === "version") return void console.log(VERSION);
+  if (cmd === "demo") process.exit(await demo({ out: values.out!, json: values.json, fast: values.fast, open: !values["no-open"] }));
   if (cmd === "init" || cmd === "setup") return await init();
   if (cmd === "doctor") process.exit(await doctor());
   if (cmd === "install-browser") return installBrowser();
@@ -234,7 +233,7 @@ async function main() {
   const results: { result: RunResult; report: string }[] = [];
   for (const ad of targets) {
     let current = ad;
-    let retestOf: string | undefined;
+    let retestOf = values["retest-of"];
     for (;;) {
       if (!values.json) console.log(`\n${c.bold("OfferTest")} ${current.source === "meta" ? `ad ${current.id} ` : ""}"${current.headline}" -> ${dest(current)}`);
       const { result, dir } = await runTest(current, { ...opts, retestOf });
@@ -267,25 +266,6 @@ async function main() {
   // A bot wall on one ad (2) must not hide a broken offer on another (1).
   const codes = results.map(({ result }) => (result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"]));
   process.exit([EXIT.error, EXIT.fail, EXIT.unresolved].find((c) => codes.includes(c)) ?? EXIT.pass);
-}
-
-function dest(ad: Ad): string {
-  const d = ad.destination;
-  return d.type === "website" || d.type === "app" ? d.url : d.type === "lead_form" ? `Instant Form ${d.formId}` : d.type === "messaging" ? `${d.channel} chat` : d.type;
-}
-
-function printResult(r: RunResult, report: string) {
-  const badge = r.error ? c.red("ERROR") : r.overall === "pass" ? c.green("PASS") : r.overall === "fail" ? c.red("FAIL") : c.yellow("UNRESOLVED");
-  console.log(`\n${c.bold(badge)}  ${r.boundary}  ${c.dim(`$${r.usage.usd.toFixed(2)}`)}`);
-  if (r.error) console.log(c.red(`  ${r.error}`));
-  for (const v of r.verdicts) {
-    const a = r.assertions.find((x) => x.id === v.assertionId);
-    const mark = v.status === "supported" ? c.green("✓") : v.status === "contradicted" ? c.red("✗") : c.yellow("?");
-    console.log(`  ${mark} ${a?.claim ?? v.assertionId}`);
-    console.log(c.dim(`      ad: "${v.adQuote}"${v.pageQuote ? `   funnel: "${v.pageQuote.replace(/\s+/g, " ")}"` : ""}`));
-  }
-  if (r.fix) console.log(`\n  ${c.bold("Fix:")} ${r.fix.summary}${r.fix.steps.map((s) => `\n    - ${s}`).join("")}`);
-  console.log(`\n  Report: ${report}`);
 }
 
 async function ads(account?: string, live?: boolean) {

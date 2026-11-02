@@ -191,6 +191,9 @@ function header(r: RunResult): string {
     .map((s) => `<div class="tally t-${STATUS[s].tone}${count(s) ? "" : " zero"}"><b>${count(s)}</b><span>${STATUS[s].label}</span></div>`)
     .join("");
   const notes = [
+    r.replay
+      ? `<div class="note n-info"><b>Recorded run, replayed</b> Recorded ${esc(fmtDate(r.replay.recordedAt))} with <span class="mono">${esc(r.replay.command)}</span>. The model answers are the recorded ones. On this computer, ${esc(r.replay.files)} files matched their SHA-256 and the quote check ran again: ${esc(r.replay.quoteCheck)}.</div>`
+      : "",
     r.blocked ? `<div class="note n-warn"><b>Blocked</b> ${esc(r.blocked)}</div>` : "",
     r.error ? `<div class="note n-bad"><b>Error</b> ${esc(r.error)}</div>` : "",
     r.confirmation ? `<div class="note n-good"><b>Confirmation reached</b> ${esc(r.confirmation.text)} <span class="mono">${link(r.confirmation.url)}</span></div>` : "",
@@ -611,6 +614,7 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .n-warn{background:var(--warn-bg);color:#7a4a00;border:1px solid var(--warn-line)}
 .n-bad{background:var(--bad-bg);color:#8f1d22;border:1px solid var(--bad-line)}
 .n-good{background:var(--good-bg);color:#0a5b3f;border:1px solid var(--good-line)}
+.n-info{background:#eef3ff;color:#1d3a8a;border:1px solid #c9d6fb}
 .facts{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1.5fr) minmax(0,.8fr) minmax(0,.8fr);gap:14px 18px;margin:20px 0 0;padding-top:18px;border-top:1px solid var(--line-2);position:relative;z-index:1}
 .facts div{min-width:0}.facts .wide{grid-column:1/-1}
 .facts dt{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px}

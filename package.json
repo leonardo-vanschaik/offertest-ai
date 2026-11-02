@@ -8,7 +8,7 @@
   "exports": {
     ".": { "types": "./dist/index.d.mts", "import": "./dist/index.mjs" }
   },
-  "files": ["dist", "skills", "README.md", "LICENSE"],
+  "files": ["dist", "skills", "examples/recordings/*/**", "README.md", "LICENSE"],
   "engines": { "node": ">=22.12.0" },
   "keywords": ["meta", "ads", "agent", "computer-use", "playwright", "muse", "funnel", "testing"],
   "scripts": {

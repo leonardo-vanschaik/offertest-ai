@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { c as runTest, d as agentCheckout, f as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as loadEnv, n as getAd, o as pauseAd, p as CONFIG_ENV, s as VERSION, t as writeReport, u as itemFromUrl } from "./html.mjs";
+import { _ as loadEnv, c as runTest, d as agentCheckout, f as adText, g as CONFIG_ENV, h as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as overallOf, n as getAd, o as pauseAd, p as containsQuote, s as VERSION, t as writeReport, u as itemFromUrl } from "./html.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
 import { parseArgs } from "node:util";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -668,7 +668,7 @@ async function doctor() {
 }
 
 //#endregion
-//#region src/cli.ts
+//#region src/print.ts
 const c = {
 	dim: (s) => `\x1b[2m${s}\x1b[0m`,
 	bold: (s) => `\x1b[1m${s}\x1b[0m`,
@@ -677,6 +677,154 @@ const c = {
 	yellow: (s) => `\x1b[33m${s}\x1b[0m`,
 	blue: (s) => `\x1b[34m${s}\x1b[0m`
 };
+function dest(ad) {
+	const d = ad.destination;
+	return d.type === "website" || d.type === "app" ? d.url : d.type === "lead_form" ? `Instant Form ${d.formId}` : d.type === "messaging" ? `${d.channel} chat` : d.type;
+}
+function printResult(r, report) {
+	const badge = r.error ? c.red("ERROR") : r.overall === "pass" ? c.green("PASS") : r.overall === "fail" ? c.red("FAIL") : c.yellow("UNRESOLVED");
+	console.log(`\n${c.bold(badge)}  ${r.boundary}  ${c.dim(`$${r.usage.usd.toFixed(2)}`)}`);
+	if (r.error) console.log(c.red(`  ${r.error}`));
+	for (const v of r.verdicts) {
+		const a = r.assertions.find((x) => x.id === v.assertionId);
+		const mark = v.status === "supported" ? c.green("✓") : v.status === "contradicted" ? c.red("✗") : c.yellow("?");
+		console.log(`  ${mark} ${a?.claim ?? v.assertionId}`);
+		console.log(c.dim(`      ad: "${v.adQuote}"${v.pageQuote ? `   funnel: "${v.pageQuote.replace(/\s+/g, " ")}"` : ""}`));
+	}
+	if (r.fix) console.log(`\n  ${c.bold("Fix:")} ${r.fix.summary}${r.fix.steps.map((s) => `\n    - ${s}`).join("")}`);
+	console.log(`\n  Report: ${report}`);
+}
+
+//#endregion
+//#region src/demo.ts
+const RECORDINGS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../examples/recordings");
+function sha256(file) {
+	return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+}
+function verify(dir, m) {
+	for (const [rel, want] of Object.entries(m.files)) {
+		const file = path.join(dir, rel);
+		if (!fs.existsSync(file)) throw new Error(`Recording ${path.basename(dir)} is missing ${rel}.`);
+		if (sha256(file) !== want) throw new Error(`Recording ${path.basename(dir)}: ${rel} changed after it was recorded (SHA-256 does not match).`);
+	}
+}
+function recheck(dir, r) {
+	const pages = path.join(dir, "pages");
+	const evidence = fs.existsSync(pages) ? fs.readdirSync(pages).map((f) => fs.readFileSync(path.join(pages, f), "utf8")) : [];
+	const ad = adText(r.ad);
+	for (const v of r.verdicts) {
+		const adFound = !!v.adQuote && containsQuote(ad, v.adQuote);
+		const pageFound = !!v.pageQuote && evidence.some((t) => containsQuote(t, v.pageQuote));
+		if (adFound !== v.quoteCheck.adQuoteFound || pageFound !== v.quoteCheck.pageQuoteFound) throw new Error(`Recording ${path.basename(dir)}: the quote check for ${v.assertionId} does not give the recorded answer.`);
+	}
+	if (overallOf(r.verdicts) !== r.overall) throw new Error(`Recording ${path.basename(dir)}: the verdicts do not give the recorded result.`);
+	return { checked: r.verdicts.length };
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function replay(dir, opts) {
+	const m = JSON.parse(fs.readFileSync(path.join(dir, "recording.json"), "utf8"));
+	verify(dir, m);
+	const r = JSON.parse(fs.readFileSync(path.join(dir, "result.json"), "utf8"));
+	const events = fs.readFileSync(path.join(dir, "log.jsonl"), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+	const say = (s) => !opts.quiet && console.log(s);
+	say(`\n${c.bold(m.intro)}`);
+	say(c.dim(`Recorded ${m.recordedAt.slice(0, 16).replace("T", " ")} UTC with ${Object.values(r.models).join(", ")} · store: ${m.store}`));
+	say(c.dim(`$ ${m.command}`));
+	say(`\n${c.bold("OfferTest")} "${r.ad.headline}" -> ${dest(r.ad)}`);
+	const t = (e) => Date.parse(e.at);
+	const span = Math.max(1, t(events[events.length - 1]) - t(events[0]));
+	for (let i = 0; i < events.length; i++) {
+		const e = events[i];
+		if (opts.paced && i) await sleep(Math.min(1200, (t(e) - t(events[i - 1])) * 12e3 / span));
+		if (e.type === "phase") say(`${c.blue("●")} ${e.phase}`);
+		else if (e.type === "step") say(c.dim(`  ${String(e.n).padStart(2)} ${e.summary}`));
+	}
+	const { checked } = recheck(dir, r);
+	const quoteCheck = `${checked} of ${checked} verdicts: both quotes found word for word in the recorded ad and pages`;
+	say(`${c.blue("●")} Quote check, run again on this computer: ${quoteCheck}`);
+	const to = path.resolve(opts.out, "demo", r.id);
+	fs.rmSync(to, {
+		recursive: true,
+		force: true
+	});
+	fs.cpSync(dir, to, {
+		recursive: true,
+		filter: (f) => !/recording\.json$|report\.html$/.test(f)
+	});
+	const result = {
+		...r,
+		replay: {
+			recordedAt: m.recordedAt,
+			command: m.command,
+			commit: m.commit,
+			files: Object.keys(m.files).length,
+			quoteCheck
+		}
+	};
+	fs.writeFileSync(path.join(to, "result.json"), JSON.stringify(result, null, 2));
+	const report = writeReport(result, to);
+	if (!opts.quiet) printResult(result, report);
+	return {
+		result,
+		report
+	};
+}
+async function demo(o) {
+	const root = o.dir ?? RECORDINGS;
+	const dirs = fs.existsSync(root) ? fs.readdirSync(root).filter((d) => fs.existsSync(path.join(root, d, "recording.json"))).sort().map((d) => path.join(root, d)) : [];
+	if (!dirs.length) {
+		console.error(c.red(`No recordings found in ${root}.`));
+		return 3;
+	}
+	const tty = !!process.stdout.isTTY && !o.json;
+	if (!o.json) {
+		console.log(c.bold("OfferTest demo"));
+		console.log("Real runs, recorded with Meta's models against the sample store, replayed on your computer. No key, no cost.");
+	}
+	const done = [];
+	try {
+		for (const d of dirs) done.push(await replay(d, {
+			out: o.out,
+			quiet: !!o.json,
+			paced: tty && !o.fast
+		}));
+	} catch (e) {
+		console.error(c.red(e instanceof Error ? e.message : String(e)));
+		return 3;
+	}
+	if (o.json) {
+		console.log(JSON.stringify(done.map(({ result, report }) => ({
+			id: result.id,
+			overall: result.overall,
+			retestOf: result.retestOf,
+			report,
+			replay: result.replay
+		})), null, 2));
+		return 0;
+	}
+	console.log(`\n${c.bold("Reports")}`);
+	for (const { result, report } of done) console.log(`  ${result.overall?.toUpperCase().padEnd(5)} ${report}`);
+	console.log(`\nRun it live with your own Meta Model API key: ${c.bold("npx offertest init")}, then the sample store test in README.md.`);
+	if (tty && o.open !== false) openFile(done[0].report);
+	return 0;
+}
+function openFile(file) {
+	const [cmd, args] = process.platform === "darwin" ? ["open", [file]] : process.platform === "win32" ? ["cmd", [
+		"/c",
+		"start",
+		"",
+		file
+	]] : ["xdg-open", [file]];
+	try {
+		spawn(cmd, args, {
+			detached: true,
+			stdio: "ignore"
+		}).on("error", () => {}).unref();
+	} catch {}
+}
+
+//#endregion
+//#region src/cli.ts
 const EXIT = {
 	pass: 0,
 	fail: 1,
@@ -687,6 +835,7 @@ const EXIT = {
 const HELP = `${c.bold("offertest")} ${VERSION}: an AI agent follows your Meta ad's funnel like a customer and checks the offer holds.
 
 ${c.bold("Usage")}
+  offertest demo                               replay a real recorded run: no key, no cost (start here)
   offertest check --ad <ad id>                 test one ad from Meta Ads Manager
   offertest check --account <act_123>          test every ad about to launch (paused / in review)
   offertest check --url <landing url> --headline "..." --text "..." [--image ad.png]
@@ -718,6 +867,7 @@ ${c.bold("Check options")}
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop a run above this model cost
   --out <dir>           run folders go here (default ./offertest-runs)
+  --retest-of <run id>  mark this run as the re-test of an earlier run (after a fix)
   --json                print result.json paths and verdicts as JSON
   --yes                 answer yes to approval prompts (payment, pause)
 
@@ -835,6 +985,9 @@ async function main() {
 			},
 			json: { type: "boolean" },
 			yes: { type: "boolean" },
+			"retest-of": { type: "string" },
+			fast: { type: "boolean" },
+			"no-open": { type: "boolean" },
 			port: { type: "string" },
 			help: {
 				type: "boolean",
@@ -844,6 +997,12 @@ async function main() {
 	});
 	if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h" || values.help) return void console.log(HELP);
 	if (cmd === "--version" || cmd === "version") return void console.log(VERSION);
+	if (cmd === "demo") process.exit(await demo({
+		out: values.out,
+		json: values.json,
+		fast: values.fast,
+		open: !values["no-open"]
+	}));
 	if (cmd === "init" || cmd === "setup") return await init();
 	if (cmd === "doctor") process.exit(await doctor());
 	if (cmd === "install-browser") return installBrowser();
@@ -923,7 +1082,7 @@ async function main() {
 	const results = [];
 	for (const ad of targets) {
 		let current = ad;
-		let retestOf;
+		let retestOf = values["retest-of"];
 		for (;;) {
 			if (!values.json) console.log(`\n${c.bold("OfferTest")} ${current.source === "meta" ? `ad ${current.id} ` : ""}"${current.headline}" -> ${dest(current)}`);
 			const { result, dir } = await runTest(current, {
@@ -967,23 +1126,6 @@ async function main() {
 		EXIT.fail,
 		EXIT.unresolved
 	].find((c$2) => codes.includes(c$2)) ?? EXIT.pass);
-}
-function dest(ad) {
-	const d = ad.destination;
-	return d.type === "website" || d.type === "app" ? d.url : d.type === "lead_form" ? `Instant Form ${d.formId}` : d.type === "messaging" ? `${d.channel} chat` : d.type;
-}
-function printResult(r, report) {
-	const badge = r.error ? c.red("ERROR") : r.overall === "pass" ? c.green("PASS") : r.overall === "fail" ? c.red("FAIL") : c.yellow("UNRESOLVED");
-	console.log(`\n${c.bold(badge)}  ${r.boundary}  ${c.dim(`$${r.usage.usd.toFixed(2)}`)}`);
-	if (r.error) console.log(c.red(`  ${r.error}`));
-	for (const v of r.verdicts) {
-		const a = r.assertions.find((x) => x.id === v.assertionId);
-		const mark = v.status === "supported" ? c.green("✓") : v.status === "contradicted" ? c.red("✗") : c.yellow("?");
-		console.log(`  ${mark} ${a?.claim ?? v.assertionId}`);
-		console.log(c.dim(`      ad: "${v.adQuote}"${v.pageQuote ? `   funnel: "${v.pageQuote.replace(/\s+/g, " ")}"` : ""}`));
-	}
-	if (r.fix) console.log(`\n  ${c.bold("Fix:")} ${r.fix.summary}${r.fix.steps.map((s) => `\n    - ${s}`).join("")}`);
-	console.log(`\n  Report: ${report}`);
 }
 async function ads(account, live) {
 	const ids = await listAdIds(account, live ? ["ACTIVE"] : void 0);

@@ -115,6 +115,8 @@ export type RunResult = {
   models: Record<string, string>; // job -> model id
   usage: { inputTokens: number; outputTokens: number; images: number; usd: number };
   error?: string;
+  // Set by `offertest demo`: this result is a replay of a recorded run, not a new run.
+  replay?: { recordedAt: string; command: string; commit: string; files: number; quoteCheck: string };
 };
 
 export type RunOptions = {
