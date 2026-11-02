@@ -96,7 +96,7 @@ Anyone can type real details into a public test store, so it keeps no full conta
 
 - Orders keep `t***@example.com`, a first name with an initial, and no street address. Orders saved before this rule are redacted when read. The store keeps the newest 200 orders.
 - An open ACP session keeps the buyer's details, because it needs the address. When it is completed or canceled, they are hidden. Saved replies for idempotent retries never hold them.
-- Sessions, carts, and saved replies are deleted 24 hours after their last write.
+- Sessions, carts, and saved replies expire 24 hours after their last write: they are never read again, and the next store request deletes them. Migration `0003_kv_expiry.sql` adds the time column; rows from before it expire at once.
 
 ## Test the Workers build locally
 

@@ -255,7 +255,7 @@ var Driver = class {
 	allowSubmit = true;
 	blockedRequests = [];
 	sendLinks = /* @__PURE__ */ new WeakSet();
-	sendBlockUntil = 0;
+	sendBlock = false;
 	downloads = [];
 	async start(url, opts = {}) {
 		this.allowPayment = !!opts.allowPayment;
@@ -279,7 +279,7 @@ var Driver = class {
 				this.blockedRequests.push(req.url());
 				return route.abort("blockedbyclient");
 			}
-			if (!this.allowSubmit && req.method() !== "GET" && Date.now() < this.sendBlockUntil) {
+			if (!this.allowSubmit && req.method() !== "GET" && this.sendBlock) {
 				this.blockedRequests.push(req.url());
 				return route.abort("blockedbyclient");
 			}
@@ -291,6 +291,7 @@ var Driver = class {
 		this.context.on("page", (p) => this.watchDownloads(p));
 		this.page = await this.context.newPage();
 		this.watchDownloads(this.page);
+		this.page.on("domcontentloaded", () => this.sendBlock = false);
 		await this.page.goto(url, {
 			waitUntil: "domcontentloaded",
 			timeout: 45e3
@@ -583,7 +584,7 @@ var Driver = class {
 	}
 	async execute(action) {
 		const p = this.page;
-		if (this.sendLinks.has(action)) this.sendBlockUntil = Date.now() + 3e3;
+		if (this.sendLinks.has(action)) this.sendBlock = true;
 		switch (action.type) {
 			case "click":
 				if (action.button === "back") await p.goBack().catch(() => {});

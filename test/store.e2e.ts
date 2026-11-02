@@ -57,21 +57,26 @@ test("orders saved before redaction are redacted when read", () => {
   assert.doesNotMatch(out.address, /Main/);
 });
 
-test("the shared key-value store: first write wins, compare-and-swap, and records expire after 24 hours", () => {
+test("the shared key-value store: first write wins, compare-and-swap, and a record is gone 24 hours after its last write", () => {
   const out = withStore(`
 const first = await st.kvSet("k", "a", null);
 const second = await st.kvSet("k", "b", null);
 const stale = await st.kvSet("k", "c", "b");
 const swap = await st.kvSet("k", "c", "a");
 const now = Date.now;
-Date.now = () => now() + st.KV_TTL_MS + 1000;
-await st.kvPrune();
-console.log(JSON.stringify({ first, second, stale, swap, after: await st.kvGet("k") }));`) as Record<string, unknown>;
-  assert.deepEqual(out, { first: true, second: false, stale: false, swap: true, after: null });
+Date.now = () => now() + st.KV_TTL_MS + 1000; // a day later, before any cleanup
+const expired = await st.kvGet("k");
+const staleSwap = await st.kvSet("k", "d", "c");
+const reused = await st.kvSet("k", "e", null); // an expired key counts as new
+await st.kvSet("old", "x");
+Date.now = () => now() + 2 * (st.KV_TTL_MS + 1000);
+await st.kvPrune(true);
+console.log(JSON.stringify({ first, second, stale, swap, expired, staleSwap, reused, after: await st.kvGet("k") }));`) as Record<string, unknown>;
+  assert.deepEqual(out, { first: true, second: false, stale: false, swap: true, expired: null, staleSwap: false, reused: true, after: null });
 });
 
 test("ACP: a completed session and its saved replies hide the buyer's address and email", async () => {
-  const acp = (p: string, body: object, key = crypto.randomUUID()) =>
+  const acp = (p: string, body: object, key: string = crypto.randomUUID()) =>
     fetch(`${STORE}/api/acp/checkout_sessions${p}`, {
       method: "POST",
       headers: { authorization: "Bearer alder-trail-demo", "content-type": "application/json", "idempotency-key": key },
@@ -80,11 +85,12 @@ test("ACP: a completed session and its saved replies hide the buyer's address an
   await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
   const address = { name: "Jane Q Public", line_one: "1 Main St", city: "Springfield", state: "OH", country: "US", postal_code: "45501" };
   const create = { line_items: [{ id: "ridge-trail-shoe" }], currency: "usd", fulfillment_details: { email: "jane@example.com", address } };
-  const created = await acp("", create, "create-1");
+  const once = `create-${crypto.randomUUID()}`; // the same key twice: the second answer is the saved reply
+  const created = await acp("", create, once);
   const s = (await created.json()) as { id: string; fulfillment_details: { address: { line_one: string } } };
   assert.equal(s.fulfillment_details.address.line_one, "1 Main St", "an open session keeps the address it needs");
   // A retry of the same request gets the saved reply, which never holds the full address.
-  const replay = (await (await acp("", create, "create-1")).json()) as { fulfillment_details: { email: string; address: { line_one: string; postal_code: string } } };
+  const replay = (await (await acp("", create, once)).json()) as { fulfillment_details: { email: string; address: { line_one: string; postal_code: string } } };
   assert.equal(replay.fulfillment_details.address.line_one, "Hidden");
   assert.equal(replay.fulfillment_details.email, "j***@example.com");
   const pay = { payment_data: { handler_id: "demo_card", instrument: { type: "card", credential: { type: "spt", token: "spt_demo_4242" } } } };

@@ -268,7 +268,8 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
     const seenRaw = (await kvGet(slot)) ?? mine;
     const seen = JSON.parse(seenRaw) as Replay;
     if (seen.hash !== hash) return fail(422, "idempotency_conflict", "This Idempotency-Key was used with a different body.");
-    if (seen.status) return Response.json(seen.body, { status: seen.status, headers: { "idempotent-replayed": "true" } });
+    // Hidden again on the way out: a reply saved by an older version may still hold the details.
+    if (seen.status) return Response.json(hideBody(seen.body), { status: seen.status, headers: { "idempotent-replayed": "true" } });
     // Still running, unless that request died: then take the key over.
     if (Date.now() - seen.at < STALE_MS || !(await kvSet(slot, mine, seenRaw))) {
       const inFlight = fail(409, "idempotency_in_flight", "A request with this Idempotency-Key is still running.");
@@ -295,7 +296,7 @@ async function post(raw: string, id: string | undefined, action: string | undefi
   let s: Session | undefined;
   if (!id) {
     if (!body.currency) return fail(400, "missing", "currency is required.", "$.currency");
-    await kvPrune();
+    await kvPrune(true);
     s = { id: `cs_${randomUUID().slice(0, 12)}`, created: Date.now(), items: [], codes: [], status: "open" };
     apply(s, body, config);
     if (!s.items.length) return fail(400, "invalid", "No known item in line_items. Use a variant id, product id, or product slug.", "$.line_items");

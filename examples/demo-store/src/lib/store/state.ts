@@ -172,7 +172,10 @@ async function backend(): Promise<Backend> {
   return d1Backend(env.STORE_DB);
 }
 
-const readState = async () => (await backend()).read();
+const readState = async () => {
+  await kvPrune().catch(() => {}); // cleanup must never break a page
+  return (await backend()).read();
+};
 const mutate = async <T>(fn: (s: StoreState) => T): Promise<T> => (await backend()).mutate(fn);
 
 export async function getConfig(): Promise<StoreConfig> {
@@ -340,7 +343,8 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
 
 // ---------- Small shared key-value store (agent checkout sessions, carts, idempotency keys) ----------
 // In memory locally (one Node process). On Workers a D1 table, so every instance sees the same session.
-// Every record is deleted 24 hours after its last write.
+// A record expires 24 hours after its last write: it is never read again, and the next store request
+// (at most every 10 minutes) deletes it.
 
 export const KV_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -351,13 +355,18 @@ type Kv = {
   prune(before: number): Promise<void>; // delete records last written before this time (ms)
 };
 
+const cutoff = () => Date.now() - KV_TTL_MS;
+
 const g = globalThis as { storeKv?: Map<string, { value: string; at: number }> };
+const live = (key: string) => {
+  const e = (g.storeKv ??= new Map()).get(key);
+  return e && e.at >= cutoff() ? e.value : null;
+};
 const memoryKv: Kv = {
-  get: async (key) => (g.storeKv ??= new Map()).get(key)?.value ?? null,
+  get: async (key) => live(key),
   set: async (key, value, prev) => {
-    const m = (g.storeKv ??= new Map());
-    if (prev !== undefined && (m.get(key)?.value ?? null) !== prev) return false;
-    m.set(key, { value, at: Date.now() });
+    if (prev !== undefined && live(key) !== prev) return false;
+    (g.storeKv ??= new Map()).set(key, { value, at: Date.now() });
     return true;
   },
   prune: async (before) => {
@@ -367,7 +376,7 @@ const memoryKv: Kv = {
 
 let kvReady: Promise<unknown> | undefined;
 function d1Kv(db: D1): Kv {
-  // Same table as migrations/0002_kv.sql, so a database without it still works.
+  // The table as migrations 0002 and 0003 leave it, so a database without it still works.
   kvReady ??= db.exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL, at INTEGER NOT NULL DEFAULT 0)").catch((e) => {
     kvReady = undefined;
     throw e;
@@ -375,17 +384,19 @@ function d1Kv(db: D1): Kv {
   return {
     get: async (key) => {
       await kvReady;
-      return (await db.prepare("SELECT value FROM kv WHERE key = ?").bind(key).first<{ value: string }>())?.value ?? null;
+      return (await db.prepare("SELECT value FROM kv WHERE key = ? AND at >= ?").bind(key, cutoff()).first<{ value: string }>())?.value ?? null;
     },
     set: async (key, value, prev) => {
       await kvReady;
       const at = Date.now();
+      // An expired record counts as missing.
+      if (prev === null) await db.prepare("DELETE FROM kv WHERE key = ? AND at < ?").bind(key, cutoff()).run();
       const q =
         prev === undefined
           ? db.prepare("INSERT INTO kv (key, value, at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, at = excluded.at").bind(key, value, at)
           : prev === null
             ? db.prepare("INSERT OR IGNORE INTO kv (key, value, at) VALUES (?, ?, ?)").bind(key, value, at)
-            : db.prepare("UPDATE kv SET value = ?, at = ? WHERE key = ? AND value = ?").bind(value, at, key, prev);
+            : db.prepare("UPDATE kv SET value = ?, at = ? WHERE key = ? AND value = ? AND at >= ?").bind(value, at, key, prev, cutoff());
       return (await q.run()).meta.changes === 1;
     },
     prune: async (before) => {
@@ -410,7 +421,11 @@ export async function kvSet(key: string, value: string, prev?: string | null): P
   return (await kv()).set(key, value, prev);
 }
 
-// Delete every record older than KV_TTL_MS. Called when a session or cart is created.
-export async function kvPrune(): Promise<void> {
-  await (await kv()).prune(Date.now() - KV_TTL_MS);
+// Delete every expired record. Runs on store requests at most every 10 minutes per instance, and when a
+// session or cart is created (force).
+let lastPrune = 0;
+export async function kvPrune(force = false): Promise<void> {
+  if (!force && Date.now() - lastPrune < 10 * 60 * 1000) return;
+  lastPrune = Date.now();
+  await (await kv()).prune(cutoff());
 }

@@ -55,10 +55,11 @@ export class Driver {
   allowPayment = false;
   allowSubmit = true;
   blockedRequests: string[] = [];
-  // --no-submit: a link whose words say it sends (Subscribe) may open its page, but its click must not
-  // POST anything. Such actions arm a short window in which every non-GET request is aborted.
+  // --no-submit: a link whose words say it sends (Subscribe) may open its page, but its scripts must not
+  // POST anything. Activating one blocks every non-GET request until a new document loads, so a handler
+  // that prevents navigation or sends later is blocked too.
   private sendLinks = new WeakSet<ComputerAction>();
-  private sendBlockUntil = 0;
+  private sendBlock = false;
   downloads: string[] = []; // a download leaves the page unchanged, so the agent would not see it
 
   async start(url: string, opts: { headful?: boolean; mobile?: boolean; allowPayment?: boolean; allowSubmit?: boolean } = {}) {
@@ -80,7 +81,7 @@ export class Driver {
         this.blockedRequests.push(req.url());
         return route.abort("blockedbyclient");
       }
-      if (!this.allowSubmit && req.method() !== "GET" && Date.now() < this.sendBlockUntil) {
+      if (!this.allowSubmit && req.method() !== "GET" && this.sendBlock) {
         this.blockedRequests.push(req.url());
         return route.abort("blockedbyclient");
       }
@@ -93,6 +94,7 @@ export class Driver {
     this.context.on("page", (p) => this.watchDownloads(p));
     this.page = await this.context.newPage();
     this.watchDownloads(this.page);
+    this.page.on("domcontentloaded", () => (this.sendBlock = false)); // a new document: the old page's scripts are gone
     await this.page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await this.settle();
     await this.dismissOverlays();
@@ -359,7 +361,7 @@ export class Driver {
 
   async execute(action: ComputerAction) {
     const p = this.page;
-    if (this.sendLinks.has(action)) this.sendBlockUntil = Date.now() + 3000;
+    if (this.sendLinks.has(action)) this.sendBlock = true;
     switch (action.type) {
       case "click":
         if (action.button === "back") await p.goBack().catch(() => {});

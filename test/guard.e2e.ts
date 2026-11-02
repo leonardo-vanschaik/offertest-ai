@@ -148,6 +148,18 @@ test("--no-submit: a Subscribe link may open its page, but its script cannot sen
       await d.page.waitForTimeout(300);
       await d.page.goto(`${site.url}/`);
     }
+    // A handler that waits before it sends is blocked too: the block lasts until a new page loads.
+    const late = await at(d, "#d");
+    assert.equal(await d.guard(late), null);
+    await d.execute(late);
+    await d.page.waitForTimeout(4000);
+    assert.deepEqual(site.posts, []);
+    // A new page lifts the block: shopping that posts (add to cart) still works.
+    await d.page.goto(`${site.url}/`);
+    await d.execute(await at(d, "#k"));
+    await d.page.waitForTimeout(300);
+    assert.deepEqual(site.posts, ["/cart"]);
+    site.posts.length = 0;
     // The same by keyboard.
     await d.page.locator("#s").focus();
     const enterKey: ComputerAction = { type: "keypress", keys: ["Enter"] };
@@ -178,6 +190,8 @@ async function sendsSite() {
 <a href="/trial" id="l">Start free trial</a>
 <a href="/subscribe" id="s" onclick="fetch('/signup',{method:'POST',keepalive:true})">Subscribe</a>
 <a href="/subscribe" id="p" onclick="event.preventDefault(); fetch('/signup',{method:'POST'})">Subscribe now</a>
+<a href="/subscribe" id="d" onclick="event.preventDefault(); setTimeout(() => fetch('/signup',{method:'POST'}), 3500)">Join the club</a>
+<button type="button" id="k" onclick="fetch('/cart',{method:'POST'})">Add to bag</button>
 <button type="button" id="c">Add to cart</button>
 <button type="button" id="g">Get 20% off</button>`;
   const srv = http.createServer((req, res) => {
