@@ -55,6 +55,10 @@ export class Driver {
   allowPayment = false;
   allowSubmit = true;
   blockedRequests: string[] = [];
+  // --no-submit: a link whose words say it sends (Subscribe) may open its page, but its click must not
+  // POST anything. Such actions arm a short window in which every non-GET request is aborted.
+  private sendLinks = new WeakSet<ComputerAction>();
+  private sendBlockUntil = 0;
   downloads: string[] = []; // a download leaves the page unchanged, so the agent would not see it
 
   async start(url: string, opts: { headful?: boolean; mobile?: boolean; allowPayment?: boolean; allowSubmit?: boolean } = {}) {
@@ -73,6 +77,10 @@ export class Driver {
     await this.context.route("**/*", (route) => {
       const req = route.request();
       if (!this.allowPayment && req.method() !== "GET" && ORDER_SUBMIT.some((re) => re.test(req.url()))) {
+        this.blockedRequests.push(req.url());
+        return route.abort("blockedbyclient");
+      }
+      if (!this.allowSubmit && req.method() !== "GET" && Date.now() < this.sendBlockUntil) {
         this.blockedRequests.push(req.url());
         return route.abort("blockedbyclient");
       }
@@ -171,6 +179,7 @@ export class Driver {
       // or a script button that says it sends. A link to another page sends nothing.
       if (!this.allowSubmit && !hit.pay && (hit.form ? !SAFE_STEP.test(hit.label) : !hit.link && SENDS.test(hit.label)))
         return { kind: "submit", label: hit.label || "Submit" };
+      if (!this.allowSubmit && hit.link && SENDS.test(hit.label)) this.sendLinks.add(action);
       return null;
     }
     const submits =
@@ -182,7 +191,7 @@ export class Driver {
       const label = await this.enterSubmitsPay();
       if (label) return { kind: "payment", label };
       if (!this.allowSubmit) {
-        const form = (await this.enterSubmitsForm()) ?? (await this.focusedSendButton());
+        const form = (await this.enterSubmitsForm()) ?? (await this.focusedSend(action));
         if (form) return { kind: "submit", label: form };
       }
     }
@@ -193,27 +202,30 @@ export class Driver {
       const focused = await this.focusedPayButton();
       if (focused) return { kind: "payment", label: focused };
       if (!this.allowSubmit) {
-        const form = (await this.enterSubmitsForm(true)) ?? (await this.focusedSendButton());
+        const form = (await this.enterSubmitsForm(true)) ?? (await this.focusedSend(action));
         if (form) return { kind: "submit", label: form };
       }
     }
     return null;
   }
 
-  // A focused script button (not a form submit, not a link to another page) whose words say it sends.
-  private async focusedSendButton(): Promise<string | null> {
-    return (await this.focusedFrame())
+  // A focused script button (not a form submit) whose words say it sends: its label, to block it.
+  // A focused link to another page with such words may open, but arms the send block (see execute).
+  private async focusedSend(action: ComputerAction): Promise<string | null> {
+    const hit = await (await this.focusedFrame())
       .evaluate((src) => {
         const a = document.activeElement as HTMLInputElement | null;
         if (!a || a === document.body) return null;
         const button = /^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A";
         if (!button || (/^(submit|image)$/.test(a.type) && a.form)) return null;
         const href = a.tagName === "A" ? (a.getAttribute("href") ?? "") : "";
-        if (href && href !== "#" && !/^javascript:/i.test(href)) return null;
         const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
-        return new RegExp(src, "i").test(label) ? label : null;
+        if (!new RegExp(src, "i").test(label)) return null;
+        return { label, link: !!href && href !== "#" && !/^javascript:/i.test(href) };
       }, SENDS.source)
       .catch(() => null);
+    if (hit?.link) this.sendLinks.add(action);
+    return hit && !hit.link ? hit.label : null;
   }
 
   // The frame that holds the focused control: focus inside an embedded form (an iframe) belongs to that frame.
@@ -347,6 +359,7 @@ export class Driver {
 
   async execute(action: ComputerAction) {
     const p = this.page;
+    if (this.sendLinks.has(action)) this.sendBlockUntil = Date.now() + 3000;
     switch (action.type) {
       case "click":
         if (action.button === "back") await p.goBack().catch(() => {});

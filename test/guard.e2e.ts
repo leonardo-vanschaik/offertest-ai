@@ -136,6 +136,32 @@ test("--no-submit blocks script-driven sign-up buttons, and no sign-up request l
   }
 });
 
+test("--no-submit: a Subscribe link may open its page, but its script cannot send anything", async () => {
+  const site = await sendsSite();
+  const d = new Driver();
+  await d.start(`${site.url}/`, { allowSubmit: false });
+  try {
+    for (const id of ["#s", "#p"]) {
+      const click = await at(d, id);
+      assert.equal(await d.guard(click), null, `${id}: opening a page is allowed`);
+      await d.execute(click);
+      await d.page.waitForTimeout(300);
+      await d.page.goto(`${site.url}/`);
+    }
+    // The same by keyboard.
+    await d.page.locator("#s").focus();
+    const enterKey: ComputerAction = { type: "keypress", keys: ["Enter"] };
+    assert.equal(await d.guard(enterKey), null);
+    await d.execute(enterKey);
+    await d.page.waitForTimeout(300);
+    assert.deepEqual(site.posts, []);
+    assert.ok(d.blockedRequests.some((u) => u.endsWith("/signup")));
+  } finally {
+    await d.close();
+    site.close();
+  }
+});
+
 test("without --no-submit, script-driven sign-up buttons are allowed", () =>
   page(`<button type="button" id="b" onclick="fetch('/signup',{method:'POST'})">Sign up</button>`, async (d) => {
     assert.equal(await d.guard(await at(d, "#b")), null);
@@ -150,6 +176,8 @@ async function sendsSite() {
 <a href="#" id="a" onclick="fetch('/lead',{method:'POST'})">Claim your guide</a>
 <input type="button" id="i" value="Start free trial" onclick="fetch('/trial',{method:'POST'})">
 <a href="/trial" id="l">Start free trial</a>
+<a href="/subscribe" id="s" onclick="fetch('/signup',{method:'POST',keepalive:true})">Subscribe</a>
+<a href="/subscribe" id="p" onclick="event.preventDefault(); fetch('/signup',{method:'POST'})">Subscribe now</a>
 <button type="button" id="c">Add to cart</button>
 <button type="button" id="g">Get 20% off</button>`;
   const srv = http.createServer((req, res) => {

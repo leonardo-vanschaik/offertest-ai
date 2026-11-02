@@ -254,6 +254,8 @@ var Driver = class {
 	allowPayment = false;
 	allowSubmit = true;
 	blockedRequests = [];
+	sendLinks = /* @__PURE__ */ new WeakSet();
+	sendBlockUntil = 0;
 	downloads = [];
 	async start(url, opts = {}) {
 		this.allowPayment = !!opts.allowPayment;
@@ -274,6 +276,10 @@ var Driver = class {
 		await this.context.route("**/*", (route) => {
 			const req = route.request();
 			if (!this.allowPayment && req.method() !== "GET" && ORDER_SUBMIT.some((re) => re.test(req.url()))) {
+				this.blockedRequests.push(req.url());
+				return route.abort("blockedbyclient");
+			}
+			if (!this.allowSubmit && req.method() !== "GET" && Date.now() < this.sendBlockUntil) {
 				this.blockedRequests.push(req.url());
 				return route.abort("blockedbyclient");
 			}
@@ -363,6 +369,7 @@ var Driver = class {
 				kind: "submit",
 				label: hit.label || "Submit"
 			};
+			if (!this.allowSubmit && hit.link && SENDS.test(hit.label)) this.sendLinks.add(action);
 			return null;
 		}
 		if (action.type === "keypress" && action.keys.some((k) => /^(enter|return)$/i.test(k)) || action.type === "type" && /[\r\n]/.test(action.text)) {
@@ -372,7 +379,7 @@ var Driver = class {
 				label
 			};
 			if (!this.allowSubmit) {
-				const form = await this.enterSubmitsForm() ?? await this.focusedSendButton();
+				const form = await this.enterSubmitsForm() ?? await this.focusedSend(action);
 				if (form) return {
 					kind: "submit",
 					label: form
@@ -386,7 +393,7 @@ var Driver = class {
 				label: focused
 			};
 			if (!this.allowSubmit) {
-				const form = await this.enterSubmitsForm(true) ?? await this.focusedSendButton();
+				const form = await this.enterSubmitsForm(true) ?? await this.focusedSend(action);
 				if (form) return {
 					kind: "submit",
 					label: form
@@ -395,16 +402,21 @@ var Driver = class {
 		}
 		return null;
 	}
-	async focusedSendButton() {
-		return (await this.focusedFrame()).evaluate((src) => {
+	async focusedSend(action) {
+		const hit = await (await this.focusedFrame()).evaluate((src) => {
 			const a = document.activeElement;
 			if (!a || a === document.body) return null;
 			if (!(/^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A") || /^(submit|image)$/.test(a.type) && a.form) return null;
 			const href = a.tagName === "A" ? a.getAttribute("href") ?? "" : "";
-			if (href && href !== "#" && !/^javascript:/i.test(href)) return null;
 			const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
-			return new RegExp(src, "i").test(label) ? label : null;
+			if (!new RegExp(src, "i").test(label)) return null;
+			return {
+				label,
+				link: !!href && href !== "#" && !/^javascript:/i.test(href)
+			};
 		}, SENDS.source).catch(() => null);
+		if (hit?.link) this.sendLinks.add(action);
+		return hit && !hit.link ? hit.label : null;
 	}
 	async focusedFrame() {
 		let frame = this.page.mainFrame();
@@ -571,6 +583,7 @@ var Driver = class {
 	}
 	async execute(action) {
 		const p = this.page;
+		if (this.sendLinks.has(action)) this.sendBlockUntil = Date.now() + 3e3;
 		switch (action.type) {
 			case "click":
 				if (action.button === "back") await p.goBack().catch(() => {});
