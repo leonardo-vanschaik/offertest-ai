@@ -201,13 +201,21 @@ type OpenWeights = {
   route: string;
   provider: string;
   quantization: string;
-  requests: string[];
-  calls: number;
+  requests: OpenWeightsRequest[];
   ms: number;
   inputTokens: number;
   outputTokens: number;
   usd: number;
   fallback?: string;
+};
+type OpenWeightsRequest = {
+  id: string;
+  provider: string;
+  quantization: string;
+  inputTokens: number;
+  outputTokens: number;
+  usd: number;
+  accepted: boolean;
 };
 type RunOptions = {
   outDir: string;
@@ -276,4 +284,4 @@ type AcpOptions = {
 };
 declare function acpCheckout(o: AcpOptions): Promise<AgentCheckout>;
 //#endregion
-export { Ad, AdCard, Assertion, ComputerAction, Destination, Fix, LeadForm, OpenWeights, Overall, RunOptions, RunResult, SamBox, Step, VERSION, Verdict, VerdictStatus, acpCheckout, agentCheckout, getAd, getLeadForm, listAds, pauseAd, runTest, writeReport };
+export { Ad, AdCard, Assertion, ComputerAction, Destination, Fix, LeadForm, OpenWeights, OpenWeightsRequest, Overall, RunOptions, RunResult, SamBox, Step, VERSION, Verdict, VerdictStatus, acpCheckout, agentCheckout, getAd, getLeadForm, listAds, pauseAd, runTest, writeReport };

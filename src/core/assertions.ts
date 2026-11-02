@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type OpenAI from "openai";
 import { imageAsDataUrl, MODELS, structured } from "../meta/client.ts";
-import { SPARK_OPEN, sparkOpenKey, sparkOpenStructured } from "../meta/open.ts";
+import { sparkOpenKey, sparkOpenModel, sparkOpenStructured } from "../meta/open.ts";
 import type { Ad, Assertion, RunResult } from "../types.ts";
 
 const Schema = z.object({
@@ -45,25 +45,23 @@ export async function adContent(ad: Ad): Promise<OpenAI.Chat.Completions.ChatCom
 
 // The model that reads the promises: Muse Spark Open (open weights) when OPENROUTER_API_KEY is set, else Muse Spark.
 export function promiseModel(): string {
-  return sparkOpenKey() ? SPARK_OPEN : MODELS.spark;
+  return sparkOpenKey() ? sparkOpenModel() : MODELS.spark;
 }
 
-// If Muse Spark Open fails, Muse Spark reads the promises and the run records why.
+// If Muse Spark Open fails, Muse Spark reads the promises (Muse Wonder if Spark fails too). r.models names the
+// model whose answer was used, and openWeights.fallback says why Muse Spark Open's was not.
 export async function extractAssertions(r: RunResult, opts: { open?: boolean } = {}): Promise<{ assertions: Assertion[]; subject: string; imageText: string }> {
   const user = await adContent(r.ad);
   let out: z.infer<typeof Schema> | undefined;
   if (opts.open ?? !!sparkOpenKey()) {
-    r.models["ad to promises"] = SPARK_OPEN;
+    r.models["ad to promises"] = sparkOpenModel();
     try {
       out = await sparkOpenStructured(r, { job: "ad to promises", schema: Schema, system: SYSTEM, user });
     } catch (err) {
       r.openWeights!.fallback = (err as Error).message;
     }
   }
-  if (!out) {
-    r.models["ad to promises"] = MODELS.spark;
-    out = await structured(r, { model: MODELS.spark, fallbackModel: MODELS.wonder, name: "offer_assertions", schema: Schema, system: SYSTEM, user });
-  }
+  out ??= await structured(r, { model: MODELS.spark, fallbackModel: MODELS.wonder, name: "offer_assertions", schema: Schema, system: SYSTEM, user, job: "ad to promises" });
   return {
     subject: out.subject,
     imageText: out.imageText,

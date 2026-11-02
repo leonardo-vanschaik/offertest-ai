@@ -125,15 +125,24 @@ export type OpenWeights = {
   job: string; // "ad to promises"
   model: string; // "meta/muse-spark-open"
   route: string; // "OpenRouter"
-  provider: string; // the inference partner that ran it: "BaseTen", "Fireworks", "Modal"
+  provider: string; // the inference partner whose answer was used: "BaseTen", "Fireworks", "Modal" ("" if none)
   quantization: string; // as OpenRouter lists it for that provider: "fp4"
-  requests: string[]; // OpenRouter request ids ("gen-..."), one per call
-  calls: number;
+  requests: OpenWeightsRequest[]; // every answered request, in order
   ms: number;
   inputTokens: number;
   outputTokens: number;
   usd: number;
-  fallback?: string; // why Muse Spark read the promises instead
+  fallback?: string; // why another model read the promises instead (RunResult.models names it)
+};
+
+export type OpenWeightsRequest = {
+  id: string; // OpenRouter's request id ("gen-...")
+  provider: string;
+  quantization: string;
+  inputTokens: number;
+  outputTokens: number;
+  usd: number;
+  accepted: boolean; // its answer passed the schema and was used
 };
 
 export type RunOptions = {

@@ -6,11 +6,18 @@ import { z } from "zod";
 import type { RunResult } from "../types.ts";
 
 // Meta Model API is OpenAI-compatible: https://dev.meta.ai/docs
+// Read when used, after loadEnv(), so a model set in a .env file counts.
 export const MODELS = {
-  wonder: process.env.OFFERTEST_WONDER_MODEL ?? "muse-wonder-1.0",
-  spark: process.env.OFFERTEST_SPARK_MODEL ?? "muse-spark-1.3",
+  get wonder(): string {
+    loadEnv();
+    return process.env.OFFERTEST_WONDER_MODEL || "muse-wonder-1.0";
+  },
+  get spark(): string {
+    loadEnv();
+    return process.env.OFFERTEST_SPARK_MODEL || "muse-spark-1.3";
+  },
   sam: "sam-3.1",
-} as const;
+};
 
 // USD per 1M tokens (dev.meta.ai/docs/pricing-rate-limits, 29 Oct 2026)
 const PRICES: Record<string, { in: number; out: number }> = {
@@ -66,7 +73,8 @@ export type ChatContent = OpenAI.Chat.Completions.ChatCompletionContentPart[] | 
 // Structured output over Chat Completions (response_format json_schema), validated with zod.
 export async function structured<T>(
   r: RunResult,
-  opts: { model: string; name: string; schema: z.ZodType<T>; system: string; user: ChatContent; fallbackModel?: string },
+  // job: when set, r.models[job] names the model whose answer was used (the fallback, if it was needed)
+  opts: { model: string; name: string; schema: z.ZodType<T>; system: string; user: ChatContent; fallbackModel?: string; job?: string },
 ): Promise<T> {
   const jsonSchema = z.toJSONSchema(opts.schema, { target: "draft-7" }) as Record<string, unknown>;
   delete jsonSchema.$schema;
@@ -81,7 +89,9 @@ export async function structured<T>(
     });
     addUsage(r, model, res.usage?.prompt_tokens, res.usage?.completion_tokens);
     const text = res.choices[0]?.message?.content ?? "";
-    return opts.schema.parse(JSON.parse(stripFences(text)));
+    const out = opts.schema.parse(JSON.parse(stripFences(text)));
+    if (opts.job) r.models[opts.job] = model;
+    return out;
   };
   try {
     return await call(opts.model);

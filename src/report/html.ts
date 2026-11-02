@@ -466,12 +466,17 @@ function modelsSection(r: RunResult): string {
     .join("");
   const u = r.usage;
   const o = r.openWeights;
-  // Where the open-weight model ran, and the request ids that prove it.
+  // Where the open-weight model ran, and the request ids that prove it: each request with its own provider.
+  const req = (q: NonNullable<RunResult["openWeights"]>["requests"][number]) => `<span class="mono">${esc(q.id)}</span> on ${esc(q.provider)} (${esc(q.quantization)})`;
+  const used = o?.requests.find((q) => q.accepted);
+  const unused = o?.requests.filter((q) => !q.accepted) ?? [];
   const ow = !o
     ? ""
-    : o.fallback
-      ? `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} did not answer, so Muse Spark read the promises: ${esc(o.fallback)}</p>`
-      : `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} read the ad's promises on ${esc(o.provider)} (${esc(o.quantization)}), through ${esc(o.route)}. ${o.calls} request${o.calls === 1 ? "" : "s"}: <span class="mono">${o.requests.map(esc).join(", ")}</span>. ${(o.ms / 1000).toFixed(1)} s, ${num(o.inputTokens)} tokens in, ${num(o.outputTokens)} out, ${esc(fmtUsd(o.usd))}.</p>`;
+    : `<p class="ow"><b>Open weights.</b> ${
+        used
+          ? `${esc(modelName(o.model))} read the ad's promises through ${esc(o.route)}: request ${req(used)}.`
+          : `${esc(modelName(o.model))} gave no usable answer, so ${esc(modelName(r.models[o.job] ?? ""))} read the promises. ${esc(o.fallback ?? "")}`
+      }${unused.length ? ` Not used: ${unused.map(req).join(", ")}.` : ""} ${(o.ms / 1000).toFixed(1)} s, ${num(o.inputTokens)} tokens in, ${num(o.outputTokens)} out, ${esc(fmtUsd(o.usd))}.</p>`;
   return section(
     "models",
     "Models used",

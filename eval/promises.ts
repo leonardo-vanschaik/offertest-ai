@@ -6,15 +6,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { extractAssertions } from "../src/core/assertions.ts";
-import { adText, containsQuote, norm } from "../src/core/quotes.ts";
-import type { Assertion, OpenWeights, RunResult } from "../src/types.ts";
+import { MODELS } from "../src/meta/client.ts";
+import { adText, containsQuote } from "../src/core/quotes.ts";
+import type { OpenWeights, RunResult } from "../src/types.ts";
 import { CASES } from "./cases.ts";
+import { found, type Expected } from "./score.ts";
 
 type Model = "spark" | "spark-open";
-// A promise is found when one assertion has one of these kinds and mentions every term.
-type Expected = { kinds: string[]; terms: string[] };
 
-// Keyed by ad headline. Fixed before any scored run: do not edit after one.
+// Keyed by ad headline. Fixed before the first scored run. After a review, the scorer stopped reading the ad
+// quote, and the no-credit-card label must now be stated as absent (negated). Both models were scored again
+// with these stricter rules. Do not edit after a scored run.
 const LABELS: Record<string, Expected[]> = {
   "20% off the Ridge trail shoe.": [{ kinds: ["discount"], terms: ["save20", "20"] }],
   "Take 20% off the Ridge trail shoe.": [{ kinds: ["discount"], terms: ["save20", "20"] }],
@@ -25,7 +27,7 @@ const LABELS: Record<string, Expected[]> = {
   "The Ridge in Slate, every size from 7 to 12, in stock now.": [{ kinds: ["availability"], terms: ["7", "12"] }],
   "Every size in stock.": [{ kinds: ["availability"], terms: ["7", "12"] }],
   "$10 off the Summit rain jacket with code TRAIL10.": [{ kinds: ["discount"], terms: ["trail10", "10"] }],
-  "Try Trail Club free for 30 days.": [{ kinds: ["free_trial"], terms: ["30"] }, { kinds: ["free_trial", "other"], terms: ["credit card"] }],
+  "Try Trail Club free for 30 days.": [{ kinds: ["free_trial"], terms: ["30"] }, { kinds: ["free_trial", "other"], terms: ["credit card"], negated: true }],
   "Free: The First Thru-Hike Guide": [{ kinds: ["lead_magnet"], terms: ["guide"] }],
 };
 
@@ -33,10 +35,6 @@ const { values } = parseArgs({ options: { models: { type: "string", default: "sp
 const models = values.models!.split(",") as Model[];
 const OUT = path.join(import.meta.dirname, "results", "promises.json");
 
-// What an assertion says, in one searchable string: "credit_card" reads as "credit card".
-const said = (a: Assertion) => norm([a.claim, a.adQuote, ...Object.entries(a.conditions).flat()].join(" ").replace(/_/g, " "));
-const has = (text: string, term: string) => new RegExp(`(^|[^\\p{L}\\p{N}])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^\\p{L}\\p{N}]|$)`, "u").test(text);
-const found = (e: Expected, as: Assertion[]) => as.some((a) => e.kinds.includes(a.kind) && e.terms.every((t) => has(said(a), t)));
 
 function blank(ad: (typeof CASES)[number]): RunResult {
   return {
@@ -72,7 +70,8 @@ async function main() {
       const t0 = Date.now();
       try {
         const { assertions } = await extractAssertions(r, { open: model === "spark-open" });
-        if (r.openWeights?.fallback) throw new Error(`Muse Spark read this one instead: ${r.openWeights.fallback}`);
+        if (r.openWeights?.fallback) throw new Error(`${r.models["ad to promises"]} read this one instead: ${r.openWeights.fallback}`);
+        if (model === "spark" && r.models["ad to promises"] !== MODELS.spark) throw new Error(`${r.models["ad to promises"]} answered instead of ${MODELS.spark}`);
         const labels = LABELS[c.ad.headline];
         const got = labels.filter((e) => found(e, assertions)).length;
         const okQuotes = assertions.filter((a) => containsQuote(adText(r.ad), a.adQuote)).length;

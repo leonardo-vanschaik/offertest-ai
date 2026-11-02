@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-11-02T20:12:04.299Z",
+  "ranAt": "2026-11-02T20:42:22.266Z",
   "ads": 11,
   "expectedPromises": 14,
   "summary": {
@@ -8,8 +8,8 @@
       "promisesFound": "14/14",
       "quotesWordForWord": "14/14",
       "errors": 0,
-      "seconds": 84,
-      "usd": 0.1254
+      "seconds": 77,
+      "usd": 0.1178
     },
     "spark-open": {
       "model": "meta/muse-spark-open",
@@ -22,10 +22,10 @@
       ],
       "fellBack": 0,
       "promisesFound": "14/14",
-      "quotesWordForWord": "16/16",
+      "quotesWordForWord": "15/15",
       "errors": 0,
-      "seconds": 53,
-      "usd": 0.0412
+      "seconds": 29,
+      "usd": 0.0293
     }
   },
   "rows": [
@@ -59,7 +59,7 @@
           "id": "a1",
           "kind": "price",
           "claim": "The Ridge trail shoe costs $120",
-          "adQuote": "$120.",
+          "adQuote": "$120",
           "conditions": {
             "product": "The Ridge trail shoe",
             "amount": "$120"
@@ -69,7 +69,7 @@
           "id": "a2",
           "kind": "free_shipping",
           "claim": "The Ridge trail shoe has free shipping",
-          "adQuote": "Free shipping.",
+          "adQuote": "Free shipping",
           "conditions": {
             "product": "The Ridge trail shoe"
           }
@@ -122,7 +122,7 @@
           "conditions": {
             "product": "The Ridge",
             "variant": "Slate",
-            "size_range": "7 to 12"
+            "size": "7 to 12"
           }
         }
       ]
@@ -137,7 +137,7 @@
           "id": "a1",
           "kind": "discount",
           "claim": "Code TRAIL10 gives $10 off the Summit rain jacket",
-          "adQuote": "$10 off the Summit rain jacket with code TRAIL10",
+          "adQuote": "$10 off the Summit rain jacket with code TRAIL10.",
           "conditions": {
             "code": "TRAIL10",
             "amount": "$10",
@@ -175,21 +175,21 @@
         {
           "id": "a1",
           "kind": "price",
-          "claim": "The Ridge trail shoe in Slate costs $120",
+          "claim": "The Ridge trail shoe costs $120",
           "adQuote": "$120",
           "conditions": {
-            "product": "Ridge trail shoe",
-            "variant": "Slate",
-            "amount": "$120"
+            "product": "Ridge",
+            "amount": "$120",
+            "variant": "Slate"
           }
         },
         {
           "id": "a2",
           "kind": "free_shipping",
-          "claim": "The Ridge trail shoe in Slate ships free",
+          "claim": "The Ridge trail shoe ships free",
           "adQuote": "shipped free",
           "conditions": {
-            "product": "Ridge trail shoe",
+            "product": "Ridge",
             "variant": "Slate"
           }
         }
@@ -204,10 +204,10 @@
         {
           "id": "a1",
           "kind": "availability",
-          "claim": "Sizes 7 through 12 of the Ridge trail shoe in Slate are available now",
+          "claim": "The Ridge trail shoe in Slate is available in sizes 7 through 12",
           "adQuote": "Sizes 7 through 12, all available now.",
           "conditions": {
-            "product": "Ridge trail shoe",
+            "product": "The Ridge trail shoe",
             "variant": "Slate",
             "sizes": "7 through 12"
           }
@@ -228,7 +228,7 @@
           "conditions": {
             "product": "Trail Club",
             "duration": "30 days",
-            "credit card": "not required"
+            "credit_card": "not required"
           }
         },
         {
@@ -236,7 +236,9 @@
           "kind": "other",
           "claim": "Every order has free returns",
           "adQuote": "free returns on every order",
-          "conditions": {}
+          "conditions": {
+            "scope": "every order"
+          }
         }
       ]
     },
@@ -249,11 +251,12 @@
         {
           "id": "a1",
           "kind": "lead_magnet",
-          "claim": "The First Thru-Hike Guide is available as a free instant download",
+          "claim": "The First Thru-Hike Guide is free to download instantly",
           "adQuote": "Free: The First Thru-Hike Guide",
           "conditions": {
             "product": "The First Thru-Hike Guide",
-            "delivery": "Instant download"
+            "price": "Free",
+            "format": "Instant download"
           }
         }
       ]
@@ -273,7 +276,7 @@
             "code": "SAVE20",
             "percent": "20%",
             "product": "Ridge trail shoe",
-            "time_limit": "This week only"
+            "validity": "This week only"
           }
         }
       ]
@@ -288,7 +291,7 @@
           "id": "a1",
           "kind": "price",
           "claim": "The Ridge trail shoe costs $120",
-          "adQuote": "$120.",
+          "adQuote": "$120",
           "conditions": {
             "product": "The Ridge trail shoe",
             "amount": "$120"
@@ -298,8 +301,10 @@
           "id": "a2",
           "kind": "free_shipping",
           "claim": "The Ridge trail shoe has free shipping",
-          "adQuote": "Free shipping.",
-          "conditions": {}
+          "adQuote": "Free shipping",
+          "conditions": {
+            "product": "The Ridge trail shoe"
+          }
         }
       ]
     },
@@ -312,11 +317,9 @@
         {
           "id": "a1",
           "kind": "free_shipping",
-          "claim": "Every order qualifies for free shipping",
+          "claim": "Free shipping is available on every order",
           "adQuote": "Free shipping on every order.",
-          "conditions": {
-            "threshold": "none"
-          }
+          "conditions": {}
         }
       ]
     },
@@ -351,7 +354,8 @@
           "conditions": {
             "product": "The Ridge",
             "variant": "Slate",
-            "sizes": "7 to 12"
+            "size_min": "7",
+            "size_max": "12"
           }
         }
       ]
@@ -413,7 +417,7 @@
         {
           "id": "a2",
           "kind": "free_shipping",
-          "claim": "The Ridge trail shoe ships free",
+          "claim": "The Ridge ships for free",
           "adQuote": "shipped free",
           "conditions": {
             "product": "Ridge"
@@ -425,7 +429,7 @@
           "claim": "The Ridge trail shoe is available in Slate",
           "adQuote": "in Slate",
           "conditions": {
-            "product": "Ridge",
+            "product": "Ridge trail shoe",
             "variant": "Slate"
           }
         }
@@ -435,7 +439,7 @@
       "model": "spark-open",
       "ad": "Every size in stock.",
       "found": "1/1",
-      "quotesWordForWord": "2/2",
+      "quotesWordForWord": "1/1",
       "assertions": [
         {
           "id": "a1",
@@ -443,17 +447,9 @@
           "claim": "The Ridge trail shoe in Slate is available in sizes 7 through 12",
           "adQuote": "Sizes 7 through 12, all available now.",
           "conditions": {
-            "product": "The Ridge trail shoe in Slate",
+            "product": "Ridge trail shoe",
+            "variant": "Slate",
             "sizes": "7 through 12"
-          }
-        },
-        {
-          "id": "a2",
-          "kind": "availability",
-          "claim": "Every size of The Ridge trail shoe is in stock",
-          "adQuote": "Every size in stock.",
-          "conditions": {
-            "product": "The Ridge trail shoe"
           }
         }
       ]
@@ -472,13 +468,13 @@
           "conditions": {
             "product": "Trail Club",
             "duration": "30 days",
-            "credit_card_required": "false"
+            "credit card required": "no"
           }
         },
         {
           "id": "a2",
-          "kind": "other",
-          "claim": "Every order includes free returns",
+          "kind": "guarantee",
+          "claim": "Free returns are available on every order",
           "adQuote": "free returns on every order",
           "conditions": {}
         }
@@ -493,7 +489,7 @@
         {
           "id": "a1",
           "kind": "lead_magnet",
-          "claim": "The First Thru-Hike Guide is available for free as an instant download",
+          "claim": "The First Thru-Hike Guide is available as a free instant download",
           "adQuote": "Free: The First Thru-Hike Guide",
           "conditions": {
             "product": "The First Thru-Hike Guide"

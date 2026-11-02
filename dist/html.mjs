@@ -9,8 +9,14 @@ import { parseImageStream, recordsOfKind } from "@meta-sam/parser";
 
 //#region src/meta/client.ts
 const MODELS = {
-	wonder: process.env.OFFERTEST_WONDER_MODEL ?? "muse-wonder-1.0",
-	spark: process.env.OFFERTEST_SPARK_MODEL ?? "muse-spark-1.3",
+	get wonder() {
+		loadEnv();
+		return process.env.OFFERTEST_WONDER_MODEL || "muse-wonder-1.0";
+	},
+	get spark() {
+		loadEnv();
+		return process.env.OFFERTEST_SPARK_MODEL || "muse-spark-1.3";
+	},
 	sam: "sam-3.1"
 };
 const PRICES = {
@@ -85,7 +91,9 @@ async function structured(r, opts) {
 		});
 		addUsage(r, model, res.usage?.prompt_tokens, res.usage?.completion_tokens);
 		const text = res.choices[0]?.message?.content ?? "";
-		return opts.schema.parse(JSON.parse(stripFences(text)));
+		const out = opts.schema.parse(JSON.parse(stripFences(text)));
+		if (opts.job) r.models[opts.job] = model;
+		return out;
 	};
 	try {
 		return await call$2(opts.model);
@@ -123,9 +131,13 @@ async function imageAsDataUrl(src) {
 
 //#endregion
 //#region src/meta/open.ts
-const SPARK_OPEN = process.env.OFFERTEST_SPARK_OPEN_MODEL ?? "meta/muse-spark-open";
-const PROVIDERS = (process.env.OFFERTEST_SPARK_OPEN_PROVIDERS ?? "baseten,fireworks,modal").split(",").map((p) => p.trim()).filter(Boolean);
-const base = () => (process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+function env(name, fallback) {
+	loadEnv();
+	return process.env[name] || fallback;
+}
+const sparkOpenModel = () => env("OFFERTEST_SPARK_OPEN_MODEL", "meta/muse-spark-open");
+const providers = () => env("OFFERTEST_SPARK_OPEN_PROVIDERS", "baseten,fireworks,modal").split(",").map((p) => p.trim()).filter(Boolean);
+const base = () => env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").replace(/\/+$/, "");
 function sparkOpenKey() {
 	loadEnv();
 	return process.env.OPENROUTER_API_KEY || void 0;
@@ -153,36 +165,34 @@ async function call$1(p, body, timeoutMs = 18e4) {
 }
 async function sparkOpenStatus() {
 	await call$1("/key", void 0, 15e3);
-	return `OpenRouter key works (${SPARK_OPEN} on ${PROVIDERS.join(", ")})`;
+	return `OpenRouter key works (${sparkOpenModel()} on ${providers().join(", ")})`;
 }
-let quantizations;
-function quantizationOf(provider) {
-	quantizations ??= call$1(`/models/${SPARK_OPEN}/endpoints`, void 0, 2e4).then((r) => new Map((r.data?.endpoints ?? []).map((e) => [e.provider_name.toLowerCase(), e.quantization ?? "unknown"]))).catch(() => /* @__PURE__ */ new Map());
-	return quantizations.then((m) => {
-		const q = m.get(provider.toLowerCase());
-		return !q || q === "unknown" ? "not published by the provider" : q;
-	});
+const quantizations = /* @__PURE__ */ new Map();
+async function quantizationOf(model, provider) {
+	if (!quantizations.has(model)) quantizations.set(model, call$1(`/models/${model}/endpoints`, void 0, 2e4).then((r) => new Map((r.data?.endpoints ?? []).map((e) => [e.provider_name.toLowerCase(), e.quantization ?? "unknown"]))).catch(() => /* @__PURE__ */ new Map()));
+	const q = (await quantizations.get(model)).get(provider.toLowerCase());
+	return !q || q === "unknown" ? "not published by the provider" : q;
 }
 async function sparkOpenStructured(r, opts) {
 	const schema = z.toJSONSchema(opts.schema, { target: "draft-7" });
 	delete schema.$schema;
+	const model = sparkOpenModel();
 	const ow = r.openWeights ??= {
 		job: opts.job,
-		model: SPARK_OPEN,
+		model,
 		route: "OpenRouter",
 		provider: "",
 		quantization: "",
 		requests: [],
-		calls: 0,
 		ms: 0,
 		inputTokens: 0,
 		outputTokens: 0,
 		usd: 0
 	};
 	const body = {
-		model: SPARK_OPEN,
+		model,
 		provider: {
-			order: PROVIDERS,
+			order: providers(),
 			allow_fallbacks: false
 		},
 		reasoning: { effort: "low" },
@@ -205,20 +215,31 @@ async function sparkOpenStructured(r, opts) {
 			lastError = err;
 			continue;
 		}
-		ow.calls++;
 		ow.ms += Date.now() - t0;
-		ow.requests.push(res.id);
-		ow.provider = res.provider ?? "unknown";
-		ow.quantization = await quantizationOf(ow.provider);
 		const u = res.usage ?? {};
-		ow.inputTokens += u.prompt_tokens ?? 0;
-		ow.outputTokens += u.completion_tokens ?? 0;
-		ow.usd += u.cost ?? 0;
-		r.usage.inputTokens += u.prompt_tokens ?? 0;
-		r.usage.outputTokens += u.completion_tokens ?? 0;
-		r.usage.usd += u.cost ?? 0;
+		const provider = res.provider ?? "unknown";
+		const req = {
+			id: res.id,
+			provider,
+			quantization: await quantizationOf(model, provider),
+			inputTokens: u.prompt_tokens ?? 0,
+			outputTokens: u.completion_tokens ?? 0,
+			usd: u.cost ?? 0,
+			accepted: false
+		};
+		ow.requests.push(req);
+		ow.inputTokens += req.inputTokens;
+		ow.outputTokens += req.outputTokens;
+		ow.usd += req.usd;
+		r.usage.inputTokens += req.inputTokens;
+		r.usage.outputTokens += req.outputTokens;
+		r.usage.usd += req.usd;
 		try {
-			return opts.schema.parse(JSON.parse(stripFences(res.choices?.[0]?.message?.content ?? "")));
+			const out = opts.schema.parse(JSON.parse(stripFences(res.choices?.[0]?.message?.content ?? "")));
+			req.accepted = true;
+			ow.provider = req.provider;
+			ow.quantization = req.quantization;
+			return out;
 		} catch (err) {
 			lastError = err;
 		}
@@ -267,13 +288,13 @@ async function adContent(ad) {
 	return parts;
 }
 function promiseModel() {
-	return sparkOpenKey() ? SPARK_OPEN : MODELS.spark;
+	return sparkOpenKey() ? sparkOpenModel() : MODELS.spark;
 }
 async function extractAssertions(r, opts = {}) {
 	const user = await adContent(r.ad);
 	let out;
 	if (opts.open ?? !!sparkOpenKey()) {
-		r.models["ad to promises"] = SPARK_OPEN;
+		r.models["ad to promises"] = sparkOpenModel();
 		try {
 			out = await sparkOpenStructured(r, {
 				job: "ad to promises",
@@ -285,17 +306,15 @@ async function extractAssertions(r, opts = {}) {
 			r.openWeights.fallback = err.message;
 		}
 	}
-	if (!out) {
-		r.models["ad to promises"] = MODELS.spark;
-		out = await structured(r, {
-			model: MODELS.spark,
-			fallbackModel: MODELS.wonder,
-			name: "offer_assertions",
-			schema: Schema$2,
-			system: SYSTEM$2,
-			user
-		});
-	}
+	out ??= await structured(r, {
+		model: MODELS.spark,
+		fallbackModel: MODELS.wonder,
+		name: "offer_assertions",
+		schema: Schema$2,
+		system: SYSTEM$2,
+		user,
+		job: "ad to promises"
+	});
 	return {
 		subject: out.subject,
 		imageText: out.imageText,
@@ -2786,7 +2805,10 @@ function modelsSection(r) {
 	const rows = Object.entries(r.models).map(([job, id]) => `<tr><td><b>${esc(modelName(id))}</b> <span class="muted">· ${esc(jobName(job))}</span></td><td class="mono">${esc(id)}</td></tr>`).join("");
 	const u = r.usage;
 	const o = r.openWeights;
-	const ow = !o ? "" : o.fallback ? `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} did not answer, so Muse Spark read the promises: ${esc(o.fallback)}</p>` : `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} read the ad's promises on ${esc(o.provider)} (${esc(o.quantization)}), through ${esc(o.route)}. ${o.calls} request${o.calls === 1 ? "" : "s"}: <span class="mono">${o.requests.map(esc).join(", ")}</span>. ${(o.ms / 1e3).toFixed(1)} s, ${num(o.inputTokens)} tokens in, ${num(o.outputTokens)} out, ${esc(fmtUsd(o.usd))}.</p>`;
+	const req = (q) => `<span class="mono">${esc(q.id)}</span> on ${esc(q.provider)} (${esc(q.quantization)})`;
+	const used = o?.requests.find((q) => q.accepted);
+	const unused = o?.requests.filter((q) => !q.accepted) ?? [];
+	const ow = !o ? "" : `<p class="ow"><b>Open weights.</b> ${used ? `${esc(modelName(o.model))} read the ad's promises through ${esc(o.route)}: request ${req(used)}.` : `${esc(modelName(o.model))} gave no usable answer, so ${esc(modelName(r.models[o.job] ?? ""))} read the promises. ${esc(o.fallback ?? "")}`}${unused.length ? ` Not used: ${unused.map(req).join(", ")}.` : ""} ${(o.ms / 1e3).toFixed(1)} s, ${num(o.inputTokens)} tokens in, ${num(o.outputTokens)} out, ${esc(fmtUsd(o.usd))}.</p>`;
 	return section("models", "Models used", "", `<div class="models">
   <div class="card table-card"><table><thead><tr><th>Model and job</th><th>Model id</th></tr></thead><tbody>${rows || `<tr><td colspan="2" class="muted">No models recorded.</td></tr>`}</tbody></table>${ow}</div>
   <div class="usage">

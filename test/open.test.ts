@@ -16,10 +16,12 @@ const PROMISES = JSON.stringify({
 
 // A stand-in for OpenRouter (Muse Spark Open) and the Meta Model API (Muse Spark) on one port, for the whole file:
 // the Meta client is made once per process. Each test sets the replies OpenRouter gives.
+type OpenReply = string | number | { content: string; provider: string };
 async function fakeApis() {
   const open: Record<string, unknown>[] = [];
   const spark: Record<string, unknown>[] = [];
-  const replies: (string | number)[] = [];
+  const replies: OpenReply[] = [];
+  let sparkBroken = false;
   const srv = http.createServer(async (req, res) => {
     let body = "";
     for await (const chunk of req) body += chunk;
@@ -33,17 +35,20 @@ async function fakeApis() {
       open.push(JSON.parse(body));
       const reply = replies.shift() ?? 500;
       if (typeof reply === "number") return send(reply, { error: { message: "provider unavailable" } });
+      const { content, provider } = typeof reply === "string" ? { content: reply, provider: "BaseTen" } : reply;
       return send(200, {
         id: `gen-${open.length}`,
-        provider: "BaseTen",
+        provider,
         model: "meta/muse-spark-open",
-        choices: [{ message: { role: "assistant", content: reply } }],
+        choices: [{ message: { role: "assistant", content } }],
         usage: { prompt_tokens: 900, completion_tokens: 300, cost: 0.0024 },
       });
     }
     if (req.url === "/meta/chat/completions") {
+      const { model } = JSON.parse(body) as { model: string };
       spark.push(JSON.parse(body));
-      return send(200, { id: "x", object: "chat.completion", created: 0, model: "muse-spark-1.3", choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: PROMISES } }], usage: { prompt_tokens: 1000, completion_tokens: 200 } });
+      const content = sparkBroken && model === "muse-spark-1.3" ? "not json" : PROMISES;
+      return send(200, { id: "x", object: "chat.completion", created: 0, model, choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content } }], usage: { prompt_tokens: 1000, completion_tokens: 200 } });
     }
     send(404, { error: { message: "not found" } });
   });
@@ -54,8 +59,9 @@ async function fakeApis() {
   return {
     open,
     spark,
-    reset(openReplies: (string | number)[]) {
+    reset(openReplies: OpenReply[], opts: { sparkBroken?: boolean } = {}) {
       open.length = spark.length = 0;
+      sparkBroken = !!opts.sparkBroken;
       replies.splice(0, replies.length, ...openReplies);
       Object.assign(process.env, env);
     },
@@ -107,8 +113,7 @@ test("with an OpenRouter key, Muse Spark Open reads the promises on a hackathon 
     route: "OpenRouter",
     provider: "BaseTen",
     quantization: "fp4",
-    requests: ["gen-1"],
-    calls: 1,
+    requests: [{ id: "gen-1", provider: "BaseTen", quantization: "fp4", inputTokens: 900, outputTokens: 300, usd: 0.0024, accepted: true }],
     ms: r.openWeights!.ms,
     inputTokens: 900,
     outputTokens: 300,
@@ -116,14 +121,23 @@ test("with an OpenRouter key, Muse Spark Open reads the promises on a hackathon 
   });
   assert.equal(r.usage.usd, 0.0024, "the cost counts in the run's total");
   const html = fs.readFileSync(writeReport(r, fs.mkdtempSync(path.join(os.tmpdir(), "offertest-open-"))), "utf8");
-  assert.match(html, /Muse Spark Open read the ad's promises on BaseTen \(fp4\), through OpenRouter\. 1 request: <span class="mono">gen-1<\/span>/);
+  assert.match(html, /Muse Spark Open read the ad's promises through OpenRouter: request <span class="mono">gen-1<\/span> on BaseTen \(fp4\)\./);
 });
 
-test("an answer that does not match the schema gets one more try", async () => {
-  apis.reset(["Here are the promises: {", PROMISES]);
+test("an answer that does not match the schema gets one more try, and each request keeps its own provider", async () => {
+  apis.reset([{ content: "Here are the promises: {", provider: "Fireworks" }, PROMISES]);
   const r = run();
   assert.equal((await extractAssertions(r)).assertions.length, 1);
-  assert.deepEqual(r.openWeights?.requests, ["gen-1", "gen-2"]);
+  assert.deepEqual(
+    r.openWeights?.requests.map((q) => [q.id, q.provider, q.quantization, q.accepted]),
+    [
+      ["gen-1", "Fireworks", "not published by the provider", false],
+      ["gen-2", "BaseTen", "fp4", true],
+    ],
+  );
+  assert.equal(r.openWeights?.provider, "BaseTen", "the provider of the answer that was used");
+  const html = fs.readFileSync(writeReport(r, fs.mkdtempSync(path.join(os.tmpdir(), "offertest-open-"))), "utf8");
+  assert.match(html, /Not used: <span class="mono">gen-1<\/span> on Fireworks/);
 });
 
 test("if Muse Spark Open fails, Muse Spark reads the promises, and the run says so", async () => {
@@ -133,6 +147,27 @@ test("if Muse Spark Open fails, Muse Spark reads the promises, and the run says 
   assert.equal(apis.spark.length, 1);
   assert.equal(r.models["ad to promises"], "muse-spark-1.3");
   assert.match(r.openWeights?.fallback ?? "", /Muse Spark Open did not return valid ad to promises after 2 tries: .*provider unavailable/);
+});
+
+test("if Muse Spark fails too, the run names Muse Wonder, the model whose answer was used", async () => {
+  apis.reset([503, 503], { sparkBroken: true });
+  const r = run();
+  assert.equal((await extractAssertions(r)).assertions.length, 1);
+  assert.equal(r.models["ad to promises"], "muse-wonder-1.0");
+});
+
+test("the provider order can come from a .env file", async () => {
+  apis.reset([PROMISES]);
+  const cwd = process.cwd();
+  process.chdir(fs.mkdtempSync(path.join(os.tmpdir(), "offertest-env-")));
+  fs.writeFileSync(".env", "OFFERTEST_SPARK_OPEN_PROVIDERS=fireworks\n");
+  try {
+    await extractAssertions(run());
+    assert.deepEqual((apis.open[0] as { provider: { order: string[] } }).provider.order, ["fireworks"]);
+  } finally {
+    process.chdir(cwd);
+    delete process.env.OFFERTEST_SPARK_OPEN_PROVIDERS;
+  }
 });
 
 test("without an OpenRouter key, Muse Spark reads the promises (only the Meta key is needed)", async () => {
