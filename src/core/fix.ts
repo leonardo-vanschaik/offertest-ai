@@ -15,7 +15,8 @@ const SYSTEM = `An ad-offer test failed: the funnel does not give the customer w
 - Prefer fixing the funnel when the ad states the intended offer (expired or wrong code, price drift, hidden condition, sold-out item, broken link, form that leads nowhere). Say exactly where to change it (for example "Shopify admin > Discounts > SAVE20 > Active dates: end Nov 9, 11:59 PM").
 - Propose new ad copy (target "ad", with adHeadline and adText) only when the funnel is right and the ad is wrong.
 - summary: one sentence the owner can approve, e.g. "Extend SAVE20 to Nov 9, 11:59 PM, the ad's last day."
-- steps: 1 to 4 short instructions.`;
+- rationale: one sentence on why this fix, from the evidence, e.g. "The ad is right and the checkout rejects SAVE20 as expired, so the code is what changed."
+- steps: 1 to 4 short instructions, each naming the screen or setting to change. The last one says how to check it.`;
 
 export async function proposeFix(r: RunResult): Promise<Fix> {
   const failed = r.verdicts.filter((v) => v.status === "contradicted");
