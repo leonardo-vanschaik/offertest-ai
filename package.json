@@ -4,11 +4,15 @@
   "description": "An AI agent that follows your Meta ad's funnel like a customer and checks that the offer holds, before the ad spends.",
   "type": "module",
   "license": "Apache-2.0",
+  "author": "Leo (https://github.com/leonardo-vanschaik)",
+  "homepage": "https://offertest.ai",
+  "repository": { "type": "git", "url": "git+https://github.com/leonardo-vanschaik/offertest-ai.git" },
+  "bugs": { "url": "https://github.com/leonardo-vanschaik/offertest-ai/issues" },
   "bin": { "offertest": "./dist/cli.mjs" },
   "exports": {
     ".": { "types": "./dist/index.d.mts", "import": "./dist/index.mjs" }
   },
-  "files": ["dist", "skills", "examples/recordings/*/**", "README.md", "LICENSE"],
+  "files": ["dist", "skills", "examples/recordings/*/**", "README.md", "LICENSE", "NOTICE"],
   "engines": { "node": ">=22.12.0" },
   "keywords": ["meta", "ads", "agent", "computer-use", "playwright", "muse", "funnel", "testing"],
   "scripts": {

@@ -8,3 +8,6 @@ next-env.d.ts
 .open-next/
 .wrangler/
 .dev.vars*
+
+# Written by next dev for coding agents; not part of the store
+AGENTS.md

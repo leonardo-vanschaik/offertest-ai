@@ -13,6 +13,7 @@
   <img alt="Muse Spark" src="https://img.shields.io/badge/Muse_Spark-ad_reading-0866FF">
   <img alt="SAM 3.1" src="https://img.shields.io/badge/SAM_3.1-segmentation-0866FF">
   <img alt="Benchmark" src="https://img.shields.io/badge/benchmark-41%2F41_correct-2EA44F">
+  <a href="https://github.com/leonardo-vanschaik/offertest-ai/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/leonardo-vanschaik/offertest-ai/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A522-339933">
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-lightgrey">
 </p>
@@ -238,5 +239,7 @@ npm test                                                 # unit tests
 npm run test:e2e                                         # browser tests
 npm run test:journeys                                    # 46 end-to-end user journeys
 ```
+
+How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md). Report a security problem: [SECURITY.md](SECURITY.md).
 
 License: Apache-2.0
