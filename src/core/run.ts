@@ -52,7 +52,7 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     r.assertions = assertions;
     if (imageText.trim()) r.ad.imageText = imageText.trim();
     if (r.openWeights) await log.event({ type: "open_weights", ...r.openWeights });
-    await log.event({ type: "assertions", assertions });
+    await log.event({ type: "assertions", assertions, subject });
     log.save();
 
     await phase("Following the funnel like a customer (Muse Wonder · computer use)");

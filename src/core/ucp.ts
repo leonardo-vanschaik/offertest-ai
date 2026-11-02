@@ -78,9 +78,16 @@ async function findItem(endpoint: string, url: URL, query: string): Promise<{ id
     }
   }
   type Product = { title?: string; url?: string; variants?: { id?: string; title?: string; availability?: { available?: boolean }; available?: boolean }[] };
-  const found = await call<{ products?: Product[] }>(endpoint, "search_catalog", { catalog: { query } }).catch(() => null);
   const path = url.pathname.replace(/\/$/, "");
-  const p = (found?.products ?? []).find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path);
+  // Search by the ad's subject, then by the page's own name ("ridge-trail-shoe"): a subject such as "shoes"
+  // can miss a product called "Ridge trail shoe".
+  const pageName = decodeURIComponent(handle ?? path.split("/").pop() ?? "").replace(/[-_]+/g, " ").trim();
+  let p: Product | undefined;
+  for (const q of [...new Set([query, pageName])].filter(Boolean)) {
+    const found = await call<{ products?: Product[] }>(endpoint, "search_catalog", { catalog: { query: q } }).catch(() => null);
+    p = (found?.products ?? []).find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path);
+    if (p) break;
+  }
   if (!p) return { skip: `Agent checkout skipped: no catalog item matches the ad's landing page ${url.pathname}` };
   const isWanted = (id?: string) => !!id && (id === want || id.endsWith(`/${want}`));
   const v = want ? p.variants?.find((x) => isWanted(x.id)) : (p.variants?.find((x) => x.availability?.available !== false && x.available !== false) ?? p.variants?.[0]);

@@ -1606,9 +1606,13 @@ async function findItem(endpoint, url, query) {
 			};
 		}
 	}
-	const found = await call(endpoint, "search_catalog", { catalog: { query } }).catch(() => null);
 	const path$1 = url.pathname.replace(/\/$/, "");
-	const p = (found?.products ?? []).find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path$1);
+	const pageName = decodeURIComponent(handle ?? path$1.split("/").pop() ?? "").replace(/[-_]+/g, " ").trim();
+	let p;
+	for (const q of [...new Set([query, pageName])].filter(Boolean)) {
+		p = ((await call(endpoint, "search_catalog", { catalog: { query: q } }).catch(() => null))?.products ?? []).find((x) => x.url && new URL(x.url, url).pathname.replace(/\/$/, "") === path$1);
+		if (p) break;
+	}
 	if (!p) return { skip: `Agent checkout skipped: no catalog item matches the ad's landing page ${url.pathname}` };
 	const isWanted = (id) => !!id && (id === want || id.endsWith(`/${want}`));
 	const v = want ? p.variants?.find((x) => isWanted(x.id)) : p.variants?.find((x) => x.availability?.available !== false && x.available !== false) ?? p.variants?.[0];
@@ -1886,7 +1890,8 @@ async function runTest(ad, opts) {
 		});
 		await log.event({
 			type: "assertions",
-			assertions
+			assertions,
+			subject
 		});
 		log.save();
 		await phase("Following the funnel like a customer (Muse Wonder · computer use)");

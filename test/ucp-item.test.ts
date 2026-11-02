@@ -18,9 +18,11 @@ async function shop() {
       for await (const c of req) raw += c;
       const rpc = JSON.parse(raw);
       const args = rpc.params.arguments;
+      // The catalog finds the trail boot only by its own name, like a store with word search.
+      const boot = /trail boot/.test(args.catalog?.query ?? "");
       const out =
         rpc.params.name === "search_catalog"
-          ? { products: [{ title: "Other", url: `${origin}/products/other`, variants: [{ id: "v9", title: "Default" }] }] }
+          ? { products: boot ? [{ title: "Trail boot", url: `${origin}/store/trail-boot`, variants: [{ id: "b1", title: "9" }] }] : [{ title: "Other", url: `${origin}/products/other`, variants: [{ id: "v9", title: "Default" }] }] }
           : { cart: { line_items: [{ item: { id: args.cart.line_items[0].item.id }, quantity: 1 }], totals: [] } };
       return void res.end(JSON.stringify({ jsonrpc: "2.0", id: rpc.id, result: { structuredContent: out } }));
     }
@@ -57,6 +59,16 @@ test("a landing page that matches no catalog item is skipped, not replaced by th
   try {
     const r = await agentCheckout(`${s.origin}/collections/sale`, ["SAVE20"], "sale");
     assert.ok("skipped" in r && /no catalog item matches/.test(r.skipped), JSON.stringify(r));
+  } finally {
+    s.close();
+  }
+});
+
+test("when the ad's subject finds nothing, the page's own name finds the advertised product", async () => {
+  const s = await shop();
+  try {
+    const r = await agentCheckout(`${s.origin}/store/trail-boot`, [], "boots");
+    assert.ok("text" in r && /Trail boot - 9/.test(r.text), JSON.stringify(r));
   } finally {
     s.close();
   }
