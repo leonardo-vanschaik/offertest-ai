@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Join Trail Club" };
 
 export default async function JoinPage() {
   await connection();
-  const { trialDays, trialRequiresCard } = getConfig().funnels;
+  const { trialDays, trialRequiresCard } = (await getConfig()).funnels;
 
   return (
     <div className={`${container} max-w-[640px] pt-10`}>

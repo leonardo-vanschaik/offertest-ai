@@ -12,8 +12,8 @@ const td = "border-b border-[#E7E1D5] px-3 py-2 align-top text-[14px]";
 
 export default async function AdminPage() {
   await connection();
-  const config = getConfig();
-  const orders = listOrders();
+  const config = await getConfig();
+  const orders = await listOrders();
   const now = new Date();
 
   return (

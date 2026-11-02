@@ -9,7 +9,7 @@ export type AddState = { error?: string };
 export async function addToCart(_prev: AddState, formData: FormData): Promise<AddState> {
   const productId = String(formData.get("productId") ?? "");
   const variantId = String(formData.get("variantId") ?? "");
-  const config = getConfig();
+  const config = await getConfig();
   const product = config.products.find((p) => p.id === productId);
   if (!product) return { error: "This product is no longer available." };
   if (!variantId) return { error: "Please select a size." };
@@ -28,7 +28,7 @@ export async function addToCart(_prev: AddState, formData: FormData): Promise<Ad
 export async function setQty(formData: FormData): Promise<void> {
   const variantId = String(formData.get("variantId") ?? "");
   const qty = Number(formData.get("qty"));
-  const config = getConfig();
+  const config = await getConfig();
   const cart = await readCart();
   const item = cart.items.find((i) => i.variantId === variantId);
   if (!item || !Number.isFinite(qty)) return;
@@ -87,7 +87,7 @@ export async function placeOrder(_prev: CheckoutState, formData: FormData): Prom
   if (!values.card) return fail("Enter your card number.");
 
   // Never trust the client: re-read the cart and re-price it with the current store config.
-  const config = getConfig();
+  const config = await getConfig();
   const cart = await readCart();
   const priced = priceCart(config, cart);
   if (priced.lines.length === 0) return fail("Your cart is empty.");
@@ -99,7 +99,7 @@ export async function placeOrder(_prev: CheckoutState, formData: FormData): Prom
   const payError = checkTestCard(values.card, values.expiry, values.cvc);
   if (payError) return fail(payError);
 
-  const order = createOrder({
+  const order = await createOrder({
     email: values.email,
     name: values.name,
     address: values.address,

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Trail Club" };
 
 export default async function TrailClubPage() {
   await connection();
-  const { trialDays } = getConfig().funnels;
+  const { trialDays } = (await getConfig()).funnels;
 
   return (
     <>

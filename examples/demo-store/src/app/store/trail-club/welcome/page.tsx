@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Welcome to Trail Club" };
 
 export default async function WelcomePage() {
   await connection();
-  const { trialDays } = getConfig().funnels;
+  const { trialDays } = (await getConfig()).funnels;
   const ends = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
     dateStyle: "long",
     timeZone: "America/New_York",

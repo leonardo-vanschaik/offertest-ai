@@ -1,0 +1,35 @@
+// Cloudflare Workers config for the demo store at demo.offertest.ai. Steps: DEPLOY.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "offertest-demo",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // Self-reference used by OpenNext. Must match "name" above.
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "offertest-demo"
+    }
+  ],
+  "d1_databases": [
+    {
+      // Store state (scenario, config, orders, cart epoch). See src/lib/store/state.ts.
+      "binding": "STORE_DB",
+      "database_name": "offertest-demo",
+      // Placeholder. Run `npx wrangler d1 create offertest-demo` and paste the database_id it prints.
+      // Local preview (npm run cf:preview) works with the placeholder.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "routes": [
+    // Cloudflare creates the DNS record for this hostname on deploy (zone offertest.ai).
+    { "pattern": "demo.offertest.ai", "custom_domain": true }
+  ],
+  "observability": { "enabled": true }
+}

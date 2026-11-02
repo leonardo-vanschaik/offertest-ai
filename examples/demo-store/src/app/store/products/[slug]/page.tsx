@@ -8,7 +8,7 @@ import { ProductForm } from "./ProductForm";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const config = getConfig();
+  const config = await getConfig();
   const product = config.products.find((p) => p.slug === slug);
   if (!product) notFound();
   const ship = shippingHeadline(config.shipping.freeOverCents);

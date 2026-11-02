@@ -83,7 +83,7 @@ function handler() {
     : { ...base, id: "demo_card", name: "dev.offertest.demo_card", psp: "none", spec: SPEC, requires_delegate_payment: false, config: { test_token: DEMO_TOKEN } };
 }
 
-function view(s: Session, origin: string, config: StoreConfig = getConfig()) {
+function view(s: Session, origin: string, config: StoreConfig) {
   const priced = priceCart(config, { items: s.items, couponCode: s.codes[0] }, new Date(), "agent");
   const rejected = s.codes.flatMap((code, i) =>
     i === 0 && priced.couponApplied ? [] : [{ code, reason: i === 0 ? reasonOf(priced.couponMessage) : "discount_code_combination_disallowed", message: i === 0 ? priced.couponMessage ?? COUPON_MESSAGES.invalid : "Only one code per order." }],
@@ -184,7 +184,7 @@ async function complete(s: Session, body: Body, origin: string): Promise<Respons
 }
 
 async function pay(s: Session, body: Body, origin: string): Promise<Response | null> {
-  const config = getConfig();
+  const config = await getConfig();
   if (soldOut(config, s.items).length) return fail(400, "out_of_stock", "An item in this checkout session is sold out.", "$.line_items");
   if (!s.items.length || !fullAddress(s.details?.address)) return fail(400, "not_ready", "The checkout session is not ready for payment: add an item and a full shipping address.");
   const token = body.payment_data?.instrument?.credential?.token;
@@ -198,7 +198,7 @@ async function pay(s: Session, body: Body, origin: string): Promise<Response | n
     s.paid = true;
   }
   const a = details.address;
-  const order = createOrder({
+  const order = await createOrder({
     email: details.email ?? "agent@example.com",
     name: details.name ?? a.name,
     address: [a.line_one, a.line_two, a.city, a.state, a.postal_code, a.country].filter(Boolean).join(", "),
@@ -218,7 +218,7 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
   const [id, action] = (await ctx.params).path ?? [];
   if (req.method === "GET") {
     const s = id && sessions.get(id);
-    return s ? Response.json(view(s, origin)) : fail(404, "not_found", "Checkout session not found.");
+    return s ? Response.json(view(s, origin, await getConfig())) : fail(404, "not_found", "Checkout session not found.");
   }
 
   // Every POST needs an Idempotency-Key; a retry with the same key and body gets the first answer.
@@ -249,7 +249,7 @@ async function post(raw: string, id: string | undefined, action: string | undefi
   } catch {
     return fail(400, "invalid", "The body is not valid JSON.");
   }
-  const config = getConfig();
+  const config = await getConfig();
 
   let status = 200;
   let s: Session | undefined;
@@ -276,7 +276,7 @@ async function post(raw: string, id: string | undefined, action: string | undefi
     else if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
     else apply(s, body, config);
   }
-  return Response.json(view(s, origin), { status });
+  return Response.json(view(s, origin, await getConfig()), { status });
 }
 
 // Echo the Idempotency-Key on every answer.

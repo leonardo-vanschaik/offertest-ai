@@ -1,4 +1,4 @@
-// Alder Trail Co. test store library. Server-only (uses node:fs), except pricing.ts which is pure.
+// Alder Trail Co. test store library. Server-only (node:fs or D1, see state.ts), except pricing.ts which is pure.
 export {
   getConfig,
   setScenario,

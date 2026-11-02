@@ -3,5 +3,5 @@ import { listOrders } from "@/lib/store";
 
 export async function GET() {
   await connection();
-  return Response.json(listOrders());
+  return Response.json(await listOrders());
 }

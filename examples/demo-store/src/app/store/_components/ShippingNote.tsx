@@ -10,7 +10,7 @@ export function shippingHeadline(freeOverCents: number | null): string | null {
 
 export async function AnnouncementBar() {
   await connection();
-  const text = shippingHeadline(getConfig().shipping.freeOverCents) ?? "Repairs and returns within 30 days";
+  const text = shippingHeadline((await getConfig()).shipping.freeOverCents) ?? "Repairs and returns within 30 days";
   return <AnnouncementView text={text} />;
 }
 

@@ -7,7 +7,7 @@ import { shippingHeadline } from "./_components/ShippingNote";
 
 export default async function StoreHome() {
   await connection();
-  const config = getConfig();
+  const config = await getConfig();
   const ridge = config.products.find((p) => p.id === "ridge");
   const ship = shippingHeadline(config.shipping.freeOverCents);
 

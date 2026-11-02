@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const config = setScenario(scenario);
+  const config = await setScenario(scenario);
   (await cookies()).delete(CART_COOKIE);
   return Response.json(config);
 }

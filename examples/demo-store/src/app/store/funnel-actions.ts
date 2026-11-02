@@ -20,7 +20,7 @@ export async function joinTrailClub(_prev: JoinState, formData: FormData): Promi
   if (!EMAIL_RE.test(values.email)) return fail("Enter a valid email address.");
   if (password.length < 8) return fail("Choose a password with at least 8 characters.");
 
-  if (getConfig().funnels.trialRequiresCard) {
+  if ((await getConfig()).funnels.trialRequiresCard) {
     if (!values.card) return fail("Enter your card number to start your trial.");
     const payError = checkTestCard(values.card, values.expiry, values.cvc);
     if (payError) return fail(payError);

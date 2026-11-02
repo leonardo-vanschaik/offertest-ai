@@ -10,7 +10,7 @@ const BROKEN_PDF_URL = "/guides/first-thru-hike-guide.pdf"; // does not exist: 4
 
 export default async function GuideThanksPage() {
   await connection();
-  const { guide } = getConfig().funnels;
+  const { guide } = (await getConfig()).funnels;
 
   return (
     <div className={`${container} max-w-[760px] pt-12`}>

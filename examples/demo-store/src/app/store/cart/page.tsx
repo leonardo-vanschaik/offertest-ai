@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Cart" };
 
 export default async function CartPage() {
   const cart = await readCart();
-  const config = getConfig();
+  const config = await getConfig();
   const priced = priceCart(config, cart);
 
   if (priced.lines.length === 0) {

@@ -62,8 +62,8 @@ function cartView(config: StoreConfig, origin: string, id: string) {
   };
 }
 
-function call(name: string, args: Record<string, unknown>, origin: string) {
-  const config = getConfig();
+async function call(name: string, args: Record<string, unknown>, origin: string) {
+  const config = await getConfig();
   if (name === "search_catalog") {
     const q = String((args.catalog as { query?: string } | undefined)?.query ?? "").toLowerCase();
     const words = q.split(/\W+/).filter((w) => w.length > 2);
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
   if (rpc.method === "tools/list") return reply({ result: { tools: TOOLS } });
   if (rpc.method !== "tools/call") return reply({ error: { code: -32601, message: "Method not found" } });
   try {
-    const out = call(rpc.params?.name ?? "", rpc.params?.arguments ?? {}, origin);
+    const out = await call(rpc.params?.name ?? "", rpc.params?.arguments ?? {}, origin);
     return reply({ result: { structuredContent: out, content: [{ type: "text", text: JSON.stringify(out) }] } });
   } catch (e) {
     return reply({ result: { isError: true, content: [{ type: "text", text: (e as Error).message }] } });

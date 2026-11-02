@@ -36,13 +36,13 @@ function parse(raw: string | undefined, epoch: number): Cart {
 
 export async function readCart(): Promise<Cart> {
   const jar = await cookies();
-  return parse(jar.get(CART_COOKIE)?.value, getCartEpoch());
+  return parse(jar.get(CART_COOKIE)?.value, await getCartEpoch());
 }
 
 /** Only callable from Server Actions or Route Handlers. */
 export async function writeCart(cart: Cart): Promise<void> {
   const jar = await cookies();
-  const value: CookieCart = { e: getCartEpoch(), items: cart.items, couponCode: cart.couponCode };
+  const value: CookieCart = { e: await getCartEpoch(), items: cart.items, couponCode: cart.couponCode };
   jar.set(CART_COOKIE, JSON.stringify(value), {
     path: "/",
     httpOnly: true,

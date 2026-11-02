@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import type { Coupon, Order, PricedCart, ScenarioName, StoreConfig, StoreFix } from "@/lib/types";
 import { baselineConfig, baselineFunnels, FIRST_ORDER_NUMBER } from "./catalog";
 import { scenarioConfig } from "./scenarios";
 
-// Server-only state. Persists to data/store.json so it survives dev reloads and is shared
+// Server-only state. Locally it persists to data/store.json so it survives dev reloads and is shared
 // by every process that imports this module (Next server, eval scripts).
+// On Cloudflare Workers (no lasting file system) it is one row of the STORE_DB D1 database.
 
 export const STORE_FILE = path.join(process.cwd(), "data", "store.json");
 
@@ -36,46 +38,151 @@ function freshState(): StoreState {
   };
 }
 
-function writeState(state: StoreState): void {
+function parseState(raw: string | null): StoreState | null {
+  if (!raw) return null;
+  try {
+    const s = JSON.parse(raw) as StoreState;
+    if (s && s.version === 1 && s.config && Array.isArray(s.orders)) {
+      s.config.funnels ??= baselineFunnels(); // state written before funnels existed
+      return s;
+    }
+  } catch {
+    // unreadable: caller falls back to baseline
+  }
+  return null;
+}
+
+type Backend = {
+  read(): Promise<StoreState>;
+  mutate<T>(fn: (s: StoreState) => T): Promise<T>; // fn changes the latest state; the change is saved unless fn throws
+  replace(s: StoreState): Promise<void>;
+};
+
+// ---------- File backend (next dev, next start, eval scripts) ----------
+
+function writeFile(state: StoreState): void {
   fs.mkdirSync(path.dirname(STORE_FILE), { recursive: true });
   const tmp = `${STORE_FILE}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
   fs.renameSync(tmp, STORE_FILE);
 }
 
-function readState(): StoreState {
+function readFile(): StoreState {
+  let raw: string | null = null;
   try {
-    const raw = fs.readFileSync(STORE_FILE, "utf8");
-    const s = JSON.parse(raw) as StoreState;
-    if (s && s.version === 1 && s.config && Array.isArray(s.orders)) {
-      s.config.funnels ??= baselineFunnels(); // store.json written before funnels existed
-      return s;
-    }
+    raw = fs.readFileSync(STORE_FILE, "utf8");
   } catch {
-    // missing or unreadable: fall through to baseline
+    // missing: fall through to baseline
   }
-  const s = freshState();
-  writeState(s);
-  return s;
+  const s = parseState(raw);
+  if (s) return s;
+  const fresh = freshState();
+  writeFile(fresh);
+  return fresh;
 }
 
-function mutate<T>(fn: (s: StoreState) => T): T {
-  const s = readState();
-  const out = fn(s);
-  writeState(s);
-  return out;
+const fileBackend: Backend = {
+  read: async () => readFile(),
+  // Sync read, change, and write: requests in this process cannot interleave.
+  mutate: async (fn) => {
+    const s = readFile();
+    const out = fn(s);
+    writeFile(s);
+    return out;
+  },
+  replace: async (s) => writeFile(s),
+};
+
+// ---------- D1 backend (Cloudflare Workers) ----------
+
+// The few D1 methods used here. Schema: migrations/0001_state.sql.
+type D1 = {
+  prepare(sql: string): {
+    bind(...values: unknown[]): {
+      first<T>(): Promise<T | null>;
+      run(): Promise<{ meta: { changes: number } }>;
+    };
+  };
+  exec(sql: string): Promise<unknown>;
+};
+
+declare global {
+  interface CloudflareEnv {
+    STORE_DB?: D1;
+  }
 }
 
-export function getConfig(): StoreConfig {
-  return readState().config;
+const ROW = "store";
+const CAS_TRIES = 20;
+let tableReady: Promise<unknown> | undefined;
+
+function d1Backend(db: D1): Backend {
+  // Same table as the migration, so a database without it still works.
+  tableReady ??= db.exec("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT NOT NULL)").catch((e) => {
+    tableReady = undefined; // try again on the next request
+    throw e;
+  });
+
+  const save = (next: StoreState, prev: string) =>
+    db.prepare("UPDATE state SET value = ? WHERE key = ? AND value = ?").bind(JSON.stringify(next), ROW, prev).run();
+
+  // The parsed state and the raw row text it came from (for compare-and-swap).
+  async function load(): Promise<{ s: StoreState; raw: string }> {
+    await tableReady;
+    for (let i = 0; i < CAS_TRIES; i++) {
+      const raw = (await db.prepare("SELECT value FROM state WHERE key = ?").bind(ROW).first<{ value: string }>())?.value ?? null;
+      const s = parseState(raw);
+      if (s && raw !== null) return { s, raw };
+      // Missing or unreadable: start from baseline, unless another request just did.
+      if (raw === null) await db.prepare("INSERT OR IGNORE INTO state (key, value) VALUES (?, ?)").bind(ROW, JSON.stringify(freshState())).run();
+      else await save(freshState(), raw);
+    }
+    throw new StoreError("Store state is busy. Try again.", 503);
+  }
+
+  return {
+    read: async () => (await load()).s,
+    // Compare-and-swap: write only if the row did not change since the read, else retry on the new state.
+    mutate: async (fn) => {
+      for (let i = 0; i < CAS_TRIES; i++) {
+        const { s, raw } = await load();
+        const out = fn(s);
+        if ((await save(s, raw)).meta.changes === 1) return out;
+      }
+      throw new StoreError("Store state is busy. Try again.", 503);
+    },
+    replace: async (s) => {
+      await tableReady;
+      await db
+        .prepare("INSERT INTO state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value")
+        .bind(ROW, JSON.stringify(s))
+        .run();
+    },
+  };
 }
 
-export function getCartEpoch(): number {
-  return readState().cartEpoch;
+// On Workers use the STORE_DB binding. Elsewhere (Node) use the file: the async Cloudflare
+// context would start a local wrangler proxy there instead of failing.
+async function backend(): Promise<Backend> {
+  if (globalThis.navigator?.userAgent !== "Cloudflare-Workers") return fileBackend;
+  const { env } = await getCloudflareContext({ async: true });
+  if (!env.STORE_DB) throw new Error("STORE_DB D1 binding is missing. See DEPLOY.md.");
+  return d1Backend(env.STORE_DB);
+}
+
+const readState = async () => (await backend()).read();
+const mutate = async <T>(fn: (s: StoreState) => T): Promise<T> => (await backend()).mutate(fn);
+
+export async function getConfig(): Promise<StoreConfig> {
+  return (await readState()).config;
+}
+
+export async function getCartEpoch(): Promise<number> {
+  return (await readState()).cartEpoch;
 }
 
 /** Reset config to baseline, then apply the scenario. Clears carts. Keeps orders. */
-export function setScenario(name: ScenarioName): StoreConfig {
+export async function setScenario(name: ScenarioName): Promise<StoreConfig> {
   return mutate((s) => {
     s.config = scenarioConfig(name);
     s.cartEpoch = Date.now();
@@ -84,9 +191,9 @@ export function setScenario(name: ScenarioName): StoreConfig {
 }
 
 /** Reset to baseline, delete all orders, restart order ids at AT-10427, clear carts. */
-export function resetStore(): StoreConfig {
+export async function resetStore(): Promise<StoreConfig> {
   const s = freshState();
-  writeState(s);
+  await (await backend()).replace(s);
   return s.config;
 }
 
@@ -107,7 +214,7 @@ function checkDate(iso: string): void {
 }
 
 /** Apply one approved fix. Throws StoreError (status 400) on unknown product, variant, or code. */
-export function applyFix(fix: StoreFix): StoreConfig {
+export async function applyFix(fix: StoreFix): Promise<StoreConfig> {
   return mutate((s) => {
     const c = s.config;
     switch (fix.type) {
@@ -174,12 +281,12 @@ export function applyFix(fix: StoreFix): StoreConfig {
 }
 
 /** All orders, newest first. */
-export function listOrders(): Order[] {
-  return [...readState().orders].reverse();
+export async function listOrders(): Promise<Order[]> {
+  return [...(await readState()).orders].reverse();
 }
 
-export function getOrder(id: string): Order | null {
-  return readState().orders.find((o) => o.id === id.trim().toUpperCase()) ?? null;
+export async function getOrder(id: string): Promise<Order | null> {
+  return (await readState()).orders.find((o) => o.id === id.trim().toUpperCase()) ?? null;
 }
 
 export type NewOrderInput = {
@@ -191,7 +298,7 @@ export type NewOrderInput = {
 };
 
 /** Create an order with the next AT- id. Caller validates fields and payment first. */
-export function createOrder(input: NewOrderInput): Order {
+export async function createOrder(input: NewOrderInput): Promise<Order> {
   if (input.priced.lines.length === 0) throw new StoreError("Cart is empty");
   return mutate((s) => {
     const order: Order = {

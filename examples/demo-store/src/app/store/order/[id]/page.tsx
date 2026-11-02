@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Order confirmed" };
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const order = getOrder(decodeURIComponent(id));
+  const order = await getOrder(decodeURIComponent(id));
   if (!order) notFound();
   const { priced } = order;
 

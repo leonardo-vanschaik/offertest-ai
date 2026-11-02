@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid StoreFix", issues: parsed.error.issues }, { status: 400 });
   }
   try {
-    return Response.json(applyFix(parsed.data as StoreFix));
+    return Response.json(await applyFix(parsed.data as StoreFix));
   } catch (e) {
     if (e instanceof StoreError) return Response.json({ error: e.message }, { status: e.status });
     throw e;
