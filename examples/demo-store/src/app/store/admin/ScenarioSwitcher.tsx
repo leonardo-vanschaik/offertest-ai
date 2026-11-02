@@ -7,9 +7,11 @@ import type { ScenarioName } from "@/lib/types";
 export function ScenarioSwitcher({
   current,
   scenarios,
+  adminKey,
 }: {
   current: ScenarioName;
   scenarios: { name: ScenarioName; label: string }[];
+  adminKey?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -21,7 +23,7 @@ export function ScenarioSwitcher({
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(adminKey ? { "x-admin-key": adminKey } : {}) },
         body: body ? JSON.stringify(body) : undefined,
       });
       setMsg(res.ok ? (done ?? "Done.") : `Error ${res.status}: ${await res.text()}`);

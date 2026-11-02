@@ -19,7 +19,9 @@ Non-checkout funnels:
 
 - Free trial: `/store/trail-club` -> `/store/trail-club/join` -> `/store/trail-club/welcome`. Baseline: 30 days, no card. `trial_requires_card` adds card fields to the join form. `trial_14_days` makes the trial 14 days.
 - Lead magnet: `/store/guides/first-thru-hike` -> email form -> `/store/guides/first-thru-hike/thanks` with a link to `/guides/first-thru-hike.pdf`. `guide_link_broken` points the link at a missing file (404). `guide_paywalled` asks $4.99 instead.
-Test card: 4242 4242 4242 4242. Orders appear at `/store/admin`.
+Test card: 4242 4242 4242 4242. Orders appear at `/store/admin`. An order keeps no full contact data: `t***@offertest.ai`, `Test S.`, no street address.
+
+Locally the admin is open. With `STORE_ADMIN_KEY` set, and always on Cloudflare, the scenario, fix, reset, and order-list endpoints need an `x-admin-key` header, and the admin page needs `?key=`. Deploy: [DEPLOY.md](DEPLOY.md).
 
 ## Agent checkout (UCP)
 

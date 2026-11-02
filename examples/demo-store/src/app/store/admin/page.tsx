@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { describeCoupon, describeShipping, getConfig, isCouponExpired, listOrders, SCENARIOS } from "@/lib/store";
+import { adminAllowed } from "@/lib/store/admin";
 import { formatCents } from "@/lib/types";
 import { container } from "../_components/ui";
 import { ScenarioSwitcher } from "./ScenarioSwitcher";
@@ -10,8 +11,21 @@ export const metadata: Metadata = { title: "Admin" };
 const th = "border-b border-[#D8D1C2] px-3 py-2 text-left text-[13px] font-semibold uppercase tracking-wide text-[#5F655F]";
 const td = "border-b border-[#E7E1D5] px-3 py-2 align-top text-[14px]";
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ key?: string }> }) {
   await connection();
+  // On the public demo the admin needs ?key=<STORE_ADMIN_KEY>. Locally it is open.
+  const { key } = await searchParams;
+  if (!adminAllowed(key)) {
+    return (
+      <div className={`${container} max-w-[720px] space-y-4 pt-12`}>
+        <h1 className="text-[28px] font-semibold">Store admin is locked</h1>
+        <p className="text-[16px] text-[#4A504A]">
+          Everyone shares this public demo store, so its scenario cannot be changed here. Run the store on your computer to switch
+          scenarios and see orders: <code>examples/demo-store/README.md</code> in the OfferTest repo.
+        </p>
+      </div>
+    );
+  }
   const config = await getConfig();
   const orders = await listOrders();
   const now = new Date();
@@ -27,7 +41,7 @@ export default async function AdminPage() {
 
       <section>
         <h2 className="mb-3 text-[18px] font-semibold">Scenario</h2>
-        <ScenarioSwitcher current={config.scenario} scenarios={SCENARIOS} />
+        <ScenarioSwitcher current={config.scenario} scenarios={SCENARIOS} adminKey={key} />
       </section>
 
       <section>

@@ -297,6 +297,20 @@ export type NewOrderInput = {
   priced: PricedCart; // must come from priceCart() on the server
 };
 
+// A demo order keeps no full contact data: anyone can type their real details into a public test store.
+// "test@offertest.ai" -> "t***@offertest.ai", "Test Shopper" -> "Test S.", and no street address.
+export function redactContact(input: Pick<NewOrderInput, "email" | "name">): { email: string; name: string; address: string } {
+  const [user, domain] = input.email.split("@");
+  const [first, ...rest] = input.name.trim().split(/\s+/);
+  return {
+    email: domain ? `${user.slice(0, 1)}***@${domain}` : "***",
+    name: [first, rest.length ? `${rest[rest.length - 1].slice(0, 1)}.` : ""].filter(Boolean).join(" ") || "Customer",
+    address: "Not kept (demo store)",
+  };
+}
+
+const MAX_ORDERS = 200; // the public demo keeps the newest orders only
+
 /** Create an order with the next AT- id. Caller validates fields and payment first. */
 export async function createOrder(input: NewOrderInput): Promise<Order> {
   if (input.priced.lines.length === 0) throw new StoreError("Cart is empty");
@@ -304,15 +318,73 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     const order: Order = {
       id: `AT-${s.nextOrderNumber}`,
       createdAt: new Date().toISOString(),
-      email: input.email,
-      name: input.name,
-      address: input.address,
+      ...redactContact(input),
       cardLast4: input.cardLast4,
       testMode: true,
       priced: input.priced,
     };
     s.nextOrderNumber += 1;
     s.orders.push(order);
+    if (s.orders.length > MAX_ORDERS) s.orders.splice(0, s.orders.length - MAX_ORDERS);
     return order;
   });
+}
+
+// ---------- Small shared key-value store (agent checkout sessions, carts, idempotency keys) ----------
+// In memory locally (one Node process). On Workers a D1 table, so every instance sees the same session.
+
+type Kv = {
+  get(key: string): Promise<string | null>;
+  // prev undefined: write. prev null: write only if the key is new. prev string: write only if the value is still prev.
+  set(key: string, value: string, prev?: string | null): Promise<boolean>;
+};
+
+const g = globalThis as { storeKv?: Map<string, string> };
+const memoryKv: Kv = {
+  get: async (key) => (g.storeKv ??= new Map()).get(key) ?? null,
+  set: async (key, value, prev) => {
+    const m = (g.storeKv ??= new Map());
+    if (prev !== undefined && (m.get(key) ?? null) !== prev) return false;
+    m.set(key, value);
+    return true;
+  },
+};
+
+let kvReady: Promise<unknown> | undefined;
+function d1Kv(db: D1): Kv {
+  kvReady ??= db.exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)").catch((e) => {
+    kvReady = undefined;
+    throw e;
+  });
+  return {
+    get: async (key) => {
+      await kvReady;
+      return (await db.prepare("SELECT value FROM kv WHERE key = ?").bind(key).first<{ value: string }>())?.value ?? null;
+    },
+    set: async (key, value, prev) => {
+      await kvReady;
+      const q =
+        prev === undefined
+          ? db.prepare("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(key, value)
+          : prev === null
+            ? db.prepare("INSERT OR IGNORE INTO kv (key, value) VALUES (?, ?)").bind(key, value)
+            : db.prepare("UPDATE kv SET value = ? WHERE key = ? AND value = ?").bind(value, key, prev);
+      return (await q.run()).meta.changes === 1;
+    },
+  };
+}
+
+async function kv(): Promise<Kv> {
+  if (globalThis.navigator?.userAgent !== "Cloudflare-Workers") return memoryKv;
+  const { env } = await getCloudflareContext({ async: true });
+  if (!env.STORE_DB) throw new Error("STORE_DB D1 binding is missing. See DEPLOY.md.");
+  return d1Kv(env.STORE_DB);
+}
+
+export async function kvGet(key: string): Promise<string | null> {
+  return (await kv()).get(key);
+}
+
+export async function kvSet(key: string, value: string, prev?: string | null): Promise<boolean> {
+  return (await kv()).set(key, value, prev);
 }

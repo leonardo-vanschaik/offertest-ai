@@ -1,12 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { getConfig, priceCart } from "@/lib/store";
+import { getConfig, kvGet, kvSet, priceCart } from "@/lib/store";
 import { COUPON_MESSAGES } from "@/lib/store/pricing";
 import type { CartItem, StoreConfig } from "@/lib/types";
 
 // A small UCP agent checkout (MCP over JSON-RPC): search_catalog, create_cart, get_cart.
 // Carts price with the "agent" sales channel, so a web-only code is rejected here.
+// Carts live in the store's shared key-value store (D1 on Workers), so get_cart works on any instance.
 const VERSION = "2026-08-25";
-const carts = new Map<string, { items: CartItem[]; codes: string[] }>();
+type Cart = { items: CartItem[]; codes: string[] };
+const cartKey = (id: string) => `ucp:cart:${id}`;
 
 type Rpc = { jsonrpc: "2.0"; id?: number | string; method: string; params?: { name?: string; arguments?: Record<string, unknown> } };
 
@@ -30,8 +32,7 @@ function product(config: StoreConfig, origin: string, p: StoreConfig["products"]
   };
 }
 
-function cartView(config: StoreConfig, origin: string, id: string) {
-  const c = carts.get(id)!;
+function cartView(config: StoreConfig, origin: string, id: string, c: Cart) {
   const priced = priceCart(config, { items: c.items, couponCode: c.codes[0] }, new Date(), "agent");
   const msg = priced.couponMessage;
   const rejected = c.codes.length && !priced.couponApplied;
@@ -78,13 +79,15 @@ async function call(name: string, args: Record<string, unknown>, origin: string)
       if (p) items.push({ productId: p.id, variantId: li.item!.id!, qty: li.quantity ?? 1 });
     }
     const id = `cart_${randomUUID().slice(0, 8)}`;
-    carts.set(id, { items, codes: (cart.discounts?.codes ?? []).map((x) => x.toUpperCase()) });
-    return { cart: cartView(config, origin, id) };
+    const c: Cart = { items, codes: (cart.discounts?.codes ?? []).map((x) => x.toUpperCase()) };
+    await kvSet(cartKey(id), JSON.stringify(c));
+    return { cart: cartView(config, origin, id, c) };
   }
   if (name === "get_cart") {
     const id = String(args.id ?? args.cart_id ?? "");
-    if (!carts.has(id)) throw new Error("Cart not found");
-    return { cart: cartView(config, origin, id) };
+    const raw = id ? await kvGet(cartKey(id)) : null;
+    if (!raw) throw new Error("Cart not found");
+    return { cart: cartView(config, origin, id, JSON.parse(raw) as Cart) };
   }
   throw new Error(`Unknown tool ${name}`);
 }

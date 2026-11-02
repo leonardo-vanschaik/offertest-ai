@@ -29,13 +29,19 @@ Run these commands in `examples/demo-store`.
    The command prints a `database_id`. Open `wrangler.jsonc` and replace `00000000-0000-0000-0000-000000000000` with it.
    If wrangler asks to add the binding to your config, answer no. The binding is already there.
 
-4. Create the table in the remote database.
+4. Create the tables in the remote database.
 
    ```bash
    npm run cf:db:remote
    ```
 
-5. Build and deploy.
+5. Set the store admin key. Without it the admin (scenario, fix, reset, order list) is off on the public store.
+
+   ```bash
+   npx wrangler secret put STORE_ADMIN_KEY
+   ```
+
+6. Build and deploy.
 
    ```bash
    npm run cf:deploy
@@ -43,7 +49,7 @@ Run these commands in `examples/demo-store`.
 
    The route in `wrangler.jsonc` has `custom_domain: true`. Cloudflare creates the DNS record for `demo.offertest.ai` itself.
 
-6. Check it.
+7. Check it.
 
    ```bash
    curl https://demo.offertest.ai/api/store/config
@@ -59,10 +65,11 @@ npm run cf:deploy
 
 ## Switch scenarios on the live store
 
-Use `https://demo.offertest.ai/store/admin`, or:
+Everyone shares the public store, so the admin needs the key from step 5. Use `https://demo.offertest.ai/store/admin?key=<key>`, or:
 
 ```bash
-curl -X POST https://demo.offertest.ai/api/store/scenario -H 'content-type: application/json' -d '{"scenario":"code_expired"}'
+curl -X POST https://demo.offertest.ai/api/store/scenario -H "x-admin-key: $STORE_ADMIN_KEY" \
+  -H 'content-type: application/json' -d '{"scenario":"code_expired"}'
 ```
 
 The next page load shows the new scenario. D1 is strongly consistent, so there is no delay.
@@ -70,10 +77,10 @@ The next page load shows the new scenario. D1 is strongly consistent, so there i
 Reset the store (baseline config, no orders):
 
 ```bash
-curl -X POST https://demo.offertest.ai/api/store/reset
+curl -X POST https://demo.offertest.ai/api/store/reset -H "x-admin-key: $STORE_ADMIN_KEY"
 ```
 
-These admin endpoints have no login. Anyone with the URL can switch the scenario.
+Keep the public store on `code_expired`: that is the example in the OfferTest README.
 
 ## Optional settings
 
@@ -83,7 +90,9 @@ Change the ACP API key (default `alder-trail-demo`):
 npx wrangler secret put ACP_API_KEY
 ```
 
-ACP checkout sessions and UCP carts are kept in memory. On Workers a later request can reach a different instance and not find the session. Store orders and the scenario are in D1 and are always shared.
+Everything is in D1 and shared by every Workers instance: the scenario, orders, ACP checkout sessions, UCP carts, and ACP idempotency keys. A session is paid at most once: `complete` takes a lock on the session with a compare-and-swap write.
+
+Orders keep no full contact data. The store saves `t***@example.com`, a first name with an initial, and no street address, because anyone can type real details into a public test store. It keeps the newest 200 orders.
 
 ## Test the Workers build locally
 

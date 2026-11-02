@@ -10,6 +10,9 @@ export {
   getCartEpoch,
   StoreError,
   STORE_FILE,
+  redactContact,
+  kvGet,
+  kvSet,
 } from "./state";
 export type { NewOrderInput } from "./state";
 export {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { applyFix, StoreError } from "@/lib/store";
+import { adminDenied } from "@/lib/store/admin";
 import type { StoreFix } from "@/lib/types";
 
 const cents = z.number().int().nonnegative();
@@ -27,6 +28,8 @@ const fixSchema = z.discriminatedUnion("type", [
 ]);
 
 export async function POST(req: Request) {
+  const denied = adminDenied(req);
+  if (denied) return denied;
   let body: unknown;
   try {
     body = await req.json();

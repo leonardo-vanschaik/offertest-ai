@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
-import { COUPON_MESSAGES, createOrder, describeCoupon, findCoupon, getConfig, priceCart } from "@/lib/store";
+import { COUPON_MESSAGES, createOrder, describeCoupon, findCoupon, getConfig, kvGet, kvSet, priceCart } from "@/lib/store";
 import type { CartItem, PricedCart, StoreConfig } from "@/lib/types";
 
 // A small ACP seller (Agentic Commerce Protocol 2026-04-17): the checkout API AI agents such as ChatGPT
-// buy through. One file serves all five routes so the in-memory sessions are shared.
+// buy through. One file serves all five routes. Sessions and idempotency keys live in the store's shared
+// key-value store (D1 on Workers), so any instance can read, update, or complete a session.
 // Sessions price with the "agent" sales channel, so a web-only code is rejected here.
 // Payment: a Stripe test-mode Shared Payment Token when STRIPE_SECRET_KEY (sk_test_) is set, else any spt_ demo token.
 // https://github.com/agentic-commerce-protocol/agentic-commerce-protocol
@@ -25,7 +26,7 @@ type Session = {
   status: "open" | "completed" | "canceled";
   order?: { id: string; permalink_url: string };
   declined?: string;
-  completing?: boolean; // a complete request is paying right now
+  completing?: number; // when a complete request started paying (ms); a second complete waits
   paid?: boolean; // charged; a retry must not charge again
 };
 type Body = {
@@ -37,10 +38,21 @@ type Body = {
   payment_data?: { handler_id?: string; instrument?: { credential?: { type?: string; token?: string } } };
 };
 
-// Survives dev reloads.
-const g = globalThis as { acpSessions?: Map<string, Session>; acpReplays?: Map<string, { hash: string; status: number; body: object }> };
-const sessions = (g.acpSessions ??= new Map());
-const replays = (g.acpReplays ??= new Map());
+type Replay = { hash: string; status: number; body: object; at: number }; // status 0: the first request is still running
+const STALE_MS = 60_000; // a request that died mid-way frees its lock after this
+
+const sessionKey = (id: string) => `acp:session:${id}`;
+
+// The session and its stored text (for compare-and-swap), or null.
+async function load(id: string): Promise<{ s: Session; raw: string } | null> {
+  const raw = await kvGet(sessionKey(id));
+  return raw ? { s: JSON.parse(raw) as Session, raw } : null;
+}
+
+// Save the session. With prev, only if nobody changed it since that read.
+const save = (s: Session, prev?: string | null) => kvSet(sessionKey(s.id), JSON.stringify(s), prev);
+
+const busy = (s: Session) => !!s.completing && Date.now() - s.completing < STALE_MS;
 
 const fail = (status: number, code: string, message: string, param?: string) =>
   Response.json({ type: status >= 500 ? "processing_error" : "invalid_request", code, message, ...(param ? { param } : {}) }, { status });
@@ -171,15 +183,19 @@ async function chargeSpt(sessionId: string, token: string, cents: number): Promi
   return null;
 }
 
-async function complete(s: Session, body: Body, origin: string): Promise<Response | null> {
+async function complete(s: Session, raw: string, body: Body, origin: string): Promise<Response | null> {
   if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
-  // One payment at a time per session: a second complete waits for the first answer.
-  if (s.completing) return fail(409, "complete_in_progress", "This checkout session is being paid. Read it again in a moment.");
-  s.completing = true;
+  // One payment at a time per session, across instances: take the lock with a compare-and-swap.
+  // A second complete gets 409 until the first has an answer.
+  const inProgress = () => fail(409, "complete_in_progress", "This checkout session is being paid. Read it again in a moment.");
+  if (busy(s)) return inProgress();
+  s.completing = Date.now();
+  if (!(await save(s, raw))) return inProgress();
   try {
     return await pay(s, body, origin);
   } finally {
-    s.completing = false;
+    s.completing = undefined;
+    await save(s);
   }
 }
 
@@ -217,8 +233,8 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
   const origin = new URL(req.url).origin;
   const [id, action] = (await ctx.params).path ?? [];
   if (req.method === "GET") {
-    const s = id && sessions.get(id);
-    return s ? Response.json(view(s, origin, await getConfig())) : fail(404, "not_found", "Checkout session not found.");
+    const got = id ? await load(id) : null;
+    return got ? Response.json(view(got.s, origin, await getConfig())) : fail(404, "not_found", "Checkout session not found.");
   }
 
   // Every POST needs an Idempotency-Key; a retry with the same key and body gets the first answer.
@@ -226,19 +242,24 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
   if (!key) return fail(400, "idempotency_key_required", "Send an Idempotency-Key header on every POST.");
   const raw = await req.text();
   const hash = createHash("sha256").update(raw).digest("hex");
-  const slot = `${id ?? ""}/${action ?? ""}/${key}`;
-  const seen = replays.get(slot);
-  if (seen && seen.hash !== hash) return fail(422, "idempotency_conflict", "This Idempotency-Key was used with a different body.");
-  if (seen && !seen.status) {
-    const busy = fail(409, "idempotency_in_flight", "A request with this Idempotency-Key is still running.");
-    busy.headers.set("retry-after", "1");
-    return busy;
+  const slot = `acp:replay:${id ?? ""}/${action ?? ""}/${key}`;
+  // Reserve the key before any work (only one request can create it), so a parallel retry cannot run it twice.
+  const mine = JSON.stringify({ hash, status: 0, body: {}, at: Date.now() } satisfies Replay);
+  if (!(await kvSet(slot, mine, null))) {
+    const seenRaw = (await kvGet(slot)) ?? mine;
+    const seen = JSON.parse(seenRaw) as Replay;
+    if (seen.hash !== hash) return fail(422, "idempotency_conflict", "This Idempotency-Key was used with a different body.");
+    if (seen.status) return Response.json(seen.body, { status: seen.status, headers: { "idempotent-replayed": "true" } });
+    // Still running, unless that request died: then take the key over.
+    if (Date.now() - seen.at < STALE_MS || !(await kvSet(slot, mine, seenRaw))) {
+      const inFlight = fail(409, "idempotency_in_flight", "A request with this Idempotency-Key is still running.");
+      inFlight.headers.set("retry-after", "1");
+      return inFlight;
+    }
   }
-  if (seen) return Response.json(seen.body, { status: seen.status, headers: { "idempotent-replayed": "true" } });
-  // Reserve the key before any work, so a parallel retry cannot run it twice. Every answer is saved for replays.
-  replays.set(slot, { hash, status: 0, body: {} });
   const res = await post(raw, id, action, origin).catch((e: Error) => fail(500, "processing_error", e.message));
-  replays.set(slot, { hash, status: res.status, body: await res.clone().json() });
+  // Every answer is saved for replays.
+  await kvSet(slot, JSON.stringify({ hash, status: res.status, body: await res.clone().json(), at: Date.now() } satisfies Replay));
   return res;
 }
 
@@ -258,23 +279,29 @@ async function post(raw: string, id: string | undefined, action: string | undefi
     s = { id: `cs_${randomUUID().slice(0, 12)}`, items: [], codes: [], status: "open" };
     apply(s, body, config);
     if (!s.items.length) return fail(400, "invalid", "No known item in line_items. Use a variant id, product id, or product slug.", "$.line_items");
-    sessions.set(s.id, s);
+    await save(s, null);
     status = 201;
   } else {
-    s = sessions.get(id);
-    if (!s) return fail(404, "not_found", "Checkout session not found.");
+    const got = await load(id);
+    if (!got) return fail(404, "not_found", "Checkout session not found.");
+    s = got.s;
+    const changed = () => fail(409, "conflict", "The checkout session changed during this request. Read it again.");
     if (action === "complete") {
-      const err = await complete(s, body, origin);
+      const err = await complete(s, got.raw, body, origin);
       if (err) return err;
-    } else if (s.completing) {
+    } else if (busy(s)) {
       // A payment is running: no cancel or change until it has an answer.
       return fail(409, "complete_in_progress", "This checkout session is being paid. Read it again in a moment.");
     } else if (action === "cancel") {
       if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
       s.status = "canceled";
+      if (!(await save(s, got.raw))) return changed();
     } else if (action) return fail(404, "not_found", `Unknown action ${action}.`);
     else if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
-    else apply(s, body, config);
+    else {
+      apply(s, body, config);
+      if (!(await save(s, got.raw))) return changed();
+    }
   }
   return Response.json(view(s, origin, await getConfig()), { status });
 }

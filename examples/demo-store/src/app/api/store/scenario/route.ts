@@ -1,8 +1,11 @@
 import { cookies } from "next/headers";
 import { isScenarioName, setScenario, SCENARIOS } from "@/lib/store";
+import { adminDenied } from "@/lib/store/admin";
 import { CART_COOKIE } from "@/lib/store/cart-cookie";
 
 export async function POST(req: Request) {
+  const denied = adminDenied(req);
+  if (denied) return denied;
   let body: unknown;
   try {
     body = await req.json();
