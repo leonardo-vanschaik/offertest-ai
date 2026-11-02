@@ -21,6 +21,6 @@ npx tsx eval/promises.ts                       # both models
 npx tsx eval/promises.ts --models spark-open    # one model
 ```
 
-- **Promises found**: each ad has labeled promises (for example, a discount with "SAVE20" and "20"). One is found when an extracted promise has the right kind and names every term.
+- **Promises found**: each ad has labeled promises (for example, a discount with "SAVE20" and "20"). One is found when an extracted promise has the right kind and states every fact in its claim or in a condition with a value. The ad quote does not count. A fact stated as untrue ("does not give 20% off") does not count, and "no credit card" must be stated as absent. Tests: `test/promise-score.test.ts`.
 - **Quotes word for word**: every extracted promise's ad quote must be in the ad, checked by the same quote check as the verdicts.
 - Results: `eval/results/promises.json`, with each model's promises per ad, the provider, and its quantization.

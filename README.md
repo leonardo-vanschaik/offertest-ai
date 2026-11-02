@@ -143,14 +143,14 @@ The promise step runs on **Muse Spark Open**, Meta's open-weight model, through 
 
 Every run records the model that read the promises, the provider, its quantization, and OpenRouter's request ids: in `result.json` (`openWeights`), in `log.jsonl`, and in the report. The two runs in `offertest demo` ran on Baseten at fp4.
 
-We scored both models on the 11 ads of the benchmark. A promise counts only when the model states its facts (a code and its amount, a trial length, "no credit card") in its own claim, not only in the ad quote it copies.
+We scored both models on the 11 ads of the benchmark. A promise counts only when the model states its facts (a code and its amount, a trial length, "no credit card") in its own claim or conditions, not only in the ad quote it copies, and does not state them as untrue.
 
 | | Muse Spark Open | Muse Spark |
 |---|---|---|
 | Promises found | **14 / 14** | 14 / 14 |
-| Ad quotes found word for word | **15 / 15** | 14 / 14 |
-| Time for all 11 ads | **29 s** | 77 s |
-| Cost for all 11 ads | **$0.03** | $0.12 |
+| Ad quotes found word for word | **17 / 17** | 15 / 15 |
+| Time for all 11 ads | **30 s** | 102 s |
+| Cost for all 11 ads | **$0.03** | $0.11 |
 
 Results: [eval/results/promises.json](eval/results/promises.json). Run it: `npx tsx eval/promises.ts`.
 

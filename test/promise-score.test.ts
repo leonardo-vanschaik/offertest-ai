@@ -29,6 +29,22 @@ test("a wrong amount is not found: the code's own digits do not count", () => {
   assert.ok(!found(TRAIL10, [a("discount", "Code TRAIL10 gives $105 off")]));
 });
 
+test("an unrelated negation, or a condition with no value, does not count as no credit card", () => {
+  assert.ok(!found(NO_CARD, [a("free_trial", "Trial has no setup fee", { credit_card: "" })]));
+  assert.ok(!found(NO_CARD, [a("free_trial", "A credit card is required; no setup fee")]));
+  assert.ok(!found(NO_CARD, [a("free_trial", "A credit card is required, no setup fee")]));
+  assert.ok(found(NO_CARD, [a("free_trial", "Start the trial without a credit card")]));
+  assert.ok(found(NO_CARD, [a("free_trial", "A credit card is not required for the trial")]));
+});
+
+test("a promise stated as untrue is not found", () => {
+  const SAVE20: Expected = { kinds: ["discount"], terms: ["save20", "20"] };
+  assert.ok(!found(SAVE20, [a("discount", "Code SAVE20 does not give 20% off")]));
+  assert.ok(!found(SAVE20, [a("discount", "SAVE20 won't take 20% off the Ridge")]));
+  assert.ok(found(SAVE20, [a("discount", "Code SAVE20 gives 20% off the Ridge, no minimum spend")]));
+  assert.ok(found(SAVE20, [a("discount", "Code gives the discount", { code: "SAVE20", percent: "20%" })]));
+});
+
 test("the right facts under the wrong kind are not found", () => {
   assert.ok(!found(TRIAL, [a("price", "Trail Club is free for 30 days")]));
 });
