@@ -176,7 +176,7 @@ export function funnelTask(r: RunResult, startUrl: string, opts: RunOptions, car
     .join("\n");
   const card = cardIndex !== undefined ? r.ad.cards?.[cardIndex] : undefined;
   const pay = opts.pay
-    ? `Payment is allowed in TEST MODE only: if the funnel ends in a payment, use card ${TEST_IDENTITY.card}, expiry ${TEST_IDENTITY.expiry}, CVC ${TEST_IDENTITY.cvc} (on a Shopify store with the Bogus test gateway, use card number 1 instead), then click the final pay button (a human approves it first; the harness handles that) and wait for the confirmation page.`
+    ? `Payment is allowed in TEST MODE only. Finish the purchase: the order confirmation shows what the customer is really charged. At the payment step use card ${TEST_IDENTITY.card}, expiry ${TEST_IDENTITY.expiry}, CVC ${TEST_IDENTITY.cvc} (on a Shopify store with the Bogus test gateway, use card number 1 instead), then click the final pay button (a human approves it first; the harness handles that) and read the confirmation page before you stop.`
     : `Payment is NOT allowed: go as far as the payment step, read every total and message shown there, and stop. Do not enter card details.`;
   const submit =
     opts.submit === false
@@ -197,7 +197,7 @@ To check that several sizes or options are available, select each one on the pro
 ${submit}
 ${pay}
 Test identity: name ${TEST_IDENTITY.name}, email ${TEST_IDENTITY.email}, phone ${TEST_IDENTITY.phone}, address ${TEST_IDENTITY.address}.
-Never open admin pages. Stop once every promise is checked.`;
+Never open admin pages. Stop once every promise is checked${opts.pay ? " and the order is confirmed" : ""}.`;
 }
 
 export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts: RunOptions, startUrl: string, cardIndex?: number): Promise<FunnelResult> {
