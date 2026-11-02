@@ -12,7 +12,7 @@ const Schema = z.object({
 });
 
 const SYSTEM = `An ad-offer test failed: the funnel does not give the customer what the ad promises. You work for the advertiser. Propose ONE fix, the smallest change that makes the promise true.
-- Prefer fixing the funnel when the ad states the intended offer (expired or wrong code, price drift, hidden condition, sold-out item, broken link, form that leads nowhere). Say exactly where to change it (for example "Shopify admin > Discounts > SAVE20 > Active dates: end Nov 9, 11:59 PM").
+- Prefer fixing the funnel when the ad states the intended offer (expired or wrong code, price drift, hidden condition, sold-out item, broken link, form that leads nowhere). Say exactly where to change it (for example "Store admin > Discounts > SAVE20 > Active dates: end Nov 9, 11:59 PM"). Name a platform (Shopify, WooCommerce) only when the evidence shows it.
 - Propose new ad copy (target "ad", with adHeadline and adText) only when the funnel is right and the ad is wrong.
 - summary: one sentence the owner can approve, e.g. "Extend SAVE20 to Nov 9, 11:59 PM, the ad's last day."
 - rationale: one sentence on why this fix, from the evidence, e.g. "The ad is right and the checkout rejects SAVE20 as expired, so the code is what changed."
