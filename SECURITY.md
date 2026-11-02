@@ -13,7 +13,7 @@ OfferTest drives a real browser through other people's checkouts with an AI mode
 - **Page text is data.** Text on a page must not be able to change what the agent does outside the funnel task.
 - **Keys stay local.** `offertest init` saves keys in `~/.offertest/.env` with permissions for your user only. Run folders and reports contain no keys.
 - **The local server only answers the extension.** `offertest serve` listens on `127.0.0.1` and refuses other origins.
-- **The public demo store is read-only for visitors.** Its admin needs `STORE_ADMIN_KEY`, and it keeps no full contact data.
+- **The public demo store is read-only for visitors.** Its admin needs `STORE_ADMIN_KEY`. Orders keep no full contact data, and agent checkout sessions hide the buyer's details once completed and are deleted after 24 hours.
 
 ## Supported versions
 

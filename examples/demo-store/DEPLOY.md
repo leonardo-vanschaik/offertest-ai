@@ -90,9 +90,13 @@ Change the ACP API key (default `alder-trail-demo`):
 npx wrangler secret put ACP_API_KEY
 ```
 
-Everything is in D1 and shared by every Workers instance: the scenario, orders, ACP checkout sessions, UCP carts, and ACP idempotency keys. A session is paid at most once: `complete` takes a lock on the session with a compare-and-swap write.
+Everything is in D1 and shared by every Workers instance: the scenario, orders, ACP checkout sessions, UCP carts, and ACP idempotency keys. A session is paid at most once: `complete` takes a lock on the session with a compare-and-swap write, and a session gets at most one order, even when a write fails and `complete` is retried.
 
-Orders keep no full contact data. The store saves `t***@example.com`, a first name with an initial, and no street address, because anyone can type real details into a public test store. It keeps the newest 200 orders.
+Anyone can type real details into a public test store, so it keeps no full contact data for long:
+
+- Orders keep `t***@example.com`, a first name with an initial, and no street address. Orders saved before this rule are redacted when read. The store keeps the newest 200 orders.
+- An open ACP session keeps the buyer's details, because it needs the address. When it is completed or canceled, they are hidden. Saved replies for idempotent retries never hold them.
+- Sessions, carts, and saved replies are deleted 24 hours after their last write.
 
 ## Test the Workers build locally
 

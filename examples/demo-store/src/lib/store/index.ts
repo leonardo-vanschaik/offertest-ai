@@ -13,6 +13,8 @@ export {
   redactContact,
   kvGet,
   kvSet,
+  kvPrune,
+  KV_TTL_MS,
 } from "./state";
 export type { NewOrderInput } from "./state";
 export {

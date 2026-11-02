@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { COUPON_MESSAGES, createOrder, describeCoupon, findCoupon, getConfig, kvGet, kvSet, priceCart } from "@/lib/store";
+import { COUPON_MESSAGES, createOrder, describeCoupon, findCoupon, getConfig, KV_TTL_MS, kvGet, kvPrune, kvSet, priceCart, redactContact } from "@/lib/store";
 import type { CartItem, PricedCart, StoreConfig } from "@/lib/types";
 
 // A small ACP seller (Agentic Commerce Protocol 2026-04-17): the checkout API AI agents such as ChatGPT
@@ -20,6 +20,7 @@ const SPEC = "https://github.com/agentic-commerce-protocol/agentic-commerce-prot
 type Address = { name: string; line_one: string; line_two?: string; city: string; state: string; country: string; postal_code: string };
 type Session = {
   id: string;
+  created: number; // ms; a session expires KV_TTL_MS after it was created
   items: CartItem[];
   codes: string[];
   details?: { name?: string; email?: string; address?: Address };
@@ -43,11 +44,27 @@ const STALE_MS = 60_000; // a request that died mid-way frees its lock after thi
 
 const sessionKey = (id: string) => `acp:session:${id}`;
 
-// The session and its stored text (for compare-and-swap), or null.
+// The session and its stored text (for compare-and-swap), or null when missing or expired.
 async function load(id: string): Promise<{ s: Session; raw: string } | null> {
   const raw = await kvGet(sessionKey(id));
-  return raw ? { s: JSON.parse(raw) as Session, raw } : null;
+  const s = raw ? (JSON.parse(raw) as Session) : null;
+  return s && Date.now() - s.created < KV_TTL_MS ? { s, raw: raw! } : null;
 }
+
+// The buyer's details without full contact data: masked email, first name and initial, no street or postal code.
+// Kept in a session once it is completed or canceled, and in every saved replay answer.
+function hideDetails(d: Session["details"]): Session["details"] {
+  if (!d) return d;
+  const r = redactContact({ email: d.email ?? "", name: d.name ?? d.address?.name ?? "" });
+  const a = d.address;
+  return {
+    ...(d.name ? { name: r.name } : {}),
+    ...(d.email ? { email: r.email } : {}),
+    ...(a ? { address: { name: r.name, line_one: "Hidden", city: a.city, state: a.state, country: a.country, postal_code: "Hidden" } } : {}),
+  };
+}
+
+const hideBody = (b: { fulfillment_details?: Session["details"] }) => (b.fulfillment_details ? { ...b, fulfillment_details: hideDetails(b.fulfillment_details) } : b);
 
 // Save the session. With prev, only if nobody changed it since that read.
 const save = (s: Session, prev?: string | null) => kvSet(sessionKey(s.id), JSON.stringify(s), prev);
@@ -195,6 +212,7 @@ async function complete(s: Session, raw: string, body: Body, origin: string): Pr
     return await pay(s, body, origin);
   } finally {
     s.completing = undefined;
+    if (s.status !== "open") s.details = hideDetails(s.details);
     await save(s);
   }
 }
@@ -220,6 +238,7 @@ async function pay(s: Session, body: Body, origin: string): Promise<Response | n
     address: [a.line_one, a.line_two, a.city, a.state, a.postal_code, a.country].filter(Boolean).join(", "),
     cardLast4: "4242",
     priced,
+    checkoutSessionId: s.id,
   });
   s.status = "completed";
   s.order = { id: order.id, permalink_url: `${origin}/store/order/${order.id}` };
@@ -258,8 +277,8 @@ async function handle(req: Request, ctx: Ctx): Promise<Response> {
     }
   }
   const res = await post(raw, id, action, origin).catch((e: Error) => fail(500, "processing_error", e.message));
-  // Every answer is saved for replays.
-  await kvSet(slot, JSON.stringify({ hash, status: res.status, body: await res.clone().json(), at: Date.now() } satisfies Replay));
+  // Every answer is saved for replays, without the buyer's full contact data.
+  await kvSet(slot, JSON.stringify({ hash, status: res.status, body: hideBody(await res.clone().json()), at: Date.now() } satisfies Replay));
   return res;
 }
 
@@ -276,7 +295,8 @@ async function post(raw: string, id: string | undefined, action: string | undefi
   let s: Session | undefined;
   if (!id) {
     if (!body.currency) return fail(400, "missing", "currency is required.", "$.currency");
-    s = { id: `cs_${randomUUID().slice(0, 12)}`, items: [], codes: [], status: "open" };
+    await kvPrune();
+    s = { id: `cs_${randomUUID().slice(0, 12)}`, created: Date.now(), items: [], codes: [], status: "open" };
     apply(s, body, config);
     if (!s.items.length) return fail(400, "invalid", "No known item in line_items. Use a variant id, product id, or product slug.", "$.line_items");
     await save(s, null);
@@ -295,6 +315,7 @@ async function post(raw: string, id: string | undefined, action: string | undefi
     } else if (action === "cancel") {
       if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);
       s.status = "canceled";
+      s.details = hideDetails(s.details);
       if (!(await save(s, got.raw))) return changed();
     } else if (action) return fail(404, "not_found", `Unknown action ${action}.`);
     else if (s.status !== "open") return fail(405, "conflict", `Checkout session is ${s.status}.`);

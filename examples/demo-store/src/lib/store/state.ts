@@ -44,6 +44,8 @@ function parseState(raw: string | null): StoreState | null {
     const s = JSON.parse(raw) as StoreState;
     if (s && s.version === 1 && s.config && Array.isArray(s.orders)) {
       s.config.funnels ??= baselineFunnels(); // state written before funnels existed
+      // Orders saved before contact data was redacted: redact them on every read (and on the next write).
+      s.orders = s.orders.map((o) => ({ ...o, ...redactContact(o) }));
       return s;
     }
   } catch {
@@ -295,10 +297,12 @@ export type NewOrderInput = {
   address: string;
   cardLast4: string;
   priced: PricedCart; // must come from priceCart() on the server
+  checkoutSessionId?: string; // an ACP session gets at most one order
 };
 
 // A demo order keeps no full contact data: anyone can type their real details into a public test store.
 // "test@offertest.ai" -> "t***@offertest.ai", "Test Shopper" -> "Test S.", and no street address.
+// Safe to run again on redacted data: "t***@offertest.ai" and "Test S." stay the same.
 export function redactContact(input: Pick<NewOrderInput, "email" | "name">): { email: string; name: string; address: string } {
   const [user, domain] = input.email.split("@");
   const [first, ...rest] = input.name.trim().split(/\s+/);
@@ -315,6 +319,9 @@ const MAX_ORDERS = 200; // the public demo keeps the newest orders only
 export async function createOrder(input: NewOrderInput): Promise<Order> {
   if (input.priced.lines.length === 0) throw new StoreError("Cart is empty");
   return mutate((s) => {
+    // A retried ACP complete finds the order it already made, in the same atomic write.
+    const made = input.checkoutSessionId && s.orders.find((o) => o.checkoutSessionId === input.checkoutSessionId);
+    if (made) return made;
     const order: Order = {
       id: `AT-${s.nextOrderNumber}`,
       createdAt: new Date().toISOString(),
@@ -322,6 +329,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
       cardLast4: input.cardLast4,
       testMode: true,
       priced: input.priced,
+      ...(input.checkoutSessionId ? { checkoutSessionId: input.checkoutSessionId } : {}),
     };
     s.nextOrderNumber += 1;
     s.orders.push(order);
@@ -332,27 +340,35 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
 
 // ---------- Small shared key-value store (agent checkout sessions, carts, idempotency keys) ----------
 // In memory locally (one Node process). On Workers a D1 table, so every instance sees the same session.
+// Every record is deleted 24 hours after its last write.
+
+export const KV_TTL_MS = 24 * 60 * 60 * 1000;
 
 type Kv = {
   get(key: string): Promise<string | null>;
   // prev undefined: write. prev null: write only if the key is new. prev string: write only if the value is still prev.
   set(key: string, value: string, prev?: string | null): Promise<boolean>;
+  prune(before: number): Promise<void>; // delete records last written before this time (ms)
 };
 
-const g = globalThis as { storeKv?: Map<string, string> };
+const g = globalThis as { storeKv?: Map<string, { value: string; at: number }> };
 const memoryKv: Kv = {
-  get: async (key) => (g.storeKv ??= new Map()).get(key) ?? null,
+  get: async (key) => (g.storeKv ??= new Map()).get(key)?.value ?? null,
   set: async (key, value, prev) => {
     const m = (g.storeKv ??= new Map());
-    if (prev !== undefined && (m.get(key) ?? null) !== prev) return false;
-    m.set(key, value);
+    if (prev !== undefined && (m.get(key)?.value ?? null) !== prev) return false;
+    m.set(key, { value, at: Date.now() });
     return true;
+  },
+  prune: async (before) => {
+    for (const [k, v] of g.storeKv ?? []) if (v.at < before) g.storeKv!.delete(k);
   },
 };
 
 let kvReady: Promise<unknown> | undefined;
 function d1Kv(db: D1): Kv {
-  kvReady ??= db.exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)").catch((e) => {
+  // Same table as migrations/0002_kv.sql, so a database without it still works.
+  kvReady ??= db.exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL, at INTEGER NOT NULL DEFAULT 0)").catch((e) => {
     kvReady = undefined;
     throw e;
   });
@@ -363,13 +379,18 @@ function d1Kv(db: D1): Kv {
     },
     set: async (key, value, prev) => {
       await kvReady;
+      const at = Date.now();
       const q =
         prev === undefined
-          ? db.prepare("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(key, value)
+          ? db.prepare("INSERT INTO kv (key, value, at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, at = excluded.at").bind(key, value, at)
           : prev === null
-            ? db.prepare("INSERT OR IGNORE INTO kv (key, value) VALUES (?, ?)").bind(key, value)
-            : db.prepare("UPDATE kv SET value = ? WHERE key = ? AND value = ?").bind(value, key, prev);
+            ? db.prepare("INSERT OR IGNORE INTO kv (key, value, at) VALUES (?, ?, ?)").bind(key, value, at)
+            : db.prepare("UPDATE kv SET value = ?, at = ? WHERE key = ? AND value = ?").bind(value, at, key, prev);
       return (await q.run()).meta.changes === 1;
+    },
+    prune: async (before) => {
+      await kvReady;
+      await db.prepare("DELETE FROM kv WHERE at < ?").bind(before).run();
     },
   };
 }
@@ -387,4 +408,9 @@ export async function kvGet(key: string): Promise<string | null> {
 
 export async function kvSet(key: string, value: string, prev?: string | null): Promise<boolean> {
   return (await kv()).set(key, value, prev);
+}
+
+// Delete every record older than KV_TTL_MS. Called when a session or cart is created.
+export async function kvPrune(): Promise<void> {
+  await (await kv()).prune(Date.now() - KV_TTL_MS);
 }

@@ -87,6 +87,7 @@ export type Order = {
   cardLast4: string;
   testMode: true;
   priced: PricedCart;
+  checkoutSessionId?: string; // ACP: one order per checkout session, even when complete is retried
 };
 
 export type ScenarioName =

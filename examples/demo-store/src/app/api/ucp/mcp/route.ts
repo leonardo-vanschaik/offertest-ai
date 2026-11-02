@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { getConfig, kvGet, kvSet, priceCart } from "@/lib/store";
+import { getConfig, kvGet, kvPrune, kvSet, priceCart } from "@/lib/store";
 import { COUPON_MESSAGES } from "@/lib/store/pricing";
 import type { CartItem, StoreConfig } from "@/lib/types";
 
@@ -78,6 +78,7 @@ async function call(name: string, args: Record<string, unknown>, origin: string)
       const p = config.products.find((x) => x.variants.some((v) => v.id === li.item?.id));
       if (p) items.push({ productId: p.id, variantId: li.item!.id!, qty: li.quantity ?? 1 });
     }
+    await kvPrune();
     const id = `cart_${randomUUID().slice(0, 8)}`;
     const c: Cart = { items, codes: (cart.discounts?.codes ?? []).map((x) => x.toUpperCase()) };
     await kvSet(cartKey(id), JSON.stringify(c));
