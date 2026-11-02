@@ -1,0 +1,505 @@
+{
+  "ranAt": "2026-11-02T20:12:04.299Z",
+  "ads": 11,
+  "expectedPromises": 14,
+  "summary": {
+    "spark": {
+      "model": "muse-spark-1.3",
+      "promisesFound": "14/14",
+      "quotesWordForWord": "14/14",
+      "errors": 0,
+      "seconds": 84,
+      "usd": 0.1254
+    },
+    "spark-open": {
+      "model": "meta/muse-spark-open",
+      "route": "OpenRouter",
+      "providers": [
+        "BaseTen"
+      ],
+      "quantization": [
+        "fp4"
+      ],
+      "fellBack": 0,
+      "promisesFound": "14/14",
+      "quotesWordForWord": "16/16",
+      "errors": 0,
+      "seconds": 53,
+      "usd": 0.0412
+    }
+  },
+  "rows": [
+    {
+      "model": "spark",
+      "ad": "20% off the Ridge trail shoe.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "discount",
+          "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+          "adQuote": "20% off the Ridge trail shoe.",
+          "conditions": {
+            "code": "SAVE20",
+            "percent": "20%",
+            "product": "Ridge trail shoe",
+            "date": "This week only"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "The Ridge trail shoe. $120.",
+      "found": "2/2",
+      "quotesWordForWord": "2/2",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "price",
+          "claim": "The Ridge trail shoe costs $120",
+          "adQuote": "$120.",
+          "conditions": {
+            "product": "The Ridge trail shoe",
+            "amount": "$120"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "free_shipping",
+          "claim": "The Ridge trail shoe has free shipping",
+          "adQuote": "Free shipping.",
+          "conditions": {
+            "product": "The Ridge trail shoe"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Free shipping on every order.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "free_shipping",
+          "claim": "Every order gets free shipping",
+          "adQuote": "Free shipping on every order",
+          "conditions": {}
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Free shipping on orders over $50.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "free_shipping",
+          "claim": "Orders over $50 get free shipping",
+          "adQuote": "Free shipping on orders over $50",
+          "conditions": {
+            "threshold": "$50"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "availability",
+          "claim": "The Ridge in Slate is in stock in every size from 7 to 12",
+          "adQuote": "every size from 7 to 12, in stock now",
+          "conditions": {
+            "product": "The Ridge",
+            "variant": "Slate",
+            "size_range": "7 to 12"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "$10 off the Summit rain jacket with code TRAIL10.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "discount",
+          "claim": "Code TRAIL10 gives $10 off the Summit rain jacket",
+          "adQuote": "$10 off the Summit rain jacket with code TRAIL10",
+          "conditions": {
+            "code": "TRAIL10",
+            "amount": "$10",
+            "product": "Summit rain jacket"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Take 20% off the Ridge trail shoe.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "discount",
+          "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+          "adQuote": "Take 20% off the Ridge trail shoe",
+          "conditions": {
+            "code": "SAVE20",
+            "percent": "20%",
+            "product": "Ridge trail shoe",
+            "time_limit": "Limited time"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Meet the Ridge: $120, shipped free.",
+      "found": "2/2",
+      "quotesWordForWord": "2/2",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "price",
+          "claim": "The Ridge trail shoe in Slate costs $120",
+          "adQuote": "$120",
+          "conditions": {
+            "product": "Ridge trail shoe",
+            "variant": "Slate",
+            "amount": "$120"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "free_shipping",
+          "claim": "The Ridge trail shoe in Slate ships free",
+          "adQuote": "shipped free",
+          "conditions": {
+            "product": "Ridge trail shoe",
+            "variant": "Slate"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Every size in stock.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "availability",
+          "claim": "Sizes 7 through 12 of the Ridge trail shoe in Slate are available now",
+          "adQuote": "Sizes 7 through 12, all available now.",
+          "conditions": {
+            "product": "Ridge trail shoe",
+            "variant": "Slate",
+            "sizes": "7 through 12"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Try Trail Club free for 30 days.",
+      "found": "2/2",
+      "quotesWordForWord": "2/2",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "free_trial",
+          "claim": "Trail Club can be tried free for 30 days with no credit card required",
+          "adQuote": "Try Trail Club free for 30 days",
+          "conditions": {
+            "product": "Trail Club",
+            "duration": "30 days",
+            "credit card": "not required"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "other",
+          "claim": "Every order has free returns",
+          "adQuote": "free returns on every order",
+          "conditions": {}
+        }
+      ]
+    },
+    {
+      "model": "spark",
+      "ad": "Free: The First Thru-Hike Guide",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "lead_magnet",
+          "claim": "The First Thru-Hike Guide is available as a free instant download",
+          "adQuote": "Free: The First Thru-Hike Guide",
+          "conditions": {
+            "product": "The First Thru-Hike Guide",
+            "delivery": "Instant download"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "20% off the Ridge trail shoe.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "discount",
+          "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+          "adQuote": "20% off the Ridge trail shoe.",
+          "conditions": {
+            "code": "SAVE20",
+            "percent": "20%",
+            "product": "Ridge trail shoe",
+            "time_limit": "This week only"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "The Ridge trail shoe. $120.",
+      "found": "2/2",
+      "quotesWordForWord": "2/2",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "price",
+          "claim": "The Ridge trail shoe costs $120",
+          "adQuote": "$120.",
+          "conditions": {
+            "product": "The Ridge trail shoe",
+            "amount": "$120"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "free_shipping",
+          "claim": "The Ridge trail shoe has free shipping",
+          "adQuote": "Free shipping.",
+          "conditions": {}
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Free shipping on every order.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "free_shipping",
+          "claim": "Every order qualifies for free shipping",
+          "adQuote": "Free shipping on every order.",
+          "conditions": {
+            "threshold": "none"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Free shipping on orders over $50.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "free_shipping",
+          "claim": "Orders over $50 qualify for free shipping",
+          "adQuote": "Free shipping on orders over $50.",
+          "conditions": {
+            "threshold": "$50"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "availability",
+          "claim": "The Ridge in Slate is in stock in every size from 7 to 12",
+          "adQuote": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+          "conditions": {
+            "product": "The Ridge",
+            "variant": "Slate",
+            "sizes": "7 to 12"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "$10 off the Summit rain jacket with code TRAIL10.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "discount",
+          "claim": "Code TRAIL10 gives $10 off the Summit rain jacket",
+          "adQuote": "$10 off the Summit rain jacket with code TRAIL10.",
+          "conditions": {
+            "code": "TRAIL10",
+            "amount": "$10",
+            "product": "Summit rain jacket"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Take 20% off the Ridge trail shoe.",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "discount",
+          "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+          "adQuote": "Take 20% off the Ridge trail shoe.",
+          "conditions": {
+            "code": "SAVE20",
+            "percent": "20%",
+            "product": "Ridge trail shoe"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Meet the Ridge: $120, shipped free.",
+      "found": "2/2",
+      "quotesWordForWord": "3/3",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "price",
+          "claim": "The Ridge trail shoe costs $120",
+          "adQuote": "$120",
+          "conditions": {
+            "amount": "$120",
+            "product": "Ridge"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "free_shipping",
+          "claim": "The Ridge trail shoe ships free",
+          "adQuote": "shipped free",
+          "conditions": {
+            "product": "Ridge"
+          }
+        },
+        {
+          "id": "a3",
+          "kind": "availability",
+          "claim": "The Ridge trail shoe is available in Slate",
+          "adQuote": "in Slate",
+          "conditions": {
+            "product": "Ridge",
+            "variant": "Slate"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Every size in stock.",
+      "found": "1/1",
+      "quotesWordForWord": "2/2",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "availability",
+          "claim": "The Ridge trail shoe in Slate is available in sizes 7 through 12",
+          "adQuote": "Sizes 7 through 12, all available now.",
+          "conditions": {
+            "product": "The Ridge trail shoe in Slate",
+            "sizes": "7 through 12"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "availability",
+          "claim": "Every size of The Ridge trail shoe is in stock",
+          "adQuote": "Every size in stock.",
+          "conditions": {
+            "product": "The Ridge trail shoe"
+          }
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Try Trail Club free for 30 days.",
+      "found": "2/2",
+      "quotesWordForWord": "2/2",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "free_trial",
+          "claim": "Trail Club can be tried free for 30 days with no credit card required",
+          "adQuote": "Try Trail Club free for 30 days.",
+          "conditions": {
+            "product": "Trail Club",
+            "duration": "30 days",
+            "credit_card_required": "false"
+          }
+        },
+        {
+          "id": "a2",
+          "kind": "other",
+          "claim": "Every order includes free returns",
+          "adQuote": "free returns on every order",
+          "conditions": {}
+        }
+      ]
+    },
+    {
+      "model": "spark-open",
+      "ad": "Free: The First Thru-Hike Guide",
+      "found": "1/1",
+      "quotesWordForWord": "1/1",
+      "assertions": [
+        {
+          "id": "a1",
+          "kind": "lead_magnet",
+          "claim": "The First Thru-Hike Guide is available for free as an instant download",
+          "adQuote": "Free: The First Thru-Hike Guide",
+          "conditions": {
+            "product": "The First Thru-Hike Guide"
+          }
+        }
+      ]
+    }
+  ]
+}

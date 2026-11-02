@@ -19,6 +19,8 @@ export function printResult(r: RunResult, report: string) {
   const badge = r.error ? c.red("ERROR") : r.overall === "pass" ? c.green("PASS") : r.overall === "fail" ? c.red("FAIL") : c.yellow("UNRESOLVED");
   console.log(`\n${c.bold(badge)}  ${r.boundary}  ${c.dim(`$${r.usage.usd.toFixed(2)}`)}`);
   if (r.error) console.log(c.red(`  ${r.error}`));
+  const o = r.openWeights;
+  if (o && !o.fallback) console.log(c.dim(`  Promises read by Muse Spark Open (open weights) on ${o.provider}, ${o.quantization}`));
   for (const v of r.verdicts) {
     const a = r.assertions.find((x) => x.id === v.assertionId);
     const mark = v.status === "supported" ? c.green("✓") : v.status === "contradicted" ? c.red("✗") : c.yellow("?");

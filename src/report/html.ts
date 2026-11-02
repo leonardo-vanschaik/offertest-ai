@@ -161,6 +161,7 @@ function actionText(a: ComputerAction): string {
 }
 
 function modelName(id: string): string {
+  if (/spark-open/i.test(id)) return "Muse Spark Open";
   if (/wonder/i.test(id)) return "Muse Wonder";
   if (/spark/i.test(id)) return "Muse Spark";
   if (/sam/i.test(id)) return `SAM ${id.match(/\d+(\.\d+)?/)?.[0] ?? ""}`.trim();
@@ -464,6 +465,13 @@ function modelsSection(r: RunResult): string {
     .map(([job, id]) => `<tr><td><b>${esc(modelName(id))}</b> <span class="muted">· ${esc(jobName(job))}</span></td><td class="mono">${esc(id)}</td></tr>`)
     .join("");
   const u = r.usage;
+  const o = r.openWeights;
+  // Where the open-weight model ran, and the request ids that prove it.
+  const ow = !o
+    ? ""
+    : o.fallback
+      ? `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} did not answer, so Muse Spark read the promises: ${esc(o.fallback)}</p>`
+      : `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} read the ad's promises on ${esc(o.provider)} (${esc(o.quantization)}), through ${esc(o.route)}. ${o.calls} request${o.calls === 1 ? "" : "s"}: <span class="mono">${o.requests.map(esc).join(", ")}</span>. ${(o.ms / 1000).toFixed(1)} s, ${num(o.inputTokens)} tokens in, ${num(o.outputTokens)} out, ${esc(fmtUsd(o.usd))}.</p>`;
   return section(
     "models",
     "Models used",
@@ -471,7 +479,7 @@ function modelsSection(r: RunResult): string {
     `<div class="models">
   <div class="card table-card"><table><thead><tr><th>Model and job</th><th>Model id</th></tr></thead><tbody>${
     rows || `<tr><td colspan="2" class="muted">No models recorded.</td></tr>`
-  }</tbody></table></div>
+  }</tbody></table>${ow}</div>
   <div class="usage">
     <div class="stat"><span>Input tokens</span><b class="num">${num(u.inputTokens)}</b></div>
     <div class="stat"><span>Output tokens</span><b class="num">${num(u.outputTokens)}</b></div>
@@ -798,6 +806,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:11px 18px;background:#fafbfc;border-bottom:1px solid var(--line)}
 td{padding:12px 18px;border-top:1px solid var(--line-2)}
 tbody tr:first-child td{border-top:0}
+.ow{margin:0;padding:12px 16px;border-top:1px solid var(--line-2);color:var(--ink-2);font-size:.92em;line-height:1.5}
 .usage{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;flex-direction:column}
 .stat span{font-size:12.5px;color:var(--muted);font-weight:500}

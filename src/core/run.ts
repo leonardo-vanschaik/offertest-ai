@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { MODELS } from "../meta/client.ts";
 import type { Ad, Destination, LeadForm, RunOptions, RunResult } from "../types.ts";
-import { extractAssertions } from "./assertions.ts";
+import { extractAssertions, promiseModel } from "./assertions.ts";
 import { Driver } from "./driver.ts";
 import { proposeFix } from "./fix.ts";
 import { runFunnel, shortUrl, type FunnelResult } from "./funnel.ts";
@@ -33,7 +33,7 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     steps: [],
     verdicts: [],
     boundary: "Not tested",
-    models: { "computer use, judge, fix": MODELS.wonder, "ad to promises": MODELS.spark, "product boxes": MODELS.sam },
+    models: { "computer use, judge, fix": MODELS.wonder, "ad to promises": promiseModel(), "product boxes": MODELS.sam },
     usage: { inputTokens: 0, outputTokens: 0, images: 0, usd: 0 },
   };
   const log = new RunLog(r, opts.outDir);
@@ -47,10 +47,11 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
     if (ad.source === "meta")
       await log.step({ kind: "source", summary: `Pulled ad ${ad.id} "${ad.name ?? ad.headline}" from Meta Ads Manager (${ad.status ?? "status unknown"})` });
 
-    await phase("Reading the ad's promises (Muse Spark)");
+    await phase(`Reading the ad's promises (${r.models["ad to promises"] === MODELS.spark ? "Muse Spark" : "Muse Spark Open, open weights"})`);
     const { assertions, subject, imageText } = await extractAssertions(r);
     r.assertions = assertions;
     if (imageText.trim()) r.ad.imageText = imageText.trim();
+    if (r.openWeights) await log.event({ type: "open_weights", ...r.openWeights });
     await log.event({ type: "assertions", assertions });
     log.save();
 

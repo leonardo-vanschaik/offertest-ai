@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { _ as loadEnv, c as runTest, d as agentCheckout, f as adText, g as CONFIG_ENV, h as CONFIG_DIR, i as listAdIds, l as acpCheckout, m as overallOf, n as getAd, o as pauseAd, p as containsQuote, s as VERSION, t as writeReport, u as itemFromUrl } from "./html.mjs";
+import { _ as CONFIG_DIR, c as runTest, d as agentCheckout, f as adText, g as sparkOpenStatus, h as sparkOpenKey, i as listAdIds, l as acpCheckout, m as overallOf, n as getAd, o as pauseAd, p as containsQuote, s as VERSION, t as writeReport, u as itemFromUrl, v as CONFIG_ENV, y as loadEnv } from "./html.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -662,6 +662,12 @@ async function doctor() {
 	const browser = await browserReady();
 	if (browser) ok(`Browser: ${browser}`);
 	else fail("No browser found", "install Google Chrome, or run `offertest install-browser`");
+	if (!sparkOpenKey()) warn("Muse Spark Open: not set up (optional). Muse Spark reads the promises. For Meta's open-weight model, add OPENROUTER_API_KEY (https://openrouter.ai/keys)");
+	else try {
+		ok(`Muse Spark Open (open weights) reads the promises: ${await sparkOpenStatus()}`);
+	} catch (err) {
+		warn(`Muse Spark Open: ${err.message}. Runs use Muse Spark until it works`);
+	}
 	const skills = SKILL_TARGETS.filter((t) => t.detect());
 	for (const t of skills) (t.installed() ? ok : warn)(`${t.name}: skill ${t.installed() ? "installed" : "not installed (optional): run `offertest init` (step 4)"}`);
 	console.log(problems ? `\n${c$1.red(`${problems} problem(s).`)} Fix them, then run \`offertest doctor\` again.\n` : `\n${c$1.green("All good.")}\n`);
@@ -686,6 +692,8 @@ function printResult(r, report) {
 	const badge = r.error ? c.red("ERROR") : r.overall === "pass" ? c.green("PASS") : r.overall === "fail" ? c.red("FAIL") : c.yellow("UNRESOLVED");
 	console.log(`\n${c.bold(badge)}  ${r.boundary}  ${c.dim(`$${r.usage.usd.toFixed(2)}`)}`);
 	if (r.error) console.log(c.red(`  ${r.error}`));
+	const o = r.openWeights;
+	if (o && !o.fallback) console.log(c.dim(`  Promises read by Muse Spark Open (open weights) on ${o.provider}, ${o.quantization}`));
 	for (const v of r.verdicts) {
 		const a = r.assertions.find((x) => x.id === v.assertionId);
 		const mark = v.status === "supported" ? c.green("✓") : v.status === "contradicted" ? c.red("✗") : c.yellow("?");

@@ -61,7 +61,7 @@ export function addUsage(r: RunResult, model: string, inputTokens = 0, outputTok
   r.usage.usd += (inputTokens * p.in + outputTokens * p.out) / 1e6;
 }
 
-type ChatContent = OpenAI.Chat.Completions.ChatCompletionContentPart[] | string;
+export type ChatContent = OpenAI.Chat.Completions.ChatCompletionContentPart[] | string;
 
 // Structured output over Chat Completions (response_format json_schema), validated with zod.
 export async function structured<T>(
@@ -91,7 +91,7 @@ export async function structured<T>(
   }
 }
 
-function stripFences(s: string): string {
+export function stripFences(s: string): string {
   const m = s.match(/```(?:json)?\s*([\s\S]*?)```/);
   return (m ? m[1] : s).trim();
 }

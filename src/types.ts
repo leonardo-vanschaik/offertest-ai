@@ -33,7 +33,7 @@ export type Ad = {
   description?: string;
   cta: string;
   imageUrl?: string; // http(s) URL, data URL, or local file path
-  imageText?: string; // words printed in the ad image, read by Muse Spark (quotable like ad text)
+  imageText?: string; // words printed in the ad image, read with the promises (quotable like ad text)
   destination: Destination;
   cards?: AdCard[];
 };
@@ -114,9 +114,26 @@ export type RunResult = {
   boundary: string; // how far the test went
   models: Record<string, string>; // job -> model id
   usage: { inputTokens: number; outputTokens: number; images: number; usd: number };
+  openWeights?: OpenWeights; // set when Muse Spark Open read the promises
   error?: string;
   // Set by `offertest demo`: this result is a replay of a recorded run, not a new run.
   replay?: { recordedAt: string; command: string; commit: string; files: number; quoteCheck: string };
+};
+
+// Which open-weight model ran a job, where, and the request ids to check it by. Usage is also counted in RunResult.usage.
+export type OpenWeights = {
+  job: string; // "ad to promises"
+  model: string; // "meta/muse-spark-open"
+  route: string; // "OpenRouter"
+  provider: string; // the inference partner that ran it: "BaseTen", "Fireworks", "Modal"
+  quantization: string; // as OpenRouter lists it for that provider: "fp4"
+  requests: string[]; // OpenRouter request ids ("gen-..."), one per call
+  calls: number;
+  ms: number;
+  inputTokens: number;
+  outputTokens: number;
+  usd: number;
+  fallback?: string; // why Muse Spark read the promises instead
 };
 
 export type RunOptions = {

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { chromium } from "playwright-core";
 import { CONFIG_DIR, CONFIG_ENV, loadEnv } from "./meta/client.ts";
+import { sparkOpenKey, sparkOpenStatus } from "./meta/open.ts";
 
 // Setup wizard (`offertest init`) and health check (`offertest doctor`).
 // Every step tests what the user pasted right away and says exactly what to do when it fails.
@@ -423,6 +424,15 @@ export async function doctor(): Promise<number> {
   const browser = await browserReady();
   if (browser) ok(`Browser: ${browser}`);
   else fail("No browser found", "install Google Chrome, or run `offertest install-browser`");
+
+  // Optional: Muse Spark Open (open weights) reads the promises when OPENROUTER_API_KEY is set.
+  if (!sparkOpenKey()) warn("Muse Spark Open: not set up (optional). Muse Spark reads the promises. For Meta's open-weight model, add OPENROUTER_API_KEY (https://openrouter.ai/keys)");
+  else
+    try {
+      ok(`Muse Spark Open (open weights) reads the promises: ${await sparkOpenStatus()}`);
+    } catch (err) {
+      warn(`Muse Spark Open: ${(err as Error).message}. Runs use Muse Spark until it works`);
+    }
 
   const skills = SKILL_TARGETS.filter((t) => t.detect());
   for (const t of skills) (t.installed() ? ok : warn)(`${t.name}: skill ${t.installed() ? "installed" : "not installed (optional): run `offertest init` (step 4)"}`);

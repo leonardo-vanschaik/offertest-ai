@@ -64,7 +64,7 @@ function addUsage(r, model, inputTokens = 0, outputTokens = 0, images = 0) {
 async function structured(r, opts) {
 	const jsonSchema = z.toJSONSchema(opts.schema, { target: "draft-7" });
 	delete jsonSchema.$schema;
-	const call$1 = async (model) => {
+	const call$2 = async (model) => {
 		const res = await meta().chat.completions.create({
 			model,
 			messages: [{
@@ -88,10 +88,10 @@ async function structured(r, opts) {
 		return opts.schema.parse(JSON.parse(stripFences(text)));
 	};
 	try {
-		return await call$1(opts.model);
+		return await call$2(opts.model);
 	} catch (err) {
 		if (!opts.fallbackModel) throw err;
-		return await call$1(opts.fallbackModel);
+		return await call$2(opts.fallbackModel);
 	}
 }
 function stripFences(s) {
@@ -119,6 +119,111 @@ async function imageAsDataUrl(src) {
 	} catch {
 		return null;
 	}
+}
+
+//#endregion
+//#region src/meta/open.ts
+const SPARK_OPEN = process.env.OFFERTEST_SPARK_OPEN_MODEL ?? "meta/muse-spark-open";
+const PROVIDERS = (process.env.OFFERTEST_SPARK_OPEN_PROVIDERS ?? "baseten,fireworks,modal").split(",").map((p) => p.trim()).filter(Boolean);
+const base = () => (process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+function sparkOpenKey() {
+	loadEnv();
+	return process.env.OPENROUTER_API_KEY || void 0;
+}
+async function call$1(p, body, timeoutMs = 18e4) {
+	const res = await fetch(`${base()}${p}`, {
+		method: body ? "POST" : "GET",
+		headers: {
+			authorization: `Bearer ${sparkOpenKey()}`,
+			"content-type": "application/json",
+			"x-title": "OfferTest AI"
+		},
+		body: body ? JSON.stringify(body) : void 0,
+		signal: AbortSignal.timeout(timeoutMs)
+	});
+	const text = await res.text();
+	let json;
+	try {
+		json = JSON.parse(text);
+	} catch {
+		throw new Error(`OpenRouter sent a reply that is not JSON (${res.status}): ${text.slice(0, 200)}`);
+	}
+	if (!res.ok || json.error) throw new Error(`Muse Spark Open failed (${res.status}): ${json.error?.message ?? text.slice(0, 200)}`);
+	return json;
+}
+async function sparkOpenStatus() {
+	await call$1("/key", void 0, 15e3);
+	return `OpenRouter key works (${SPARK_OPEN} on ${PROVIDERS.join(", ")})`;
+}
+let quantizations;
+function quantizationOf(provider) {
+	quantizations ??= call$1(`/models/${SPARK_OPEN}/endpoints`, void 0, 2e4).then((r) => new Map((r.data?.endpoints ?? []).map((e) => [e.provider_name.toLowerCase(), e.quantization ?? "unknown"]))).catch(() => /* @__PURE__ */ new Map());
+	return quantizations.then((m) => {
+		const q = m.get(provider.toLowerCase());
+		return !q || q === "unknown" ? "not published by the provider" : q;
+	});
+}
+async function sparkOpenStructured(r, opts) {
+	const schema = z.toJSONSchema(opts.schema, { target: "draft-7" });
+	delete schema.$schema;
+	const ow = r.openWeights ??= {
+		job: opts.job,
+		model: SPARK_OPEN,
+		route: "OpenRouter",
+		provider: "",
+		quantization: "",
+		requests: [],
+		calls: 0,
+		ms: 0,
+		inputTokens: 0,
+		outputTokens: 0,
+		usd: 0
+	};
+	const body = {
+		model: SPARK_OPEN,
+		provider: {
+			order: PROVIDERS,
+			allow_fallbacks: false
+		},
+		reasoning: { effort: "low" },
+		max_tokens: 16e3,
+		messages: [{
+			role: "system",
+			content: `${opts.system}\n\nAnswer with one JSON object that matches this JSON schema, and nothing else:\n${JSON.stringify(schema)}`
+		}, {
+			role: "user",
+			content: opts.user
+		}]
+	};
+	let lastError;
+	for (let attempt = 0; attempt < 2; attempt++) {
+		const t0 = Date.now();
+		let res;
+		try {
+			res = await call$1("/chat/completions", body);
+		} catch (err) {
+			lastError = err;
+			continue;
+		}
+		ow.calls++;
+		ow.ms += Date.now() - t0;
+		ow.requests.push(res.id);
+		ow.provider = res.provider ?? "unknown";
+		ow.quantization = await quantizationOf(ow.provider);
+		const u = res.usage ?? {};
+		ow.inputTokens += u.prompt_tokens ?? 0;
+		ow.outputTokens += u.completion_tokens ?? 0;
+		ow.usd += u.cost ?? 0;
+		r.usage.inputTokens += u.prompt_tokens ?? 0;
+		r.usage.outputTokens += u.completion_tokens ?? 0;
+		r.usage.usd += u.cost ?? 0;
+		try {
+			return opts.schema.parse(JSON.parse(stripFences(res.choices?.[0]?.message?.content ?? "")));
+		} catch (err) {
+			lastError = err;
+		}
+	}
+	throw new Error(`Muse Spark Open did not return valid ${opts.job} after 2 tries: ${String(lastError).slice(0, 200)}`);
 }
 
 //#endregion
@@ -161,15 +266,36 @@ async function adContent(ad) {
 	});
 	return parts;
 }
-async function extractAssertions(r) {
-	const out = await structured(r, {
-		model: MODELS.spark,
-		fallbackModel: MODELS.wonder,
-		name: "offer_assertions",
-		schema: Schema$2,
-		system: SYSTEM$2,
-		user: await adContent(r.ad)
-	});
+function promiseModel() {
+	return sparkOpenKey() ? SPARK_OPEN : MODELS.spark;
+}
+async function extractAssertions(r, opts = {}) {
+	const user = await adContent(r.ad);
+	let out;
+	if (opts.open ?? !!sparkOpenKey()) {
+		r.models["ad to promises"] = SPARK_OPEN;
+		try {
+			out = await sparkOpenStructured(r, {
+				job: "ad to promises",
+				schema: Schema$2,
+				system: SYSTEM$2,
+				user
+			});
+		} catch (err) {
+			r.openWeights.fallback = err.message;
+		}
+	}
+	if (!out) {
+		r.models["ad to promises"] = MODELS.spark;
+		out = await structured(r, {
+			model: MODELS.spark,
+			fallbackModel: MODELS.wonder,
+			name: "offer_assertions",
+			schema: Schema$2,
+			system: SYSTEM$2,
+			user
+		});
+	}
 	return {
 		subject: out.subject,
 		imageText: out.imageText,
@@ -904,9 +1030,9 @@ function planBatch(actions, view) {
 	}
 	return errors.length ? `error: nothing was run. ${errors.join("; ")}` : plan;
 }
-function args(call$1) {
+function args(call$2) {
 	try {
-		const v = JSON.parse(call$1.arguments || "{}");
+		const v = JSON.parse(call$2.arguments || "{}");
 		return v && typeof v === "object" ? v : void 0;
 	} catch {
 		return;
@@ -1010,9 +1136,9 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 	let sameState = 0;
 	for (let turn = 0; turn < maxTurns; turn++) {
 		const calls = res.output.filter((o) => o.type === "function_call");
-		const call$1 = calls.find((c) => c.name === "computer.computer");
+		const call$2 = calls.find((c) => c.name === "computer.computer");
 		const said = messageText(res);
-		if (!call$1) {
+		if (!call$2) {
 			const stop$1 = calls.find((c) => c.name === "computer.stop");
 			const answer = stop$1 ? args(stop$1)?.answer : void 0;
 			out.notes = typeof answer === "string" && answer || res.output_text || said;
@@ -1031,7 +1157,7 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 			out.stepLimitHit = true;
 			return out;
 		}
-		const plan = planBatch(args(call$1)?.actions, driver.viewport);
+		const plan = planBatch(args(call$2)?.actions, driver.viewport);
 		const status = typeof plan === "string" ? [plan] : [];
 		const done = [];
 		const urlBefore = driver.url();
@@ -1122,7 +1248,7 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 		const input = calls.map((c) => ({
 			type: "function_call_output",
 			call_id: c.call_id,
-			output: JSON.stringify({ status: c === call$1 ? status : ["skipped: one tool call per turn"] })
+			output: JSON.stringify({ status: c === call$2 ? status : ["skipped: one tool call per turn"] })
 		}));
 		input.push({
 			role: "user",
@@ -1155,9 +1281,9 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 	});
 	return out;
 }
-async function continueChain(call$1) {
+async function continueChain(call$2) {
 	for (let attempt = 0;; attempt++) try {
-		return await call$1();
+		return await call$2();
 	} catch (err) {
 		if (!/referenced response|previous_response/i.test(String(err.message))) throw err;
 		if (attempt >= 1) return null;
@@ -1719,7 +1845,7 @@ async function runTest(ad, opts) {
 		boundary: "Not tested",
 		models: {
 			"computer use, judge, fix": MODELS.wonder,
-			"ad to promises": MODELS.spark,
+			"ad to promises": promiseModel(),
 			"product boxes": MODELS.sam
 		},
 		usage: {
@@ -1750,10 +1876,14 @@ async function runTest(ad, opts) {
 			kind: "source",
 			summary: `Pulled ad ${ad.id} "${ad.name ?? ad.headline}" from Meta Ads Manager (${ad.status ?? "status unknown"})`
 		});
-		await phase("Reading the ad's promises (Muse Spark)");
+		await phase(`Reading the ad's promises (${r.models["ad to promises"] === MODELS.spark ? "Muse Spark" : "Muse Spark Open, open weights"})`);
 		const { assertions, subject, imageText } = await extractAssertions(r);
 		r.assertions = assertions;
 		if (imageText.trim()) r.ad.imageText = imageText.trim();
+		if (r.openWeights) await log.event({
+			type: "open_weights",
+			...r.openWeights
+		});
 		await log.event({
 			type: "assertions",
 			assertions
@@ -2422,6 +2552,7 @@ function actionText(a) {
 	}
 }
 function modelName(id) {
+	if (/spark-open/i.test(id)) return "Muse Spark Open";
 	if (/wonder/i.test(id)) return "Muse Wonder";
 	if (/spark/i.test(id)) return "Muse Spark";
 	if (/sam/i.test(id)) return `SAM ${id.match(/\d+(\.\d+)?/)?.[0] ?? ""}`.trim();
@@ -2649,8 +2780,10 @@ function stepsSection(r, shots) {
 function modelsSection(r) {
 	const rows = Object.entries(r.models).map(([job, id]) => `<tr><td><b>${esc(modelName(id))}</b> <span class="muted">· ${esc(jobName(job))}</span></td><td class="mono">${esc(id)}</td></tr>`).join("");
 	const u = r.usage;
+	const o = r.openWeights;
+	const ow = !o ? "" : o.fallback ? `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} did not answer, so Muse Spark read the promises: ${esc(o.fallback)}</p>` : `<p class="ow"><b>Open weights.</b> ${esc(modelName(o.model))} read the ad's promises on ${esc(o.provider)} (${esc(o.quantization)}), through ${esc(o.route)}. ${o.calls} request${o.calls === 1 ? "" : "s"}: <span class="mono">${o.requests.map(esc).join(", ")}</span>. ${(o.ms / 1e3).toFixed(1)} s, ${num(o.inputTokens)} tokens in, ${num(o.outputTokens)} out, ${esc(fmtUsd(o.usd))}.</p>`;
 	return section("models", "Models used", "", `<div class="models">
-  <div class="card table-card"><table><thead><tr><th>Model and job</th><th>Model id</th></tr></thead><tbody>${rows || `<tr><td colspan="2" class="muted">No models recorded.</td></tr>`}</tbody></table></div>
+  <div class="card table-card"><table><thead><tr><th>Model and job</th><th>Model id</th></tr></thead><tbody>${rows || `<tr><td colspan="2" class="muted">No models recorded.</td></tr>`}</tbody></table>${ow}</div>
   <div class="usage">
     <div class="stat"><span>Input tokens</span><b class="num">${num(u.inputTokens)}</b></div>
     <div class="stat"><span>Output tokens</span><b class="num">${num(u.outputTokens)}</b></div>
@@ -2961,6 +3094,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:11px 18px;background:#fafbfc;border-bottom:1px solid var(--line)}
 td{padding:12px 18px;border-top:1px solid var(--line-2)}
 tbody tr:first-child td{border-top:0}
+.ow{margin:0;padding:12px 16px;border-top:1px solid var(--line-2);color:var(--ink-2);font-size:.92em;line-height:1.5}
 .usage{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;flex-direction:column}
 .stat span{font-size:12.5px;color:var(--muted);font-weight:500}
@@ -2995,4 +3129,4 @@ a{color:inherit}
 `;
 
 //#endregion
-export { loadEnv as _, listAds as a, runTest as c, agentCheckout as d, adText as f, CONFIG_ENV as g, CONFIG_DIR as h, listAdIds as i, acpCheckout as l, overallOf as m, getAd as n, pauseAd as o, containsQuote as p, getLeadForm as r, VERSION$1 as s, writeReport as t, itemFromUrl as u };
+export { CONFIG_DIR as _, listAds as a, runTest as c, agentCheckout as d, adText as f, sparkOpenStatus as g, sparkOpenKey as h, listAdIds as i, acpCheckout as l, overallOf as m, getAd as n, pauseAd as o, containsQuote as p, getLeadForm as r, VERSION$1 as s, writeReport as t, itemFromUrl as u, CONFIG_ENV as v, loadEnv as y };

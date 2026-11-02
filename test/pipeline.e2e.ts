@@ -54,6 +54,7 @@ function fakeMeta(): Promise<{ url: string; close: () => void }> {
 const meta = await fakeMeta();
 process.env.META_BASE_URL = meta.url;
 process.env.META_API_KEY = "test";
+process.env.OPENROUTER_API_KEY = ""; // Muse Spark (faked here) reads the promises, not Muse Spark Open
 after(() => meta.close());
 
 test("pipeline: promises -> funnel -> verdict with quote check -> fix -> report", async () => {

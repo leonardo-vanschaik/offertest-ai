@@ -185,6 +185,7 @@ type RunResult = {
     images: number;
     usd: number;
   };
+  openWeights?: OpenWeights;
   error?: string;
   replay?: {
     recordedAt: string;
@@ -193,6 +194,20 @@ type RunResult = {
     files: number;
     quoteCheck: string;
   };
+};
+type OpenWeights = {
+  job: string;
+  model: string;
+  route: string;
+  provider: string;
+  quantization: string;
+  requests: string[];
+  calls: number;
+  ms: number;
+  inputTokens: number;
+  outputTokens: number;
+  usd: number;
+  fallback?: string;
 };
 type RunOptions = {
   outDir: string;
@@ -261,4 +276,4 @@ type AcpOptions = {
 };
 declare function acpCheckout(o: AcpOptions): Promise<AgentCheckout>;
 //#endregion
-export { Ad, AdCard, Assertion, ComputerAction, Destination, Fix, LeadForm, Overall, RunOptions, RunResult, SamBox, Step, VERSION, Verdict, VerdictStatus, acpCheckout, agentCheckout, getAd, getLeadForm, listAds, pauseAd, runTest, writeReport };
+export { Ad, AdCard, Assertion, ComputerAction, Destination, Fix, LeadForm, OpenWeights, Overall, RunOptions, RunResult, SamBox, Step, VERSION, Verdict, VerdictStatus, acpCheckout, agentCheckout, getAd, getLeadForm, listAds, pauseAd, runTest, writeReport };
