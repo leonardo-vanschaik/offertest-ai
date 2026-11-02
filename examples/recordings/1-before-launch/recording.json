@@ -3,7 +3,7 @@
   "command": "offertest check --url http://localhost:3000/store/products/ridge-trail-shoe --headline \"20% off the Ridge.\" --text \"Use code SAVE20 at checkout. Free shipping.\" --headless",
   "store": "examples/demo-store on localhost:3000, scenario code_expired",
   "recordedAt": "2026-11-02T20:47:39.679Z",
-  "commit": "1cf1b70746dc3502aa72f8528e78218069537135",
+  "commit": "897edab79353779743325ac31ad2b9eca15d7851",
   "files": {
     "log.jsonl": "a73a8a330db2d902a4c9e28d426a2618f8842eb6616cb62c68cd44dbb54a0ba7",
     "pages/001.txt": "f1581e9e2c15c267153a6613ea3bea4cdbc1da45e845f885d03f32e2d1502fbb",
