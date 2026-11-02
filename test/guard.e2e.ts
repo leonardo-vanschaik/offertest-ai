@@ -1,6 +1,7 @@
 // Payment guard on small inline pages. No demo store needed. Run: node --import tsx --test test/guard.e2e.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import http from "node:http";
 import { Driver } from "../src/core/driver.ts";
 import type { ComputerAction } from "../src/types.ts";
 
@@ -108,6 +109,57 @@ test("--no-submit also blocks Sign up, Subscribe, and Join, which send customer 
       assert.equal(await d.guard(await at(d, "#c")), null, "moving to the next step is allowed");
     },
   ));
+
+test("--no-submit blocks script-driven sign-up buttons, and no sign-up request leaves the browser", async () => {
+  const site = await sendsSite();
+  const d = new Driver();
+  await d.start(`${site.url}/`, { allowSubmit: false });
+  try {
+    for (const id of ["#b", "#r", "#a", "#i"]) assert.equal((await d.guard(await at(d, id)))?.kind, "submit", id);
+    await d.page.locator("#b").focus();
+    assert.equal((await d.guard(enter))?.kind, "submit", "Enter on the focused button");
+    assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "submit", "Space on the focused button");
+    // Still allowed: a script button that adds to cart, and one that opens the next view.
+    for (const id of ["#c", "#g"]) assert.equal(await d.guard(await at(d, id)), null, id);
+    // Run every click the way the funnel does (only what the guard lets through): nothing is sent.
+    for (const id of ["#b", "#r", "#a", "#i", "#c", "#g"]) {
+      const click = await at(d, id);
+      if (!(await d.guard(click))) await d.execute(click);
+    }
+    await d.page.waitForTimeout(300);
+    assert.deepEqual(site.posts, []);
+    // A link to the trial page only opens it.
+    assert.equal(await d.guard(await at(d, "#l")), null);
+  } finally {
+    await d.close();
+    site.close();
+  }
+});
+
+test("without --no-submit, script-driven sign-up buttons are allowed", () =>
+  page(`<button type="button" id="b" onclick="fetch('/signup',{method:'POST'})">Sign up</button>`, async (d) => {
+    assert.equal(await d.guard(await at(d, "#b")), null);
+  }));
+
+// A page whose sign-up buttons send with fetch() instead of a form, served over http so a request would show.
+async function sendsSite() {
+  const posts: string[] = [];
+  const html = `<input id="email" value="test@offertest.ai">
+<button type="button" id="b" onclick="fetch('/signup',{method:'POST'})">Sign up</button>
+<div role="button" id="r" onclick="fetch('/signup',{method:'POST'})">Subscribe</div>
+<a href="#" id="a" onclick="fetch('/lead',{method:'POST'})">Claim your guide</a>
+<input type="button" id="i" value="Start free trial" onclick="fetch('/trial',{method:'POST'})">
+<a href="/trial" id="l">Start free trial</a>
+<button type="button" id="c">Add to cart</button>
+<button type="button" id="g">Get 20% off</button>`;
+  const srv = http.createServer((req, res) => {
+    if (req.method === "POST") posts.push(req.url ?? "");
+    res.writeHead(200, { "content-type": "text/html" });
+    res.end(html);
+  });
+  await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
+  return { url: `http://127.0.0.1:${(srv.address() as { port: number }).port}`, posts, close: () => srv.close() };
+}
 
 test("--no-submit sees a form inside an embedded frame: Enter and Space there are blocked", () =>
   noSubmitPage(

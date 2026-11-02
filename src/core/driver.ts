@@ -26,6 +26,10 @@ const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|s
 // With --no-submit, only buttons that send nothing about the customer stay free: applying a code, searching,
 // or moving between steps. Sign up, subscribe, join, log in, and save send data, so they are blocked.
 const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|register|log ?in|sign ?in|save|send|submit|get|download|claim|book|request|start|confirm)\b)(apply|redeem|use code|search|go|update|calculate|check|validate|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
+// A script-driven button (no form) can send data too. With --no-submit, one whose words say it sends is blocked.
+// Narrower than SAFE_STEP: "Get 20% off" or "Start shopping" on a script button only opens the next view.
+const SENDS =
+  /\b(sign ?up|subscribe|join|register|create (an |my |your )?account|send|submit|download|claim|book|reserve|request|start (my |a |your )?(free )?trial|confirm|rsvp|enrol+|apply now|notify me|log ?in|sign ?in|get (my|the|your) (free )?(guide|e-?book|copy|download|quote|offer|code|access|trial|demo))\b/i;
 
 // Order-submit requests on common platforms. Aborted when the run does not allow payment.
 const ORDER_SUBMIT = [
@@ -41,6 +45,7 @@ const ORDER_SUBMIT = [
 
 // payment: would spend money. submit: would send a form (sign-up, lead) when the run forbids it (--no-submit).
 export type Guard = { kind: "payment" | "submit"; label: string } | null;
+type Target = { label: string; byId: boolean; pay: boolean; form: boolean; link: boolean };
 
 export class Driver {
   private browser?: Browser;
@@ -161,9 +166,11 @@ export class Driver {
       // A known pay-button id always counts; a "Pay"/"Place order" label, or an unknown form submit button, counts on a payment page.
       if (!hit) return null;
       if (hit.byId) return { kind: "payment", label: hit.label };
-      if ((hit.pay || !SAFE_SUBMIT.test(hit.label)) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
-      // --no-submit: a form submit button that does more than apply a code or move to the next step.
-      if (!this.allowSubmit && !hit.pay && !SAFE_STEP.test(hit.label)) return { kind: "submit", label: hit.label || "Submit" };
+      if ((hit.pay || (hit.form && !SAFE_SUBMIT.test(hit.label))) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
+      // --no-submit: a form submit button that does more than apply a code or move to the next step,
+      // or a script button that says it sends. A link to another page sends nothing.
+      if (!this.allowSubmit && !hit.pay && (hit.form ? !SAFE_STEP.test(hit.label) : !hit.link && SENDS.test(hit.label)))
+        return { kind: "submit", label: hit.label || "Submit" };
       return null;
     }
     const submits =
@@ -175,7 +182,7 @@ export class Driver {
       const label = await this.enterSubmitsPay();
       if (label) return { kind: "payment", label };
       if (!this.allowSubmit) {
-        const form = await this.enterSubmitsForm();
+        const form = (await this.enterSubmitsForm()) ?? (await this.focusedSendButton());
         if (form) return { kind: "submit", label: form };
       }
     }
@@ -186,11 +193,27 @@ export class Driver {
       const focused = await this.focusedPayButton();
       if (focused) return { kind: "payment", label: focused };
       if (!this.allowSubmit) {
-        const form = await this.enterSubmitsForm(true);
+        const form = (await this.enterSubmitsForm(true)) ?? (await this.focusedSendButton());
         if (form) return { kind: "submit", label: form };
       }
     }
     return null;
+  }
+
+  // A focused script button (not a form submit, not a link to another page) whose words say it sends.
+  private async focusedSendButton(): Promise<string | null> {
+    return (await this.focusedFrame())
+      .evaluate((src) => {
+        const a = document.activeElement as HTMLInputElement | null;
+        if (!a || a === document.body) return null;
+        const button = /^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A";
+        if (!button || (/^(submit|image)$/.test(a.type) && a.form)) return null;
+        const href = a.tagName === "A" ? (a.getAttribute("href") ?? "") : "";
+        if (href && href !== "#" && !/^javascript:/i.test(href)) return null;
+        const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
+        return new RegExp(src, "i").test(label) ? label : null;
+      }, SENDS.source)
+      .catch(() => null);
   }
 
   // The frame that holds the focused control: focus inside an embedded form (an iframe) belongs to that frame.
@@ -279,18 +302,21 @@ export class Driver {
     return label;
   }
 
-  // The button under (x, y): a pay button by id or label, or a form submit button (pay: false).
-  private async payTargetAt(x: number, y: number): Promise<{ label: string; byId: boolean; pay: boolean } | null> {
-    const probe = ([px, py, src, ids]: [number, number, string, string[]]): { label: string; byId: boolean; pay: boolean } | null => {
+  // The button under (x, y): a pay button by id or label, a form submit button (form), a link to another
+  // page (link), or a script-driven button.
+  private async payTargetAt(x: number, y: number): Promise<Target | null> {
+    const probe = ([px, py, src, ids]: [number, number, string, string[]]): Target | null => {
       const re = new RegExp(src, "i");
       let el = document.elementFromPoint(px, py) as HTMLElement | null;
       for (let i = 0; el && i < 6; i++, el = el.parentElement) {
         const label = (el.innerText || (el as HTMLInputElement).value || el.getAttribute("aria-label") || "").trim();
-        if (ids.some((sel) => el!.matches(sel))) return { label: label || "Pay", byId: true, pay: true };
+        if (ids.some((sel) => el!.matches(sel))) return { label: label || "Pay", byId: true, pay: true, form: false, link: false };
         if (/^(button|a|input)$/i.test(el.tagName) || el.getAttribute("role") === "button") {
-          if (re.test(label)) return { label, byId: false, pay: true };
+          if (re.test(label)) return { label, byId: false, pay: true, form: false, link: false };
           const b = el as HTMLInputElement;
-          return /^(submit|image)$/.test(b.type) && b.form ? { label, byId: false, pay: false } : null;
+          const href = el.tagName === "A" ? (el.getAttribute("href") ?? "") : "";
+          if (b.tagName === "INPUT" && !/^(submit|image|button|reset)$/.test(b.type)) return null; // a text field, not a button
+          return { label, byId: false, pay: false, form: /^(submit|image)$/.test(b.type) && !!b.form, link: !!href && href !== "#" && !/^javascript:/i.test(href) };
         }
       }
       return null;
@@ -302,7 +328,7 @@ export class Driver {
       const el = await frame.frameElement().catch(() => null);
       const box = await el?.boundingBox().catch(() => null);
       if (!box || x < box.x || x > box.x + box.width || y < box.y || y > box.y + box.height) continue;
-      if (/paypal|shop\.app|pay\.google|apple-pay|stripe\.com\/.*(payment-request|wallet)/i.test(frame.url())) return { label: "Express pay button", byId: true, pay: true };
+      if (/paypal|shop\.app|pay\.google|apple-pay|stripe\.com\/.*(payment-request|wallet)/i.test(frame.url())) return { label: "Express pay button", byId: true, pay: true, form: false, link: false };
       const inner = await frame
         .evaluate(probe, [x - box.x, y - box.y, PAY_TEXT.source, PAY_IDS] as [number, number, string, string[]])
         .catch(() => null);
