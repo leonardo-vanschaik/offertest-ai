@@ -35,7 +35,7 @@ offertest install-browser                    download Chromium if you have no Ch
 | `--mobile` | Phone viewport and the Facebook in-app browser user agent |
 | `--headless` / `--headful` | Hide or show the browser (hidden by default when not in a terminal) |
 | `--max-turns <n>` | Agent turns per funnel (default 25) |
-| `--max-usd <n>` | Stop a run above this model cost |
+| `--max-usd <n>` | Stop the run when its model cost reaches this amount: no more agent turns, judging, or fix. Promises not judged stay unresolved |
 | `--out <dir>` | Where run folders go (default `./offertest-runs`) |
 | `--retest-of <run id>` | Mark this run as the re-test of an earlier run, after a fix |
 | `--json` | Print result paths and verdicts as JSON |

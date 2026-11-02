@@ -380,6 +380,9 @@ const PAY_IDS = [
 ];
 const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|search|go|subscribe|sign ?up|join|log ?in|sign ?in|update|calculate|check|validate|save|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|register|log ?in|sign ?in|save|send|submit|get|download|claim|book|request|start|confirm)\b)(apply|redeem|use code|search|go|update|calculate|check|validate|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
+const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
+const CODE_STEP = /^(apply|redeem|use code)\b/i;
+const sendsForm = (label, data) => !SAFE_STEP.test(label) || data && !CODE_STEP.test(label);
 const SENDS = /\b(sign ?up|subscribe|join|register|create (an |my |your )?account|send|submit|download|claim|book|reserve|request|start (my |a |your )?(free )?trial|confirm|rsvp|enrol+|apply now|notify me|log ?in|sign ?in|get (my|the|your) (free )?(guide|e-?book|copy|download|quote|offer|code|access|trial|demo))\b/i;
 const ORDER_SUBMIT = [
 	/\/graphql.*SubmitForCompletion/i,
@@ -503,6 +506,21 @@ var Driver = class {
 		}
 	}
 	async guard(action) {
+		if (action.type === "drag") {
+			for (const pt of [action.path[0], action.path[action.path.length - 1]]) {
+				if (!pt) continue;
+				const click = {
+					type: "click",
+					button: "left",
+					x: pt.x,
+					y: pt.y
+				};
+				const g = await this.guard(click);
+				if (g) return g;
+				if (this.sendLinks.has(click)) this.sendLinks.add(action);
+			}
+			return null;
+		}
 		if (action.type === "click" || action.type === "double_click") {
 			const hit = await this.payTargetAt(action.x, action.y);
 			if (!hit) return null;
@@ -514,7 +532,7 @@ var Driver = class {
 				kind: "payment",
 				label: hit.label || "Submit"
 			};
-			if (!this.allowSubmit && !hit.pay && (hit.form ? !SAFE_STEP.test(hit.label) : !hit.link && SENDS.test(hit.label))) return {
+			if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && SENDS.test(hit.label))) return {
 				kind: "submit",
 				label: hit.label || "Submit"
 			};
@@ -580,7 +598,7 @@ var Driver = class {
 		return frame;
 	}
 	async enterSubmitsForm(buttonOnly = false) {
-		return (await this.focusedFrame()).evaluate(([safe, buttonOnly$1]) => {
+		return (await this.focusedFrame()).evaluate(([safe, buttonOnly$1, customer, code]) => {
 			const a = document.activeElement;
 			if (!a || a === document.body || a.tagName === "TEXTAREA") return null;
 			const isButton = /^(submit|image)$/.test(a.type) && /^(button|input)$/i.test(a.tagName);
@@ -595,9 +613,24 @@ var Driver = class {
 				a.placeholder,
 				a.getAttribute("aria-label")
 			].join(" ");
-			if (new RegExp(safe, "i").test(text) || /discount|coupon|promo|gift ?card|voucher|search/i.test(field)) return null;
+			if (/discount|coupon|promo|gift ?card|voucher|search/i.test(field)) return null;
+			const data = Array.from(form.elements).some((f) => {
+				const i = f;
+				return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([
+					i.name,
+					i.id,
+					i.getAttribute("autocomplete"),
+					i.placeholder
+				].join(" "));
+			});
+			if (new RegExp(safe, "i").test(text) && !(data && !new RegExp(code, "i").test(text))) return null;
 			return text || "Submit";
-		}, [SAFE_STEP.source, buttonOnly]).catch(() => null);
+		}, [
+			SAFE_STEP.source,
+			buttonOnly,
+			CUSTOMER_FIELD.source,
+			CODE_STEP.source
+		]).catch(() => null);
 	}
 	async enterSubmitsPay() {
 		const focused = await this.focusedPayButton();
@@ -644,7 +677,8 @@ var Driver = class {
 		return null;
 	}
 	async focusedPayButton() {
-		const hit = await this.page.evaluate(([src, ids]) => {
+		const frame = await this.focusedFrame();
+		const hit = await frame.evaluate(([src, ids]) => {
 			const a = document.activeElement;
 			if (!a || !/^(button|a|input)$/i.test(a.tagName) && a.getAttribute("role") !== "button") return null;
 			const text = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
@@ -659,13 +693,14 @@ var Driver = class {
 			} : null;
 		}, [PAY_TEXT.source, PAY_IDS]).catch(() => null);
 		const label = hit && (hit.pay ? hit.label : !SAFE_SUBMIT.test(hit.label) && await this.onPaymentPage() ? hit.label || "Submit" : null);
+		if (!label && /paypal|shop\.app|pay\.google|apple-pay/i.test(frame.url())) return "Express pay button";
 		if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {
 			if (await this.page.evaluate(() => document.activeElement?.tagName === "IFRAME").catch(() => false)) return "Express pay button";
 		}
 		return label;
 	}
 	async payTargetAt(x, y) {
-		const probe = ([px, py, src, ids]) => {
+		const probe = ([px, py, src, ids, customer]) => {
 			const re = new RegExp(src, "i");
 			let el = document.elementFromPoint(px, py);
 			for (let i = 0; el && i < 6; i++, el = el.parentElement) {
@@ -675,6 +710,7 @@ var Driver = class {
 					byId: true,
 					pay: true,
 					form: false,
+					data: false,
 					link: false
 				};
 				if (/^(button|a|input)$/i.test(el.tagName) || el.getAttribute("role") === "button") {
@@ -683,16 +719,27 @@ var Driver = class {
 						byId: false,
 						pay: true,
 						form: false,
+						data: false,
 						link: false
 					};
 					const b = el;
 					const href = el.tagName === "A" ? el.getAttribute("href") ?? "" : "";
 					if (b.tagName === "INPUT" && !/^(submit|image|button|reset)$/.test(b.type)) return null;
+					const form = /^(submit|image)$/.test(b.type) && !!b.form;
 					return {
 						label,
 						byId: false,
 						pay: false,
-						form: /^(submit|image)$/.test(b.type) && !!b.form,
+						form,
+						data: form && Array.from(b.form.elements).some((f) => {
+							const i$1 = f;
+							return /^(email|tel|password)$/i.test(i$1.type) || new RegExp(customer, "i").test([
+								i$1.name,
+								i$1.id,
+								i$1.getAttribute("autocomplete"),
+								i$1.placeholder
+							].join(" "));
+						}),
 						link: !!href && href !== "#" && !/^javascript:/i.test(href)
 					};
 				}
@@ -703,7 +750,8 @@ var Driver = class {
 			x,
 			y,
 			PAY_TEXT.source,
-			PAY_IDS
+			PAY_IDS,
+			CUSTOMER_FIELD.source
 		]).catch(() => null);
 		if (top) return top;
 		for (const frame of this.page.frames().slice(1)) {
@@ -714,13 +762,15 @@ var Driver = class {
 				byId: true,
 				pay: true,
 				form: false,
+				data: false,
 				link: false
 			};
 			const inner = await frame.evaluate(probe, [
 				x - box.x,
 				y - box.y,
 				PAY_TEXT.source,
-				PAY_IDS
+				PAY_IDS,
+				CUSTOMER_FIELD.source
 			]).catch(() => null);
 			if (inner) return inner;
 		}
@@ -728,7 +778,7 @@ var Driver = class {
 	}
 	async onPaymentPage() {
 		if (/checkout|\/checkouts\/|payment|\/pay\b/i.test(this.url())) return true;
-		return await this.page.evaluate(() => !!document.querySelector("input[autocomplete=\"cc-number\"], input[name*=\"card\" i], [data-requires-approval]")).catch(() => false) || this.page.frames().some((f) => /stripe\.com|checkout\.pci\.shopifyinc|braintree|adyen|paypal/i.test(f.url()));
+		return (await Promise.all(this.page.frames().map((f) => f.evaluate(() => !!document.querySelector("input[autocomplete=\"cc-number\"], input[name*=\"card\" i], [data-requires-approval]")).catch(() => false)))).some(Boolean) || this.page.frames().some((f) => /stripe\.com|checkout\.pci\.shopifyinc|braintree|adyen|paypal/i.test(f.url()));
 	}
 	async execute(action) {
 		const p = this.page;
@@ -1149,6 +1199,15 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 			image_url: dataUrl(screenshot)
 		}]
 	}] });
+	const spent = () => opts.maxUsd !== void 0 && r.usage.usd >= opts.maxUsd;
+	if (spent()) {
+		await log.step({
+			kind: "note",
+			summary: `Stopped: model cost reached the --max-usd limit ($${opts.maxUsd.toFixed(2)})`
+		});
+		out.stepLimitHit = true;
+		return out;
+	}
 	let res = await fresh(jpg);
 	let imagesInChain = 1;
 	addUsage(r, MODELS.wonder, res.usage?.input_tokens, res.usage?.output_tokens, 1);
@@ -1168,10 +1227,10 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 			});
 			return out;
 		}
-		if (opts.maxUsd && r.usage.usd > opts.maxUsd) {
+		if (spent()) {
 			await log.step({
 				kind: "note",
-				summary: `Budget reached ($${opts.maxUsd.toFixed(2)})`
+				summary: `Stopped: model cost reached the --max-usd limit ($${opts.maxUsd.toFixed(2)})`
 			});
 			out.stepLimitHit = true;
 			return out;
@@ -2041,9 +2100,15 @@ async function runTest(ad, opts) {
 				summary: `Destination "${d.type}" cannot be followed by a browser`
 			});
 		}
+		const spent = () => opts.maxUsd !== void 0 && r.usage.usd >= opts.maxUsd;
+		const limit = `the --max-usd limit ($${opts.maxUsd?.toFixed(2)})`;
 		await phase("Judging each promise against word-for-word evidence (Muse Wonder + quote check)");
+		if (spent()) await log.step({
+			kind: "note",
+			summary: `Stopped: model cost reached ${limit}. The promises were not judged.`
+		});
 		const firstShot = r.steps.find((s) => s.screenshot);
-		const [verdicts, sam] = await Promise.all([judge(r, evidence), firstShot ? samFor(r, log, firstShot.screenshot, subject, opts.mobile).catch(async (e) => {
+		const [verdicts, sam] = await Promise.all([spent() ? notJudged(r, `Not judged: the run reached ${limit}.`) : judge(r, evidence), firstShot && !spent() ? samFor(r, log, firstShot.screenshot, subject, opts.mobile).catch(async (e) => {
 			await log.event({
 				type: "sam_error",
 				error: String(e)
@@ -2060,7 +2125,11 @@ async function runTest(ad, opts) {
 		const paid = funnels.some((f) => f.paid);
 		if (funnels.length && funnels.every((f) => f.blocked)) r.blocked = funnels[0].blocked;
 		r.boundary = r.blocked ? `Blocked: ${r.blocked}` : paid && r.confirmation ? "Full test-mode purchase, confirmation page reached" : r.confirmation ? "Funnel completed to the confirmation page (no payment)" : funnels.some((f) => f.stoppedAtPayment) ? "Followed to the payment step, not paid" : funnels.length ? `Followed the funnel to ${shortUrl(lastUrl)}` : "Read from Meta only (no website)";
-		if (r.overall === "fail") {
+		if (r.overall === "fail" && spent()) await log.step({
+			kind: "note",
+			summary: `No fix proposed: the run reached ${limit}.`
+		});
+		else if (r.overall === "fail") {
 			await phase("Proposing one fix (Muse Wonder)");
 			r.fix = await proposeFix(r);
 			await log.event({
@@ -2086,6 +2155,20 @@ async function runTest(ad, opts) {
 		result: r,
 		dir: log.dir
 	};
+}
+function notJudged(r, reason) {
+	return Promise.resolve(r.assertions.map((a) => ({
+		assertionId: a.id,
+		status: "unresolved",
+		adQuote: a.adQuote,
+		pageQuote: null,
+		evidenceStep: null,
+		reason,
+		quoteCheck: {
+			adQuoteFound: false,
+			pageQuoteFound: false
+		}
+	})));
 }
 function shouldRetryVisible(f, headful, opts) {
 	return !!f.blocked && !headful && !!opts.retryHeadful && !opts.baseline && !/password/i.test(f.blocked);

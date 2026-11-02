@@ -30,6 +30,17 @@ function withStore(code: string, files: Record<string, string> = {}): unknown {
 
 const priced = { lines: [{ productId: "ridge" }], subtotalCents: 12000, discountCents: 0, shippingCents: 0, totalCents: 12000 };
 
+test("the working store's codes stay valid after the judging dates; only the code_expired scenario expires SAVE20", () => {
+  const out = withStore(`
+const pricing = await import(${JSON.stringify(path.join(DEMO, "src/lib/store/pricing.ts"))});
+const scenarios = await import(${JSON.stringify(path.join(DEMO, "src/lib/store/scenarios.ts"))});
+const later = new Date("2026-12-01T12:00:00Z");
+const base = scenarios.scenarioConfig("baseline", later).coupons.map((c) => pricing.isCouponExpired(c, later));
+const expired = scenarios.scenarioConfig("code_expired", later).coupons.find((c) => c.code === "SAVE20");
+console.log(JSON.stringify({ base, expired: pricing.isCouponExpired(expired, later) }));`) as { base: boolean[]; expired: boolean };
+  assert.deepEqual(out, { base: [false, false], expired: true });
+});
+
 test("an order keeps no full contact data, and one ACP session makes at most one order", () => {
   const out = withStore(`
 const input = { email: "jane@example.com", name: "Jane Q Public", address: "1 Main St, Springfield", cardLast4: "4242", priced: ${JSON.stringify(priced)}, checkoutSessionId: "cs_1" };

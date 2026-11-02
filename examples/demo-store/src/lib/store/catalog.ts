@@ -3,7 +3,8 @@ import type { Coupon, Funnels, Product, StoreConfig } from "@/lib/types";
 // Baseline store data. Pure: no I/O. Every scenario starts from a fresh copy of this.
 
 export const STORE_NAME = "Alder Trail Co.";
-export const BASELINE_EXPIRY = "2026-11-09T23:59:00-05:00";
+// Working codes stay valid long past judging and the community vote. The code_expired scenario sets a past date.
+export const BASELINE_EXPIRY = "2027-12-31T23:59:00-05:00";
 export const FIRST_ORDER_NUMBER = 10427;
 export const DEFAULT_STOCK = 25;
 

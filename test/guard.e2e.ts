@@ -68,6 +68,28 @@ test("clicking or pressing a plain Submit button on a payment page asks first", 
     assert.equal((await d.guard(enter))?.kind, "payment");
   }));
 
+test("a drag that starts or ends on a pay button counts as a click on it", () =>
+  page(`<form action="/custom-order"><input autocomplete="cc-number"><button id="s">Place order</button></form><p id="far">text</p>`, async (d) => {
+    const s = (await at(d, "#s")) as { x: number; y: number };
+    const far = (await at(d, "#far")) as { x: number; y: number };
+    assert.equal((await d.guard({ type: "drag", path: [s, s] }))?.kind, "payment", "zero-distance drag");
+    assert.equal((await d.guard({ type: "drag", path: [far, s] }))?.kind, "payment", "drag that ends on the button");
+    assert.equal(await d.guard({ type: "drag", path: [far, far] }), null, "a drag on plain text");
+  }));
+
+test("Enter or Space on a pay button inside an embedded payment form asks first", () =>
+  page(
+    `<iframe srcdoc='<form action="/custom-order"><input autocomplete="cc-number"><button id="p">Place order</button> <button id="u">Submit</button></form>' width="500" height="200"></iframe>`,
+    async (d) => {
+      const frame = d.page.frameLocator("iframe");
+      await frame.locator("#p").focus();
+      assert.equal((await d.guard(enter))?.kind, "payment");
+      assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "payment");
+      await frame.locator("#u").focus();
+      assert.equal((await d.guard(enter))?.kind, "payment", "a plain Submit next to a card field in the frame");
+    },
+  ));
+
 test("next-step and apply buttons on a payment page need no approval", () =>
   page(
     `<form><input autocomplete="cc-number"><button id="c">Continue to shipping</button></form><form><input name="code"><button id="a">Apply</button></form>`,
@@ -98,6 +120,24 @@ test("--no-submit blocks sending a lead form by click or Enter, but not applying
     await d.page.locator("input[name=code]").focus();
     assert.equal(await d.guard(enter), null);
   }));
+
+test("--no-submit blocks a form with customer details even when its button says Continue, but not a code or a cart step", () =>
+  noSubmitPage(
+    `<form method="post" action="/lead"><input name="email" id="e"><button id="c">Continue</button></form>
+<form><input name="qty" value="1"><button id="n">Continue</button></form>
+<form><input type="email" name="contact"><input name="code" id="k"><button id="a">Apply</button></form>`,
+    async (d) => {
+      assert.equal((await d.guard(await at(d, "#c")))?.kind, "submit", "Continue on a lead form");
+      await d.page.locator("#e").focus();
+      assert.equal((await d.guard(enter))?.kind, "submit", "Enter in the email field");
+      const drag = (await at(d, "#c")) as { x: number; y: number };
+      assert.equal((await d.guard({ type: "drag", path: [drag, drag] }))?.kind, "submit", "a drag on Continue");
+      assert.equal(await d.guard(await at(d, "#n")), null, "a step with no customer details");
+      assert.equal(await d.guard(await at(d, "#a")), null, "applying a code");
+      await d.page.locator("#k").focus();
+      assert.equal(await d.guard(enter), null, "Enter in the code field");
+    },
+  ));
 
 test("--no-submit also blocks Sign up, Subscribe, and Join, which send customer data", () =>
   noSubmitPage(

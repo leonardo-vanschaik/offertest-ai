@@ -50,7 +50,7 @@ ${c.bold("Check options")}
   --headful             show the browser even when not in a terminal
   --limit <n>           with --account: test at most n ads (default 5)
   --max-turns <n>       agent turns per funnel (default 25)
-  --max-usd <n>         stop a run above this model cost
+  --max-usd <n>         stop the run's model calls when its cost reaches this amount
   --out <dir>           run folders go here (default ./offertest-runs)
   --retest-of <run id>  mark this run as the re-test of an earlier run (after a fix)
   --json                print result.json paths and verdicts as JSON

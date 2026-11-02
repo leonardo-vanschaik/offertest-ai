@@ -9,6 +9,7 @@ import path from "node:path";
 
 const STORE = process.env.DEMO_STORE ?? "http://localhost:3000";
 let turns = 0;
+let chats = 0;
 
 function fakeMeta(): Promise<{ url: string; close: () => void }> {
   const server = http.createServer(async (req, res) => {
@@ -20,6 +21,7 @@ function fakeMeta(): Promise<{ url: string; close: () => void }> {
       res.end(JSON.stringify(o));
     };
     if (req.url?.endsWith("/chat/completions")) {
+      chats++;
       const name = json.response_format?.json_schema?.name;
       const content =
         name === "offer_assertions"
@@ -102,3 +104,20 @@ test("pipeline: the agent checkouts (UCP and ACP) supply the proof the web pages
     await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"baseline"}' });
   }
 });
+
+test("--max-usd stops the whole run: past the limit, no agent turn, judge, SAM, or fix call", async () => {
+  await fetch(`${STORE}/api/store/scenario`, { method: "POST", headers: { "content-type": "application/json" }, body: '{"scenario":"code_expired"}' });
+  const { runTest } = await import("../src/core/run.ts");
+  const [t0, c0] = [turns, chats];
+  // Reading the promises costs about $0.0017 here (1,000 tokens in and 100 out on Muse Spark): past $0.001.
+  const { result } = await runTest(
+    { source: "manual", headline: "20% off the Ridge trail shoe.", text: "This week only. Use code SAVE20 at checkout.", cta: "Shop now", destination: { type: "website", url: `${STORE}/store/products/ridge-trail-shoe` } },
+    { outDir: fs.mkdtempSync(path.join(os.tmpdir(), "offertest-")), maxTurns: 6, agentCheckout: false, maxUsd: 0.001 },
+  );
+  assert.equal(turns, t0, "no computer-use turn");
+  assert.equal(chats - c0, 1, "only the promise call");
+  assert.equal(result.overall, "unresolved");
+  assert.ok(result.verdicts.length && result.verdicts.every((v) => v.status === "unresolved" && /--max-usd/.test(v.reason)));
+  assert.ok(result.steps.some((s) => /--max-usd limit \(\$0\.00\)/.test(s.summary)));
+});
+

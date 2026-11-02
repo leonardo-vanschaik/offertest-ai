@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { MODELS } from "../meta/client.ts";
-import type { Ad, Destination, LeadForm, RunOptions, RunResult } from "../types.ts";
+import type { Ad, Destination, LeadForm, RunOptions, RunResult, Verdict } from "../types.ts";
 import { extractAssertions, promiseModel } from "./assertions.ts";
 import { Driver } from "./driver.ts";
 import { proposeFix } from "./fix.ts";
@@ -136,11 +136,15 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
       }
     }
 
+    // --max-usd covers the whole run: past the limit, no judge, SAM, or fix call. The promises stay unresolved.
+    const spent = () => opts.maxUsd !== undefined && r.usage.usd >= opts.maxUsd;
+    const limit = `the --max-usd limit ($${opts.maxUsd?.toFixed(2)})`;
     await phase("Judging each promise against word-for-word evidence (Muse Wonder + quote check)");
+    if (spent()) await log.step({ kind: "note", summary: `Stopped: model cost reached ${limit}. The promises were not judged.` });
     const firstShot = r.steps.find((s) => s.screenshot);
     const [verdicts, sam] = await Promise.all([
-      judge(r, evidence),
-      firstShot
+      spent() ? notJudged(r, `Not judged: the run reached ${limit}.`) : judge(r, evidence),
+      firstShot && !spent()
         ? samFor(r, log, firstShot.screenshot!, subject, opts.mobile).catch(async (e) => {
             await log.event({ type: "sam_error", error: String(e) });
             return undefined;
@@ -166,7 +170,8 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
               ? `Followed the funnel to ${shortUrl(lastUrl)}`
               : "Read from Meta only (no website)";
 
-    if (r.overall === "fail") {
+    if (r.overall === "fail" && spent()) await log.step({ kind: "note", summary: `No fix proposed: the run reached ${limit}.` });
+    else if (r.overall === "fail") {
       await phase("Proposing one fix (Muse Wonder)");
       r.fix = await proposeFix(r);
       await log.event({ type: "fix_proposed", fix: r.fix });
@@ -179,6 +184,12 @@ export async function runTest(ad: Ad, opts: RunOptions): Promise<{ result: RunRe
   log.save();
   await log.event({ type: "run_finished", overall: r.overall, usd: r.usage.usd });
   return { result: r, dir: log.dir };
+}
+
+function notJudged(r: RunResult, reason: string): Promise<Verdict[]> {
+  return Promise.resolve(
+    r.assertions.map((a) => ({ assertionId: a.id, status: "unresolved" as const, adQuote: a.adQuote, pageQuote: null, evidenceStep: null, reason, quoteCheck: { adQuoteFound: false, pageQuoteFound: false } })),
+  );
 }
 
 // Baseline for the eval: what a single model call sees (the landing page), no clicking.

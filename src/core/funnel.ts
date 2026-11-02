@@ -247,6 +247,13 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
       ],
     });
 
+  // --max-usd: checked before every model request, here and at the top of each turn.
+  const spent = () => opts.maxUsd !== undefined && r.usage.usd >= opts.maxUsd;
+  if (spent()) {
+    await log.step({ kind: "note", summary: `Stopped: model cost reached the --max-usd limit ($${opts.maxUsd!.toFixed(2)})` });
+    out.stepLimitHit = true;
+    return out;
+  }
   let res = await fresh(jpg);
   let imagesInChain = 1;
   addUsage(r, MODELS.wonder, res.usage?.input_tokens, res.usage?.output_tokens, 1);
@@ -263,8 +270,8 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
       if (out.notes) await log.step({ kind: "model", summary: "Agent's note", modelText: out.notes });
       return out;
     }
-    if (opts.maxUsd && r.usage.usd > opts.maxUsd) {
-      await log.step({ kind: "note", summary: `Budget reached ($${opts.maxUsd.toFixed(2)})` });
+    if (spent()) {
+      await log.step({ kind: "note", summary: `Stopped: model cost reached the --max-usd limit ($${opts.maxUsd!.toFixed(2)})` });
       out.stepLimitHit = true;
       return out;
     }
