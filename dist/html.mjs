@@ -268,7 +268,7 @@ const SYSTEM$2 = `You turn an ad into typed, testable promises that a customer c
 - kind: one of price, discount, free_shipping, free_trial, availability, lead_magnet, booking, event, guarantee, response_time, other.
 - claim: a plain test statement, e.g. "Code SAVE20 gives 20% off the Ridge trail shoe".
 - adQuote: copied verbatim from the ad text, headline, description, a card, or the words printed in the ad image (exact characters). The shortest span that states the promise.
-- imageText: every word printed in the ad's images, verbatim, in reading order ("" if there is no image or no text). For a carousel card's image, start its words with "Card N: " (N is the card index).
+- imageText: every word printed in the ad's images, verbatim, in reading order ("" if there is no image or no text). For an image labeled with carousel cards, start its words with those cards, for example "Card 1: ".
 - card: the index of the carousel card the promise belongs to, or null if it is the main ad.
 - conditions: key/value facts the test needs (code, percent, amount, product, variant, threshold, date). Money as written in the ad.
 - Mood words ("best", "you'll love it") are not promises. A time limit belongs in conditions of the promise it limits.
@@ -280,22 +280,33 @@ async function adContent(ad) {
 		type: "text",
 		text: `Headline: ${ad.headline}\nText: ${ad.text}\n${ad.description ? `Description: ${ad.description}\n` : ""}Button: ${ad.cta}\nDestination: ${ad.destination.type}${cards ? `\n${cards}` : ""}`
 	}];
-	const url = await imageAsDataUrl(ad.imageUrl);
-	if (url) parts.push({
-		type: "image_url",
-		image_url: { url }
-	});
-	const seen = new Set([ad.imageUrl]);
-	for (const [i, c] of (ad.cards ?? []).entries()) {
-		if (!c.imageUrl || seen.has(c.imageUrl) || seen.size > 5) continue;
-		seen.add(c.imageUrl);
-		const card = await imageAsDataUrl(c.imageUrl);
-		if (card) parts.push({
+	const cardsOf = /* @__PURE__ */ new Map();
+	for (const [i, c] of (ad.cards ?? []).entries()) if (c.imageUrl) cardsOf.set(c.imageUrl, [...cardsOf.get(c.imageUrl) ?? [], i]);
+	const on = (cards$1) => `${cards$1.length > 1 ? "cards" : "card"} ${cards$1.join(", ")}`;
+	const main = await imageAsDataUrl(ad.imageUrl);
+	if (main) {
+		const cards$1 = ad.imageUrl ? cardsOf.get(ad.imageUrl) : void 0;
+		if (cards$1) parts.push({
 			type: "text",
-			text: `Card ${i} image:`
+			text: `Main image, also on ${on(cards$1)}:`
+		});
+		parts.push({
+			type: "image_url",
+			image_url: { url: main }
+		});
+	}
+	let extra = 0;
+	for (const [src, cards$1] of cardsOf) {
+		if (src === ad.imageUrl || extra >= 5) continue;
+		const url = await imageAsDataUrl(src);
+		if (!url) continue;
+		extra++;
+		parts.push({
+			type: "text",
+			text: `Image on ${on(cards$1)}:`
 		}, {
 			type: "image_url",
-			image_url: { url: card }
+			image_url: { url }
 		});
 	}
 	return parts;
@@ -556,11 +567,12 @@ var Driver = class {
 				kind: "payment",
 				label: hit.label || "Submit"
 			};
-			if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && (SENDS.test(hit.label) || hit.data && FORWARD.test(hit.label) && !CODE_STEP.test(hit.label)))) return {
+			const sends = SENDS.test(hit.label) || hit.data && FORWARD.test(hit.label) && !CODE_STEP.test(hit.label);
+			if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && sends)) return {
 				kind: "submit",
 				label: hit.label || "Submit"
 			};
-			if (!this.allowSubmit && hit.link && SENDS.test(hit.label)) this.sendLinks.add(action);
+			if (!this.allowSubmit && hit.link && sends) this.sendLinks.add(action);
 			return null;
 		}
 		if (action.type === "keypress" && action.keys.some((k) => /^(enter|return)$/i.test(k)) || action.type === "type" && /[\r\n]/.test(action.text)) {
@@ -599,14 +611,14 @@ var Driver = class {
 			if (!a || a === document.body) return null;
 			if (!(/^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A") || /^(submit|image)$/.test(a.type) && a.form) return null;
 			const href = a.tagName === "A" ? a.getAttribute("href") ?? "" : "";
-			const link$1 = !!href && href !== "#" && !/^javascript:/i.test(href);
+			const link$1 = !!href && !href.startsWith("#") && !/^javascript:/i.test(href);
 			const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
 			if (new RegExp(src, "i").test(label)) return {
 				label,
 				link: link$1
 			};
 			const owner = a.form ?? a.closest("form");
-			const data = !!owner && Array.from(owner.elements).some((f) => {
+			return !!owner && Array.from(owner.elements).some((f) => {
 				const i = f;
 				return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([
 					i.name,
@@ -614,8 +626,7 @@ var Driver = class {
 					i.getAttribute("autocomplete"),
 					i.placeholder
 				].join(" "));
-			});
-			return !link$1 && data && new RegExp(forward, "i").test(label) && !new RegExp(code, "i").test(label) ? {
+			}) && new RegExp(forward, "i").test(label) && !new RegExp(code, "i").test(label) ? {
 				label,
 				link: link$1
 			} : null;
@@ -784,7 +795,7 @@ var Driver = class {
 								i$1.placeholder
 							].join(" "));
 						}),
-						link: !!href && href !== "#" && !/^javascript:/i.test(href)
+						link: !!href && !href.startsWith("#") && !/^javascript:/i.test(href)
 					};
 				}
 			}

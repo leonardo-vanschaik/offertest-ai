@@ -155,6 +155,40 @@ test("--no-submit blocks a script-driven Continue button on a form with customer
     },
   ));
 
+test("--no-submit: a Continue link to a spot on the page acts as a button on a form with customer details", () =>
+  noSubmitPage(
+    `<form><input name="email" value="test@offertest.ai"><button id="a">Apply</button>
+<a href="#next" role="button" id="c" onclick="fetch('/lead',{method:'POST'});return false">Continue</a></form>`,
+    async (d) => {
+      assert.equal((await d.guard(await at(d, "#c")))?.kind, "submit", "click");
+      await d.page.locator("#c").focus();
+      assert.equal((await d.guard(enter))?.kind, "submit", "Enter on the focused link");
+      assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "submit", "Space on the focused link");
+    },
+  ));
+
+test("--no-submit: a Continue link to another page on a form with customer details may open it, but its script cannot send", async () => {
+  const posts: string[] = [];
+  const srv = http.createServer((req, res) => {
+    if (req.method === "POST") posts.push(req.url ?? "");
+    res.writeHead(200, { "content-type": "text/html" });
+    res.end(`<form><input name="email" value="test@offertest.ai"><a href="/step2" id="c" onclick="event.preventDefault(); fetch('/lead',{method:'POST'})">Continue</a></form>`);
+  });
+  await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
+  const d = new Driver();
+  await d.start(`http://127.0.0.1:${(srv.address() as { port: number }).port}/`, { allowSubmit: false });
+  try {
+    const click = await at(d, "#c");
+    assert.equal(await d.guard(click), null, "opening a page is allowed");
+    await d.execute(click);
+    await d.page.waitForTimeout(400);
+    assert.deepEqual(posts, []);
+  } finally {
+    await d.close();
+    srv.close();
+  }
+});
+
 test("without --no-submit, a script-driven Continue button is allowed", () =>
   page(`<form><input name="email"><button type="button" id="c">Continue</button></form>`, async (d) => {
     assert.equal(await d.guard(await at(d, "#c")), null);

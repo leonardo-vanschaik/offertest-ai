@@ -78,7 +78,12 @@ test("carousel card images reach the model, labeled with their card, so an offer
   const parts = await adContent(ad);
   const images = parts.flatMap((p) => (p.type === "image_url" ? [p.image_url.url] : []));
   assert.deepEqual(images, [main, second], "the main image once, then card 1's own image");
-  assert.ok(parts.some((p) => p.type === "text" && p.text === "Card 1 image:"));
+  const labels = parts.flatMap((p) => (p.type === "text" && p.text.endsWith(":") ? [p.text] : []));
+  assert.deepEqual(labels, ["Main image, also on card 0:", "Image on card 1:"], "every card keeps its index");
+  // Two cards with the same image, each with its own link: one copy, labeled with both cards.
+  const shared = await adContent({ ...ad, imageUrl: undefined, cards: [{ ...ad.cards![0], imageUrl: second }, ad.cards![1]] });
+  assert.ok(shared.some((p) => p.type === "text" && p.text === "Image on cards 0, 1:"));
+  assert.equal(shared.filter((p) => p.type === "image_url").length, 1);
 });
 
 test("click-to-WhatsApp ad reads the welcome message", async () => {

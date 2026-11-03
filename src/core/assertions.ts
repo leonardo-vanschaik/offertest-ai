@@ -23,7 +23,7 @@ const SYSTEM = `You turn an ad into typed, testable promises that a customer cou
 - kind: one of price, discount, free_shipping, free_trial, availability, lead_magnet, booking, event, guarantee, response_time, other.
 - claim: a plain test statement, e.g. "Code SAVE20 gives 20% off the Ridge trail shoe".
 - adQuote: copied verbatim from the ad text, headline, description, a card, or the words printed in the ad image (exact characters). The shortest span that states the promise.
-- imageText: every word printed in the ad's images, verbatim, in reading order ("" if there is no image or no text). For a carousel card's image, start its words with "Card N: " (N is the card index).
+- imageText: every word printed in the ad's images, verbatim, in reading order ("" if there is no image or no text). For an image labeled with carousel cards, start its words with those cards, for example "Card 1: ".
 - card: the index of the carousel card the promise belongs to, or null if it is the main ad.
 - conditions: key/value facts the test needs (code, percent, amount, product, variant, threshold, date). Money as written in the ad.
 - Mood words ("best", "you'll love it") are not promises. A time limit belongs in conditions of the promise it limits.
@@ -38,15 +38,24 @@ export async function adContent(ad: Ad): Promise<OpenAI.Chat.Completions.ChatCom
       text: `Headline: ${ad.headline}\nText: ${ad.text}\n${ad.description ? `Description: ${ad.description}\n` : ""}Button: ${ad.cta}\nDestination: ${ad.destination.type}${cards ? `\n${cards}` : ""}`,
     },
   ];
-  const url = await imageAsDataUrl(ad.imageUrl);
-  if (url) parts.push({ type: "image_url", image_url: { url } });
-  // Carousel cards: each card's own image (up to 5), labeled with its index. The first card often repeats the main image.
-  const seen = new Set([ad.imageUrl]);
-  for (const [i, c] of (ad.cards ?? []).entries()) {
-    if (!c.imageUrl || seen.has(c.imageUrl) || seen.size > 5) continue;
-    seen.add(c.imageUrl);
-    const card = await imageAsDataUrl(c.imageUrl);
-    if (card) parts.push({ type: "text", text: `Card ${i} image:` }, { type: "image_url", image_url: { url: card } });
+  // Carousel cards: one copy of each image, labeled with every card that shows it, so a promise printed on a
+  // card keeps its card index. The main image comes first; up to 5 more images.
+  const cardsOf = new Map<string, number[]>();
+  for (const [i, c] of (ad.cards ?? []).entries()) if (c.imageUrl) cardsOf.set(c.imageUrl, [...(cardsOf.get(c.imageUrl) ?? []), i]);
+  const on = (cards: number[]) => `${cards.length > 1 ? "cards" : "card"} ${cards.join(", ")}`;
+  const main = await imageAsDataUrl(ad.imageUrl);
+  if (main) {
+    const cards = ad.imageUrl ? cardsOf.get(ad.imageUrl) : undefined;
+    if (cards) parts.push({ type: "text", text: `Main image, also on ${on(cards)}:` });
+    parts.push({ type: "image_url", image_url: { url: main } });
+  }
+  let extra = 0;
+  for (const [src, cards] of cardsOf) {
+    if (src === ad.imageUrl || extra >= 5) continue;
+    const url = await imageAsDataUrl(src);
+    if (!url) continue;
+    extra++;
+    parts.push({ type: "text", text: `Image on ${on(cards)}:` }, { type: "image_url", image_url: { url } });
   }
   return parts;
 }

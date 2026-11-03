@@ -217,14 +217,11 @@ export class Driver {
       if (hit.byId) return { kind: "payment", label: hit.label };
       if ((hit.pay || (hit.form && !SAFE_SUBMIT.test(hit.label))) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
       // --no-submit: a form submit button that does more than apply a code or move to the next step, any button
-      // but "Apply" on a form with customer details, or a script button that says it sends. A link sends nothing.
-      if (
-        !this.allowSubmit &&
-        !hit.pay &&
-        (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && (SENDS.test(hit.label) || (hit.data && FORWARD.test(hit.label) && !CODE_STEP.test(hit.label))))
-      )
-        return { kind: "submit", label: hit.label || "Submit" };
-      if (!this.allowSubmit && hit.link && SENDS.test(hit.label)) this.sendLinks.add(action);
+      // but "Apply" on a form with customer details, or a script button that says it sends or moves such a form
+      // forward. A link to another page may open, but its scripts cannot send (see execute).
+      const sends = SENDS.test(hit.label) || (hit.data && FORWARD.test(hit.label) && !CODE_STEP.test(hit.label));
+      if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && sends)) return { kind: "submit", label: hit.label || "Submit" };
+      if (!this.allowSubmit && hit.link && sends) this.sendLinks.add(action);
       return null;
     }
     const submits =
@@ -266,7 +263,7 @@ export class Driver {
           const button = /^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A";
           if (!button || (/^(submit|image)$/.test(a.type) && a.form)) return null;
           const href = a.tagName === "A" ? (a.getAttribute("href") ?? "") : "";
-          const link = !!href && href !== "#" && !/^javascript:/i.test(href);
+          const link = !!href && !href.startsWith("#") && !/^javascript:/i.test(href);
           const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
           if (new RegExp(src, "i").test(label)) return { label, link };
           const owner = a.form ?? a.closest("form");
@@ -276,7 +273,7 @@ export class Driver {
               const i = f as HTMLInputElement;
               return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([i.name, i.id, i.getAttribute("autocomplete"), i.placeholder].join(" "));
             });
-          return !link && data && new RegExp(forward, "i").test(label) && !new RegExp(code, "i").test(label) ? { label, link } : null;
+          return data && new RegExp(forward, "i").test(label) && !new RegExp(code, "i").test(label) ? { label, link } : null;
         },
         [SENDS.source, FORWARD.source, CODE_STEP.source, CUSTOMER_FIELD.source] as [string, string, string, string],
       )
@@ -403,7 +400,8 @@ export class Driver {
               const i = f as HTMLInputElement;
               return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([i.name, i.id, i.getAttribute("autocomplete"), i.placeholder].join(" "));
             });
-          return { label, byId: false, pay: false, form, data, link: !!href && href !== "#" && !/^javascript:/i.test(href) };
+          // A link to a spot on the same page ("#next") opens nothing: it is a script button.
+          return { label, byId: false, pay: false, form, data, link: !!href && !href.startsWith("#") && !/^javascript:/i.test(href) };
         }
       }
       return null;
