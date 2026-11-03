@@ -208,7 +208,7 @@ flowchart TD
 
 All commands and options: [docs/CLI.md](docs/CLI.md).
 
-**In CI.** Exit code 0 means every promise holds, 1 means one broke, 2 means unresolved. Re-check live ads every 6 hours with GitHub Actions:
+**In CI.** Exit code 0 means every promise holds, 1 means one broke, 2 means unresolved. Re-check live ads every 6 hours with GitHub Actions, and pause any ad whose offer breaks (the token needs `ads_management`):
 
 ```yaml
 on:
@@ -222,7 +222,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci --prefix offertest
-      - run: node offertest/dist/cli.mjs check --account ${{ vars.META_AD_ACCOUNT_ID }} --live --json
+      - run: node offertest/dist/cli.mjs check --account ${{ vars.META_AD_ACCOUNT_ID }} --live --pause-failing --yes --json
         env:
           META_API_KEY: ${{ secrets.META_API_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
