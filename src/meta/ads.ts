@@ -236,6 +236,8 @@ export async function toAd(g: GraphAd): Promise<Ad> {
     cards.push({
       headline: ch.name ?? "",
       text: ch.description,
+      // Each card has its own image, and an offer may be printed only on it.
+      imageUrl: ch.picture ?? ch.image_url,
       destination: await destinationOf(ch.call_to_action ?? (cta?.type ? { type: cta.type } : undefined), ch.link ?? ld?.link, ld, g),
     });
   // Dynamic creative: every extra title/body combination is a variant the customer may see.

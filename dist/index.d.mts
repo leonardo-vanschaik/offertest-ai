@@ -43,6 +43,7 @@ type Destination = {
 type AdCard = {
   headline: string;
   text?: string;
+  imageUrl?: string;
   destination: Destination;
 };
 type Ad = {

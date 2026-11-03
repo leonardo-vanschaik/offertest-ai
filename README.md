@@ -142,6 +142,8 @@ We tested OfferTest on 41 ads: 17 with working offers and 24 with broken ones, a
 
 Most broken offers only show up in the cart, at checkout, after a sign-up, or behind a download link. A check that does not click cannot see them. OfferTest costs more per ad because it drives a real browser through the funnel.
 
+**Limits.** All 41 cases run on our sample store, so the right answer is known for each one. Real stores add bot checks, logins, pop-ups, and layouts that this benchmark does not cover. When a page blocks the agent, OfferTest says so and returns `unresolved`, not a guess.
+
 **How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the first scored run on 30 Oct 2026. In that first run, with Muse Spark reading the promises, OfferTest also got 41 of 41, and the landing-page check got 12 of 41 ([eval/results/2026-10-30-muse-spark.json](eval/results/2026-10-30-muse-spark.json)). In the 2 Nov run, one case stopped on a 503 error from the Meta Model API and was run again; `latest.json` keeps both tries. Results: [eval/results/latest.json](eval/results/latest.json). Run it yourself: [eval/README.md](eval/README.md).
 
 ## Open weights
@@ -188,7 +190,7 @@ flowchart TD
 4. **Judge with proof.** Muse Wonder judges each promise from the captured pages only. Code then checks that both quotes exist word for word. A verdict without proof becomes `unresolved`, never a guess.
 5. **Fix.** For each broken promise you get one change, where to make it, and the command to re-test.
 
-**It never pays.** A guard in the browser blocks the final pay button and order requests. `--no-submit` also stops it before sign-up and lead forms. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#safety).
+**It never pays without asking.** A guard in the browser blocks the final pay button and the store's order requests. With `--pay`, on a store in test mode, it asks you before the final click and uses a test card. `--no-submit` also stops it before sign-up and lead forms. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#safety).
 
 ## Use it where you work
 

@@ -20,7 +20,7 @@ export type Destination =
   | { type: "unknown"; note: string };
 
 // A carousel card or a dynamic-creative variant with its own link.
-export type AdCard = { headline: string; text?: string; destination: Destination };
+export type AdCard = { headline: string; text?: string; imageUrl?: string; destination: Destination };
 
 export type Ad = {
   source: "manual" | "meta";

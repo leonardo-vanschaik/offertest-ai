@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { adContent } from "../src/core/assertions.ts";
 import { landingUrl, toAd } from "../src/meta/ads.ts";
 
 test("link ad: copy, CTA, destination with url_tags filled", async () => {
@@ -51,6 +52,33 @@ test("carousel cards keep their own links", async () => {
   });
   assert.equal(ad.cards?.length, 2);
   assert.deepEqual(ad.cards?.[1].destination, { type: "website", url: "https://shop.example/b" });
+});
+
+test("carousel card images reach the model, labeled with their card, so an offer printed only on a card is read", async () => {
+  const main = "data:image/png;base64,TUFJTg==";
+  const second = "data:image/png;base64,Q0FSRDE=";
+  const ad = await toAd({
+    id: "2b",
+    creative: {
+      id: "c2b",
+      object_story_spec: {
+        link_data: {
+          link: "https://shop.example",
+          message: "Pick your pack",
+          picture: main,
+          child_attachments: [
+            { link: "https://shop.example/a", name: "Daypack", picture: main },
+            { link: "https://shop.example/b", name: "Socks", picture: second },
+          ],
+        },
+      },
+    },
+  });
+  assert.equal(ad.cards?.[1].imageUrl, second);
+  const parts = await adContent(ad);
+  const images = parts.flatMap((p) => (p.type === "image_url" ? [p.image_url.url] : []));
+  assert.deepEqual(images, [main, second], "the main image once, then card 1's own image");
+  assert.ok(parts.some((p) => p.type === "text" && p.text === "Card 1 image:"));
 });
 
 test("click-to-WhatsApp ad reads the welcome message", async () => {

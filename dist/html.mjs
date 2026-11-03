@@ -268,12 +268,12 @@ const SYSTEM$2 = `You turn an ad into typed, testable promises that a customer c
 - kind: one of price, discount, free_shipping, free_trial, availability, lead_magnet, booking, event, guarantee, response_time, other.
 - claim: a plain test statement, e.g. "Code SAVE20 gives 20% off the Ridge trail shoe".
 - adQuote: copied verbatim from the ad text, headline, description, a card, or the words printed in the ad image (exact characters). The shortest span that states the promise.
-- imageText: every word printed in the ad image, verbatim, in reading order ("" if there is no image or no text).
+- imageText: every word printed in the ad's images, verbatim, in reading order ("" if there is no image or no text). For a carousel card's image, start its words with "Card N: " (N is the card index).
 - card: the index of the carousel card the promise belongs to, or null if it is the main ad.
 - conditions: key/value facts the test needs (code, percent, amount, product, variant, threshold, date). Money as written in the ad.
 - Mood words ("best", "you'll love it") are not promises. A time limit belongs in conditions of the promise it limits.
 - subject: a 1-2 word noun for the advertised product or service, as it would look in a photo ("shoe", "jacket", "app screen", "person").
-- Never invent a promise the ad does not make. Read text in the ad image too.`;
+- Never invent a promise the ad does not make. Read text in the ad's images too, the carousel cards' images included.`;
 async function adContent(ad) {
 	const cards = (ad.cards ?? []).map((c, i) => `Card ${i}: ${c.headline}${c.text ? ` / ${c.text}` : ""}`).join("\n");
 	const parts = [{
@@ -285,6 +285,19 @@ async function adContent(ad) {
 		type: "image_url",
 		image_url: { url }
 	});
+	const seen = new Set([ad.imageUrl]);
+	for (const [i, c] of (ad.cards ?? []).entries()) {
+		if (!c.imageUrl || seen.has(c.imageUrl) || seen.size > 5) continue;
+		seen.add(c.imageUrl);
+		const card = await imageAsDataUrl(c.imageUrl);
+		if (card) parts.push({
+			type: "text",
+			text: `Card ${i} image:`
+		}, {
+			type: "image_url",
+			image_url: { url: card }
+		});
+	}
 	return parts;
 }
 function promiseModel() {
@@ -383,6 +396,7 @@ const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|regis
 const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
 const CODE_STEP = /^(apply|redeem|use code)\b/i;
 const sendsForm = (label, data) => !SAFE_STEP.test(label) || data && !CODE_STEP.test(label);
+const FORWARD = /\b(continue|next|review|proceed|done|finish|go|ok)\b/i;
 const SENDS = /\b(sign ?up|subscribe|join|register|create (an |my |your )?account|send|submit|download|claim|book|reserve|request|start (my |a |your )?(free )?trial|confirm|rsvp|enrol+|apply now|notify me|log ?in|sign ?in|get (my|the|your) (free )?(guide|e-?book|copy|download|quote|offer|code|access|trial|demo))\b/i;
 const ORDER_SUBMIT = [
 	/\/graphql.*SubmitForCompletion/i,
@@ -400,6 +414,7 @@ var Driver = class {
 	page;
 	viewport = DESKTOP;
 	allowPayment = false;
+	paymentApproved = false;
 	allowSubmit = true;
 	blockedRequests = [];
 	sendLinks = /* @__PURE__ */ new WeakSet();
@@ -423,7 +438,7 @@ var Driver = class {
 		});
 		await this.context.route("**/*", (route) => {
 			const req = route.request();
-			if (!this.allowPayment && req.method() !== "GET" && ORDER_SUBMIT.some((re) => re.test(req.url()))) {
+			if (!this.paying() && req.method() !== "GET" && ORDER_SUBMIT.some((re) => re.test(req.url()))) {
 				this.blockedRequests.push(req.url());
 				return route.abort("blockedbyclient");
 			}
@@ -434,7 +449,7 @@ var Driver = class {
 			return route.continue();
 		});
 		this.context.on("page", async (p) => {
-			if (!this.allowPayment && /paypal|shop\.app|pay\.google|apple\.com\/apple-pay|klarna|afterpay/i.test(p.url() || "")) await p.close();
+			if (!this.paying() && /paypal|shop\.app|pay\.google|apple\.com\/apple-pay|klarna|afterpay/i.test(p.url() || "")) await p.close();
 		});
 		this.context.on("page", (p) => this.watchPage(p));
 		this.page = await this.context.newPage();
@@ -445,6 +460,15 @@ var Driver = class {
 		});
 		await this.settle();
 		await this.dismissOverlays();
+	}
+	approvePayment() {
+		this.paymentApproved = this.allowPayment;
+	}
+	endPayment() {
+		this.paymentApproved = false;
+	}
+	paying() {
+		return this.allowPayment && this.paymentApproved;
 	}
 	watchPage(p) {
 		this.watchDownloads(p);
@@ -532,7 +556,7 @@ var Driver = class {
 				kind: "payment",
 				label: hit.label || "Submit"
 			};
-			if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && SENDS.test(hit.label))) return {
+			if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && (SENDS.test(hit.label) || hit.data && FORWARD.test(hit.label) && !CODE_STEP.test(hit.label)))) return {
 				kind: "submit",
 				label: hit.label || "Submit"
 			};
@@ -570,18 +594,37 @@ var Driver = class {
 		return null;
 	}
 	async focusedSend(action) {
-		const hit = await (await this.focusedFrame()).evaluate((src) => {
+		const hit = await (await this.focusedFrame()).evaluate(([src, forward, code, customer]) => {
 			const a = document.activeElement;
 			if (!a || a === document.body) return null;
 			if (!(/^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A") || /^(submit|image)$/.test(a.type) && a.form) return null;
 			const href = a.tagName === "A" ? a.getAttribute("href") ?? "" : "";
+			const link$1 = !!href && href !== "#" && !/^javascript:/i.test(href);
 			const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
-			if (!new RegExp(src, "i").test(label)) return null;
-			return {
+			if (new RegExp(src, "i").test(label)) return {
 				label,
-				link: !!href && href !== "#" && !/^javascript:/i.test(href)
+				link: link$1
 			};
-		}, SENDS.source).catch(() => null);
+			const owner = a.form ?? a.closest("form");
+			const data = !!owner && Array.from(owner.elements).some((f) => {
+				const i = f;
+				return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([
+					i.name,
+					i.id,
+					i.getAttribute("autocomplete"),
+					i.placeholder
+				].join(" "));
+			});
+			return !link$1 && data && new RegExp(forward, "i").test(label) && !new RegExp(code, "i").test(label) ? {
+				label,
+				link: link$1
+			} : null;
+		}, [
+			SENDS.source,
+			FORWARD.source,
+			CODE_STEP.source,
+			CUSTOMER_FIELD.source
+		]).catch(() => null);
 		if (hit?.link) this.sendLinks.add(action);
 		return hit && !hit.link ? hit.label : null;
 	}
@@ -726,12 +769,13 @@ var Driver = class {
 					const href = el.tagName === "A" ? el.getAttribute("href") ?? "" : "";
 					if (b.tagName === "INPUT" && !/^(submit|image|button|reset)$/.test(b.type)) return null;
 					const form = /^(submit|image)$/.test(b.type) && !!b.form;
+					const owner = b.form ?? el.closest("form");
 					return {
 						label,
 						byId: false,
 						pay: false,
 						form,
-						data: form && Array.from(b.form.elements).some((f) => {
+						data: !!owner && Array.from(owner.elements).some((f) => {
 							const i$1 = f;
 							return /^(email|tel|password)$/i.test(i$1.type) || new RegExp(customer, "i").test([
 								i$1.name,
@@ -1283,13 +1327,18 @@ async function runFunnel(r, driver, log, opts, startUrl, cardIndex) {
 						break;
 					}
 					out.paid = true;
+					driver.approvePayment();
 				}
 				await log.event({
 					type: "action",
 					action
 				});
-				await driver.execute(action);
-				if (guard) await driver.waitToLeave(urlBefore);
+				try {
+					await driver.execute(action);
+					if (guard) await driver.waitToLeave(urlBefore);
+				} finally {
+					if (guard) driver.endPayment();
+				}
 				done.push(action);
 			}
 			if (!stop) status.push(`${name}: ok`);
@@ -2456,6 +2505,7 @@ async function toAd(g) {
 	for (const ch of ld?.child_attachments ?? []) cards.push({
 		headline: ch.name ?? "",
 		text: ch.description,
+		imageUrl: ch.picture ?? ch.image_url,
 		destination: await destinationOf(ch.call_to_action ?? (cta?.type ? { type: cta.type } : void 0), ch.link ?? ld?.link, ld, g)
 	});
 	for (const u of afs?.link_urls?.slice(1) ?? []) if (u.website_url) cards.push({

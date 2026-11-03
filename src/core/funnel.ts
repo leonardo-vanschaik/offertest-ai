@@ -313,11 +313,16 @@ export async function runFunnel(r: RunResult, driver: Driver, log: RunLog, opts:
             break;
           }
           out.paid = true;
+          driver.approvePayment();
         }
         await log.event({ type: "action", action }); // written before it runs
-        await driver.execute(action);
-        // A paid order takes a moment to confirm: capture the confirmation page, not the checkout.
-        if (guard) await driver.waitToLeave(urlBefore);
+        try {
+          await driver.execute(action);
+          // A paid order takes a moment to confirm: capture the confirmation page, not the checkout.
+          if (guard) await driver.waitToLeave(urlBefore);
+        } finally {
+          if (guard) driver.endPayment();
+        }
         done.push(action);
       }
       if (!stop) status.push(`${name}: ok`);

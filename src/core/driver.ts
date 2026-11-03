@@ -31,6 +31,9 @@ const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|regis
 const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
 const CODE_STEP = /^(apply|redeem|use code)\b/i;
 const sendsForm = (label: string, data: boolean) => !SAFE_STEP.test(label) || (data && !CODE_STEP.test(label));
+// A script button (type="button") inside a form with customer details can send them too, when it moves the
+// form forward. Buttons that only change the page (quantity, show password, remove) stay free.
+const FORWARD = /\b(continue|next|review|proceed|done|finish|go|ok)\b/i;
 // A script-driven button (no form) can send data too. With --no-submit, one whose words say it sends is blocked.
 // Narrower than SAFE_STEP: "Get 20% off" or "Start shopping" on a script button only opens the next view.
 const SENDS =
@@ -57,7 +60,8 @@ export class Driver {
   private context?: BrowserContext;
   page!: Page;
   viewport = DESKTOP;
-  allowPayment = false;
+  allowPayment = false; // this run may pay (--pay); each payment still needs approval
+  private paymentApproved = false; // set for the approved pay action only (approvePayment / endPayment)
   allowSubmit = true;
   blockedRequests: string[] = [];
   // --no-submit: a link whose words say it sends (Subscribe) may open its page, but its scripts must not
@@ -82,7 +86,9 @@ export class Driver {
     });
     await this.context.route("**/*", (route) => {
       const req = route.request();
-      if (!this.allowPayment && req.method() !== "GET" && ORDER_SUBMIT.some((re) => re.test(req.url()))) {
+      // Order-submit requests pass only while an approved payment runs, so a checkout script that confirms
+      // the order by itself (on a timer, or after the card fields fill) cannot pay before you approve.
+      if (!this.paying() && req.method() !== "GET" && ORDER_SUBMIT.some((re) => re.test(req.url()))) {
         this.blockedRequests.push(req.url());
         return route.abort("blockedbyclient");
       }
@@ -94,7 +100,7 @@ export class Driver {
     });
     // Payment popups (PayPal, Shop Pay, wallets) are closed unless payment is allowed.
     this.context.on("page", async (p) => {
-      if (!this.allowPayment && /paypal|shop\.app|pay\.google|apple\.com\/apple-pay|klarna|afterpay/i.test(p.url() || "")) await p.close();
+      if (!this.paying() && /paypal|shop\.app|pay\.google|apple\.com\/apple-pay|klarna|afterpay/i.test(p.url() || "")) await p.close();
     });
     this.context.on("page", (p) => this.watchPage(p));
     this.page = await this.context.newPage();
@@ -102,6 +108,19 @@ export class Driver {
     await this.page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await this.settle();
     await this.dismissOverlays();
+  }
+
+  // Open the payment window for one approved action (the funnel asks you first); endPayment closes it.
+  approvePayment() {
+    this.paymentApproved = this.allowPayment;
+  }
+
+  endPayment() {
+    this.paymentApproved = false;
+  }
+
+  private paying(): boolean {
+    return this.allowPayment && this.paymentApproved;
   }
 
   private watchPage(p: Page) {
@@ -199,7 +218,11 @@ export class Driver {
       if ((hit.pay || (hit.form && !SAFE_SUBMIT.test(hit.label))) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
       // --no-submit: a form submit button that does more than apply a code or move to the next step, any button
       // but "Apply" on a form with customer details, or a script button that says it sends. A link sends nothing.
-      if (!this.allowSubmit && !hit.pay && (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && SENDS.test(hit.label)))
+      if (
+        !this.allowSubmit &&
+        !hit.pay &&
+        (hit.form ? sendsForm(hit.label, hit.data) : !hit.link && (SENDS.test(hit.label) || (hit.data && FORWARD.test(hit.label) && !CODE_STEP.test(hit.label))))
+      )
         return { kind: "submit", label: hit.label || "Submit" };
       if (!this.allowSubmit && hit.link && SENDS.test(hit.label)) this.sendLinks.add(action);
       return null;
@@ -231,20 +254,32 @@ export class Driver {
     return null;
   }
 
-  // A focused script button (not a form submit) whose words say it sends: its label, to block it.
-  // A focused link to another page with such words may open, but arms the send block (see execute).
+  // A focused script button (not a form submit) whose words say it sends, or that moves a form with customer
+  // details forward: its label, to block it. A focused link to another page with such words may open, but arms
+  // the send block (see execute).
   private async focusedSend(action: ComputerAction): Promise<string | null> {
     const hit = await (await this.focusedFrame())
-      .evaluate((src) => {
-        const a = document.activeElement as HTMLInputElement | null;
-        if (!a || a === document.body) return null;
-        const button = /^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A";
-        if (!button || (/^(submit|image)$/.test(a.type) && a.form)) return null;
-        const href = a.tagName === "A" ? (a.getAttribute("href") ?? "") : "";
-        const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
-        if (!new RegExp(src, "i").test(label)) return null;
-        return { label, link: !!href && href !== "#" && !/^javascript:/i.test(href) };
-      }, SENDS.source)
+      .evaluate(
+        ([src, forward, code, customer]) => {
+          const a = document.activeElement as HTMLInputElement | null;
+          if (!a || a === document.body) return null;
+          const button = /^(button|input)$/i.test(a.tagName) || a.getAttribute("role") === "button" || a.tagName === "A";
+          if (!button || (/^(submit|image)$/.test(a.type) && a.form)) return null;
+          const href = a.tagName === "A" ? (a.getAttribute("href") ?? "") : "";
+          const link = !!href && href !== "#" && !/^javascript:/i.test(href);
+          const label = (a.innerText || a.value || a.getAttribute("aria-label") || "").trim();
+          if (new RegExp(src, "i").test(label)) return { label, link };
+          const owner = a.form ?? a.closest("form");
+          const data =
+            !!owner &&
+            Array.from(owner.elements).some((f) => {
+              const i = f as HTMLInputElement;
+              return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([i.name, i.id, i.getAttribute("autocomplete"), i.placeholder].join(" "));
+            });
+          return !link && data && new RegExp(forward, "i").test(label) && !new RegExp(code, "i").test(label) ? { label, link } : null;
+        },
+        [SENDS.source, FORWARD.source, CODE_STEP.source, CUSTOMER_FIELD.source] as [string, string, string, string],
+      )
       .catch(() => null);
     if (hit?.link) this.sendLinks.add(action);
     return hit && !hit.link ? hit.label : null;
@@ -359,11 +394,12 @@ export class Driver {
           const href = el.tagName === "A" ? (el.getAttribute("href") ?? "") : "";
           if (b.tagName === "INPUT" && !/^(submit|image|button|reset)$/.test(b.type)) return null; // a text field, not a button
           const form = /^(submit|image)$/.test(b.type) && !!b.form;
-          // The form sends customer details: an email, phone, or password field, or a field named for one.
-          // (Inline, not a named helper: this function runs in the page.)
+          // The button's form sends customer details: an email, phone, or password field, or a field named for
+          // one. A script button belongs to the form around it. (Inline, not a named helper: this runs in the page.)
+          const owner = b.form ?? el.closest("form");
           const data =
-            form &&
-            Array.from(b.form!.elements).some((f) => {
+            !!owner &&
+            Array.from(owner.elements).some((f) => {
               const i = f as HTMLInputElement;
               return /^(email|tel|password)$/i.test(i.type) || new RegExp(customer, "i").test([i.name, i.id, i.getAttribute("autocomplete"), i.placeholder].join(" "));
             });

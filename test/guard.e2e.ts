@@ -139,6 +139,71 @@ test("--no-submit blocks a form with customer details even when its button says 
     },
   ));
 
+test("--no-submit blocks a script-driven Continue button on a form with customer details, by click, Enter, or Space", () =>
+  noSubmitPage(
+    `<form><input name="email" value="test@offertest.ai"><button type="button" id="c" onclick="fetch('/lead',{method:'POST'})">Continue</button>
+<button type="button" id="q">+</button><button type="button" id="a">Apply</button></form>
+<form><input name="qty"><button type="button" id="n">Continue</button></form>`,
+    async (d) => {
+      assert.equal((await d.guard(await at(d, "#c")))?.kind, "submit", "click");
+      await d.page.locator("#c").focus();
+      assert.equal((await d.guard(enter))?.kind, "submit", "Enter on the focused button");
+      assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "submit", "Space on the focused button");
+      assert.equal(await d.guard(await at(d, "#q")), null, "a quantity button sends nothing");
+      assert.equal(await d.guard(await at(d, "#a")), null, "applying a code");
+      assert.equal(await d.guard(await at(d, "#n")), null, "Continue on a form with no customer details");
+    },
+  ));
+
+test("without --no-submit, a script-driven Continue button is allowed", () =>
+  page(`<form><input name="email"><button type="button" id="c">Continue</button></form>`, async (d) => {
+    assert.equal(await d.guard(await at(d, "#c")), null);
+  }));
+
+test("with --pay, an order request a checkout sends by itself is blocked until a payment is approved", async () => {
+  const posts: string[] = [];
+  const srv = http.createServer((req, res) => {
+    if (req.method === "POST") posts.push(req.url ?? "");
+    res.writeHead(200, { "content-type": "text/html" });
+    // A checkout that confirms the order on a timer, with no click.
+    res.end(`<input autocomplete="cc-number" value="4242424242424242"><script>setTimeout(() => fetch('/wc/store/v1/checkout', { method: 'POST' }), 200)</script>`);
+  });
+  await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${(srv.address() as { port: number }).port}/`;
+  const d = new Driver();
+  await d.start(url, { allowPayment: true });
+  const send = () => d.page.evaluate(() => fetch("/wc/store/v1/checkout", { method: "POST" }).then(() => true, () => false));
+  try {
+    await d.page.waitForTimeout(800);
+    assert.deepEqual(posts, [], "the timed order request did not reach the store");
+    assert.ok(d.blockedRequests.some((u) => u.endsWith("/wc/store/v1/checkout")));
+    d.approvePayment();
+    assert.equal(await send(), true);
+    assert.deepEqual(posts, ["/wc/store/v1/checkout"], "after approval, the order request goes through");
+    d.endPayment();
+    assert.equal(await send(), false, "the window closes after the approved action");
+    assert.equal(posts.length, 1);
+  } finally {
+    await d.close();
+    srv.close();
+  }
+});
+
+test("without --pay, approval cannot open the payment window", async () => {
+  const d = new Driver();
+  await d.start("about:blank");
+  try {
+    d.approvePayment();
+    // Serve the page; every other request goes on to the driver's own route (the payment block).
+    await d.page.route("**/*", (r) => (r.request().method() === "GET" ? r.fulfill({ status: 200, body: "<p>store</p>", contentType: "text/html" }) : r.fallback()));
+    await d.page.goto("http://shop.test/");
+    const ok = await d.page.evaluate(() => fetch("/wc/store/v1/checkout", { method: "POST" }).then(() => true, () => false));
+    assert.equal(ok, false);
+  } finally {
+    await d.close();
+  }
+});
+
 test("--no-submit also blocks Sign up, Subscribe, and Join, which send customer data", () =>
   noSubmitPage(
     `<form><input name="email"><button id="u">Sign up</button></form><form><input name="e2"><button id="s">Subscribe</button></form><form><input name="e3"><button id="j">Join now</button></form><form><input name="q"><button id="c">Continue</button></form>`,

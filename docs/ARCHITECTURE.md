@@ -25,8 +25,8 @@ OfferTest turns an ad into tests, runs a computer-use agent through the funnel, 
 
 ## Safety
 
-- **No real payments.** A guard in the browser blocks the final pay button and order-submit requests. It checks every click, drag, Enter, and Space, also inside embedded payment forms (iframes). With `--pay` (test-mode stores only) OfferTest asks you before the final click.
-- **Forms.** The agent fills sign-up and lead forms the way a customer would, because the promise (a trial, a download) is often behind them. `--no-submit` stops it before it sends a sign-up, lead, or booking form, also when a script button sends it, and also when a form with customer details (an email, a phone, a name, an address) has a button that says "Continue". It can still apply a code, open a link, or move to a next step that sends no customer details.
+- **No real payments.** A guard in the browser blocks the final pay button and order-submit requests. It checks every click, drag, Enter, and Space, also inside embedded payment forms (iframes). With `--pay` (test-mode stores only) OfferTest asks you before the final click. Order-submit requests stay blocked until you approve that click, so a checkout that confirms the order by itself cannot pay first.
+- **Forms.** The agent fills sign-up and lead forms the way a customer would, because the promise (a trial, a download) is often behind them. `--no-submit` stops it before it sends a sign-up, lead, or booking form, also when a script button sends it, and also when a form with customer details (an email, a phone, a name, an address) has a button that says "Continue", whether it is a submit button or a script button. It can still apply a code, open a link, or move to a next step that sends no customer details.
 - **Ads.** OfferTest pauses an ad only with `--pause-failing` or a click in the extension, and asks first.
 - **Cost.** `--max-usd` is checked before every model request: once a run's model cost reaches it, no more agent turns, judging, or fix. Promises not judged stay `unresolved`. `--max-turns` limits the agent's turns.
 
