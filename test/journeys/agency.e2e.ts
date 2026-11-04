@@ -169,6 +169,31 @@ test("live ad breaks mid-sale: --pause-failing pauses only the failing live ad",
   const run = await cli(["check", "--ad", "201", "--ad", "202", "--pause-failing", "--yes", "--json", "--headless", "--no-agent-checkout"], meta.env(), { timeoutMs: 300_000 });
   assert.equal(run.code, 1, why(run));
   assert.deepEqual(meta.calls.pauses, ["201"], "only the live failing ad is paused");
+  // A scheduled job reads the JSON: stdout is only JSON, and it says which ad was paused.
+  const json = JSON.parse(run.stdout) as { ad: string; paused: boolean }[];
+  assert.deepEqual(json.map((r) => [r.ad, r.paused]), [["201", true], ["202", false]]);
+  assert.match(run.stderr, /Paused ad 201/);
+});
+
+test("scheduled live check with --limit: the ads it leaves out are named, and the run cannot pass as a whole", async () => {
+  await scenario("shipping_charged");
+  const ad = { headline: "20% off the Ridge.", text: "Use code SAVE20 at checkout.", link: RIDGE, status: "ACTIVE" };
+  meta.set({
+    ...save20,
+    shopper: { "ridge-trail-shoe": buyWithCode("Size 9", "SAVE20") },
+    graph: {
+      account: [
+        { id: "201", effective_status: "ACTIVE" },
+        { id: "202", effective_status: "ACTIVE" },
+      ],
+      ads: { "201": graphAd("201", ad), "202": graphAd("202", ad) },
+    },
+  });
+  const run = await cli(["check", "--account", "act_1", "--live", "--limit", "1", "--json", "--headless", "--no-agent-checkout"], meta.env(), { timeoutMs: 300_000 });
+  assert.equal(run.code, 2, `the one tested ad passed, but one was not tested\n${why(run)}`);
+  assert.deepEqual((JSON.parse(run.stdout) as { ad: string; overall: string }[]).map((r) => [r.ad, r.overall]), [["201", "pass"]]);
+  assert.match(run.stderr, /2 ads match; testing the first 1/);
+  assert.match(run.stderr, /1 more ad was not tested/);
 });
 
 test("pausing needs a yes: without --yes in a script, nothing is paused", async () => {

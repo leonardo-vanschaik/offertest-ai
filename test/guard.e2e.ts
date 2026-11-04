@@ -99,6 +99,30 @@ test("next-step and apply buttons on a payment page need no approval", () =>
     },
   ));
 
+test("on a payment page, a script button that finishes the order asks first, by click, Enter, or Space", () =>
+  page(
+    `<input autocomplete="cc-number"><button type="button" id="b" onclick="fetch('/api/orders',{method:'POST'})">Buy now</button>
+<div role="button" tabindex="0" id="c">Complete checkout</div><button type="button" id="s">Show order summary</button>
+<button type="button" id="q" aria-label="Increase quantity">+</button><button type="button" id="r">Continue to payment</button>`,
+    async (d) => {
+      assert.equal((await d.guard(await at(d, "#b")))?.kind, "payment", "click Buy now");
+      await d.page.locator("#b").focus();
+      assert.equal((await d.guard({ type: "keypress", keys: ["space"] }))?.kind, "payment", "Space on Buy now");
+      assert.equal((await d.guard(enter))?.kind, "payment", "Enter on Buy now");
+      assert.equal((await d.guard(await at(d, "#c")))?.kind, "payment", "a div button");
+      assert.equal(await d.guard(await at(d, "#s")), null, "a summary toggle");
+      assert.equal(await d.guard(await at(d, "#q")), null, "a quantity button");
+      assert.equal(await d.guard(await at(d, "#r")), null, "a next-step button");
+    },
+  ));
+
+test("off the payment page, a script Buy now button is free", () =>
+  page(`<button type="button" id="b">Buy it now</button>`, async (d) => {
+    assert.equal(await d.guard(await at(d, "#b")), null);
+    await d.page.locator("#b").focus();
+    assert.equal(await d.guard({ type: "keypress", keys: ["space"] }), null);
+  }));
+
 // --no-submit: the guard blocks form submits that send data, but still lets codes be applied.
 async function noSubmitPage(html: string, fn: (d: Driver) => Promise<void>) {
   const d = new Driver();
@@ -235,6 +259,28 @@ test("without --pay, approval cannot open the payment window", async () => {
     assert.equal(ok, false);
   } finally {
     await d.close();
+  }
+});
+
+test("without --pay, a custom checkout's own order request never reaches the store", async () => {
+  const posts: string[] = [];
+  const srv = http.createServer((req, res) => {
+    if (req.method === "POST") posts.push(req.url ?? "");
+    res.writeHead(200, { "content-type": "text/html" });
+    res.end(`<input autocomplete="cc-number">`);
+  });
+  await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
+  const d = new Driver();
+  await d.start(`http://127.0.0.1:${(srv.address() as { port: number }).port}/checkout`);
+  const send = (path: string) => d.page.evaluate((p) => fetch(p, { method: "POST" }).then(() => true, () => false), path);
+  try {
+    assert.equal(await send("/api/orders"), false, "POST /api/orders");
+    assert.equal(await send("/payments/confirm"), false, "POST /payments/confirm");
+    assert.equal(await send("/cart/discount"), true, "applying a code still works");
+    assert.deepEqual(posts, ["/cart/discount"]);
+  } finally {
+    await d.close();
+    srv.close();
   }
 });
 

@@ -121,6 +121,12 @@ export function cartText(cart: Cart, endpoint: string, codes: string[]): string 
   return lines.join("\n");
 }
 
+// The codes a store applied, read from a cart text (agent checkout or ACP). The whole code counts: SAVE20VIP is
+// not SAVE20.
+export function appliedCodes(text: string): Set<string> {
+  return new Set([...text.matchAll(/^Discount applied: (\S+) "/gm)].map((m) => m[1].toUpperCase()));
+}
+
 // Codes the ad tells customers to use, from the extracted promises.
 export function codesFrom(conditions: Record<string, string>[]): string[] {
   const out = new Set<string>();

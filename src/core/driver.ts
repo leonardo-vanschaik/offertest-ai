@@ -30,6 +30,12 @@ const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|regis
 // message) sends them, whatever its button says ("Continue" too). Only a button that applies a code may send it.
 const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
 const CODE_STEP = /^(apply|redeem|use code)\b/i;
+// On a payment page, a script button (no form, not a link) whose words finish the order counts as payment too:
+// a custom checkout can send the order from a script ("Buy now", "Complete checkout"). Buttons that only show
+// or hide part of the page ("Show order summary") and next-step buttons (SAFE_SUBMIT) stay free.
+const FINISHES = /\b(pay|order|purchase|buy|check ?out|complete|finish|place|confirm)\b/i;
+const VIEW_ONLY = /^(show|hide|view|see|open|close|toggle|more|less)\b/i;
+const finishesOrder = (label: string) => FINISHES.test(label) && !SAFE_SUBMIT.test(label) && !VIEW_ONLY.test(label) && !CODE_STEP.test(label);
 const sendsForm = (label: string, data: boolean) => !SAFE_STEP.test(label) || (data && !CODE_STEP.test(label));
 // A script button (type="button") inside a form with customer details can send them too, when it moves the
 // form forward. Buttons that only change the page (quantity, show password, remove) stay free.
@@ -49,6 +55,8 @@ const ORDER_SUBMIT = [
   /api\.stripe\.com\/v1\/payment_intents\/[^/]+\/confirm/i,
   /api\.stripe\.com\/v1\/payment_pages\/[^/]+\/confirm/i, // Stripe Checkout
   /paypal\.com\/.*\/(capture|authorize)/i,
+  // A custom checkout's own order or payment endpoint (POST /api/orders, /payments/confirm).
+  /\/(orders?|payments?|purchases?|charges?)(\/(create|submit|complete|confirm|place))?\/?(\?|$)/i,
 ];
 
 // payment: would spend money. submit: would send a form (sign-up, lead) when the run forbids it (--no-submit).
@@ -212,10 +220,12 @@ export class Driver {
     }
     if (action.type === "click" || action.type === "double_click") {
       const hit = await this.payTargetAt(action.x, action.y);
-      // A known pay-button id always counts; a "Pay"/"Place order" label, or an unknown form submit button, counts on a payment page.
+      // A known pay-button id always counts. On a payment page, a "Pay"/"Place order" label, an unknown form submit
+      // button, or a script button that finishes the order counts.
       if (!hit) return null;
       if (hit.byId) return { kind: "payment", label: hit.label };
-      if ((hit.pay || (hit.form && !SAFE_SUBMIT.test(hit.label))) && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
+      const finishes = hit.pay || (hit.form ? !SAFE_SUBMIT.test(hit.label) : !hit.link && finishesOrder(hit.label));
+      if (finishes && (await this.onPaymentPage())) return { kind: "payment", label: hit.label || "Submit" };
       // --no-submit: a form submit button that does more than apply a code or move to the next step, any button
       // but "Apply" on a form with customer details, or a script button that says it sends or moves such a form
       // forward. A link to another page may open, but its scripts cannot send (see execute).
@@ -362,11 +372,16 @@ export class Driver {
         const text = (a.innerText || (a as HTMLInputElement).value || a.getAttribute("aria-label") || "").trim();
         if (ids.some((sel: string) => a.matches(sel)) || new RegExp(src, "i").test(text)) return { label: text || "Pay", pay: true };
         const b = a as HTMLInputElement;
-        return /^(submit|image)$/.test(b.type) && b.form ? { label: text, pay: false } : null;
+        if (/^(submit|image)$/.test(b.type) && b.form) return { label: text, pay: false, form: true };
+        const href = a.tagName === "A" ? (a.getAttribute("href") ?? "") : "";
+        const link = !!href && !href.startsWith("#") && !/^javascript:/i.test(href);
+        return link || (b.tagName === "INPUT" && !/^(button|reset)$/.test(b.type)) ? null : { label: text, pay: false, form: false };
       }, [PAY_TEXT.source, PAY_IDS] as [string, string[]])
       .catch(() => null);
-    // A focused form submit button with an unknown label (such as "Submit") counts on a payment page.
-    const label = hit && (hit.pay ? hit.label : !SAFE_SUBMIT.test(hit.label) && (await this.onPaymentPage()) ? hit.label || "Submit" : null);
+    // On a payment page, a focused form submit button with an unknown label (such as "Submit"), or a focused
+    // script button that finishes the order, counts.
+    const unknown = hit && !hit.pay && (hit.form ? !SAFE_SUBMIT.test(hit.label) : finishesOrder(hit.label));
+    const label = hit && (hit.pay ? hit.label : unknown && (await this.onPaymentPage()) ? hit.label || "Submit" : null);
     // Focus inside a payment iframe (wallet or card frame) also counts.
     if (!label && /paypal|shop\.app|pay\.google|apple-pay/i.test(frame.url())) return "Express pay button";
     if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {

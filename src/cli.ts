@@ -10,7 +10,7 @@ import { writeReport } from "./report/html.ts";
 import { serve } from "./server.ts";
 import { doctor, init } from "./onboarding.ts";
 import { acpCheckout, itemFromUrl } from "./core/acp.ts";
-import { agentCheckout } from "./core/ucp.ts";
+import { agentCheckout, appliedCodes } from "./core/ucp.ts";
 import { demo } from "./demo.ts";
 import { c, dest, printResult } from "./print.ts";
 import type { Ad, Overall, RunOptions, RunResult } from "./types.ts";
@@ -48,7 +48,7 @@ ${c.bold("Check options")}
   --mobile              phone viewport and Facebook in-app browser user agent
   --headless            hide the browser (default when not in a terminal)
   --headful             show the browser even when not in a terminal
-  --limit <n>           with --account: test at most n ads (default 5)
+  --limit <n>           with --account: test at most n ads (default 5; ads left out make the exit code 2)
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop the run's model calls when its cost reaches this amount
   --out <dir>           run folders go here (default ./offertest-runs)
@@ -56,7 +56,7 @@ ${c.bold("Check options")}
   --json                print result.json paths and verdicts as JSON
   --yes                 answer yes to approval prompts (payment, pause)
 
-${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved or blocked · 3 error · 4 usage
+${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved, blocked, or ads left out by --limit · 3 error · 4 usage
 ${c.bold("Env")}  META_API_KEY (Meta Model API) · META_ACCESS_TOKEN (Marketing API, ads_read) · META_AD_ACCOUNT_ID
      OFFERTEST_ACP_URL · OFFERTEST_ACP_KEY (your store's ACP checkout) · STRIPE_TEST_KEY (sk_test_, for ACP test payments)`;
 
@@ -77,7 +77,8 @@ async function agentCheckoutCmd(url: string | undefined, codes: string[]) {
     console.log(c.yellow("\nThe store did not say whether the code works for agents."));
     process.exit(EXIT.unresolved);
   }
-  const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
+  const applied = appliedCodes(r.text);
+  const failed = codes.filter((code) => !applied.has(code));
   console.log(failed.length ? c.red(`\nDoes not work in agent checkout: ${failed.join(", ")}`) : c.green("\nThe code works in agent checkout."));
   process.exit(failed.length ? EXIT.fail : EXIT.pass);
 }
@@ -108,7 +109,8 @@ async function acpCmd(v: { "acp-url"?: string; "acp-key"?: string; item?: string
     process.exit(EXIT.unresolved);
   }
   console.log(r.text);
-  const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
+  const applied = appliedCodes(r.text);
+  const failed = codes.filter((code) => !applied.has(code));
   if (failed.length) console.log(c.red(`\nDoes not work in ACP checkout: ${failed.join(", ")}`));
   else if (codes.length) console.log(c.green("\nThe code works in ACP checkout."));
   const bought = /Test purchase: completed/.test(r.text);
@@ -188,12 +190,15 @@ async function main() {
   };
 
   let targets: Ad[];
+  let skipped = 0; // ads left out by --limit
   if (values.ad?.length) targets = await Promise.all(values.ad.map(getAd));
   else if (values.account || (!values.url && process.env.META_AD_ACCOUNT_ID)) {
     // Cheap list first; read each creative only for the ads we will test.
     const ids = await listAdIds(values.account, values.live ? ["ACTIVE"] : undefined);
     const limit = Number(values.limit ?? 5);
-    if (ids.length > limit && !values.json) console.log(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));
+    skipped = Math.max(0, ids.length - limit);
+    // On stderr in JSON mode, so the JSON on stdout stays valid.
+    if (skipped) (values.json ? console.error : console.log)(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));
     const pick = ids.slice(0, limit);
     if (pick.length > 1 && tty && !values.yes) {
       for (const a of pick) console.log(c.dim(`  ${a.id}  ${(a.status ?? "").padEnd(16)} ${a.name ?? ""}`));
@@ -230,7 +235,7 @@ async function main() {
     onStep: (s) => !values.json && console.log(c.dim(`  ${String(s.n).padStart(2)} ${s.summary}`)),
   };
 
-  const results: { result: RunResult; report: string }[] = [];
+  const results: { result: RunResult; report: string; paused?: boolean }[] = [];
   for (const ad of targets) {
     let current = ad;
     let retestOf = values["retest-of"];
@@ -238,13 +243,15 @@ async function main() {
       if (!values.json) console.log(`\n${c.bold("OfferTest")} ${current.source === "meta" ? `ad ${current.id} ` : ""}"${current.headline}" -> ${dest(current)}`);
       const { result, dir } = await runTest(current, { ...opts, retestOf });
       const report = writeReport(result, dir);
-      results.push({ result, report });
+      const entry: (typeof results)[number] = { result, report };
+      results.push(entry);
       if (!values.json) printResult(result, report);
 
       if (result.overall === "fail" && current.source === "meta" && values["pause-failing"] && current.status === "ACTIVE") {
         if (await ask(`Pause ad ${current.id} in Ads Manager until the offer is fixed?`)) {
           await pauseAd(current.id!);
-          console.log(c.yellow(`  Paused ad ${current.id}.`));
+          entry.paused = true;
+          (values.json ? console.error : console.log)(c.yellow(`  Paused ad ${current.id}.`));
         }
       }
       if (result.overall !== "fail" || !tty || values.yes) break;
@@ -257,7 +264,7 @@ async function main() {
   if (values.json)
     console.log(
       JSON.stringify(
-        results.map(({ result, report }) => ({ id: result.id, ad: result.ad.id ?? result.ad.headline, overall: result.overall ?? "error", boundary: result.boundary, report, verdicts: result.verdicts, fix: result.fix, error: result.error })),
+        results.map(({ result, report, paused }) => ({ id: result.id, ad: result.ad.id ?? result.ad.headline, overall: result.overall ?? "error", boundary: result.boundary, report, verdicts: result.verdicts, fix: result.fix, error: result.error, paused: !!paused })),
         null,
         2,
       ),
@@ -265,6 +272,11 @@ async function main() {
   // Most serious first: a tool error, then a proven failure, then "could not check", then pass.
   // A bot wall on one ad (2) must not hide a broken offer on another (1).
   const codes = results.map(({ result }) => (result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"]));
+  // Ads that --limit left out were not checked, so the account check cannot pass as a whole.
+  if (skipped) {
+    codes.push(EXIT.unresolved);
+    console.error(c.yellow(`${skipped} more ${skipped === 1 ? "ad was" : "ads were"} not tested (--limit). Raise --limit to check every ad.`));
+  }
   process.exit([EXIT.error, EXIT.fail, EXIT.unresolved].find((c) => codes.includes(c)) ?? EXIT.pass);
 }
 

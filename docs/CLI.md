@@ -24,7 +24,7 @@ offertest install-browser                    download Chromium if you have no Ch
 |---|---|
 | `--cta <text>` | Ad button text (default "Shop now") |
 | `--live` | With `--account`: test live (ACTIVE) ads instead of ads about to launch |
-| `--limit <n>` | With `--account`: test at most n ads (default 5) |
+| `--limit <n>` | With `--account`: test at most n ads (default 5). If ads are left out, OfferTest says how many (on stderr with `--json`) and the exit code is 2 at best |
 | `--pause-failing` | Pause a failing ad in Ads Manager (asks first) |
 | `--pay` | Allow a test-mode payment (asks before paying; test stores only) |
 | `--no-submit` | Do not submit forms (sign-up, lead, booking) |
@@ -38,7 +38,7 @@ offertest install-browser                    download Chromium if you have no Ch
 | `--max-usd <n>` | Stop the run when its model cost reaches this amount: no more agent turns, judging, or fix. Promises not judged stay unresolved |
 | `--out <dir>` | Where run folders go (default `./offertest-runs`) |
 | `--retest-of <run id>` | Mark this run as the re-test of an earlier run, after a fix |
-| `--json` | Print result paths and verdicts as JSON |
+| `--json` | Print result paths and verdicts as JSON on stdout (with `paused: true` for an ad that `--pause-failing` paused). Status lines go to stderr |
 | `--yes` | Answer yes to approval prompts (payment, pause) |
 
 ## Demo options
@@ -58,7 +58,7 @@ The recordings are in [examples/recordings](../examples/recordings). The demo ch
 |---|---|
 | 0 | Every promise holds |
 | 1 | At least one promise is broken |
-| 2 | Unresolved: the agent could not reach the evidence, or the page blocked it |
+| 2 | Unresolved: the agent could not reach the evidence, the page blocked it, or `--limit` left ads untested |
 | 3 | Error |
 | 4 | Usage error |
 

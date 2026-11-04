@@ -45,7 +45,7 @@ Add `--json` when you need to parse the output. Add `--mobile` to test as a phon
 
 ## Read the result
 
-- Exit code: `0` pass, `1` fail, `2` unresolved or blocked, `3` error, `4` usage.
+- Exit code: `0` pass, `1` fail, `2` unresolved or blocked (or `--limit` left ads untested), `3` error, `4` usage.
 - Each run writes `offertest-runs/<id>/` with `report.html`, `result.json`, `log.jsonl`, and `shots/`.
 - In `result.json`: `overall`, `boundary` (how far the test went), `verdicts[]` (`status`, `adQuote`, `pageQuote`, `reason`), `fix` (`summary`, `steps`), `blocked`, `usage.usd`.
 

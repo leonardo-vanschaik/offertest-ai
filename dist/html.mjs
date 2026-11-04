@@ -406,6 +406,9 @@ const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|s
 const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|register|log ?in|sign ?in|save|send|submit|get|download|claim|book|request|start|confirm)\b)(apply|redeem|use code|search|go|update|calculate|check|validate|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
 const CODE_STEP = /^(apply|redeem|use code)\b/i;
+const FINISHES = /\b(pay|order|purchase|buy|check ?out|complete|finish|place|confirm)\b/i;
+const VIEW_ONLY = /^(show|hide|view|see|open|close|toggle|more|less)\b/i;
+const finishesOrder = (label) => FINISHES.test(label) && !SAFE_SUBMIT.test(label) && !VIEW_ONLY.test(label) && !CODE_STEP.test(label);
 const sendsForm = (label, data) => !SAFE_STEP.test(label) || data && !CODE_STEP.test(label);
 const FORWARD = /\b(continue|next|review|proceed|done|finish|go|ok)\b/i;
 const SENDS = /\b(sign ?up|subscribe|join|register|create (an |my |your )?account|send|submit|download|claim|book|reserve|request|start (my |a |your )?(free )?trial|confirm|rsvp|enrol+|apply now|notify me|log ?in|sign ?in|get (my|the|your) (free )?(guide|e-?book|copy|download|quote|offer|code|access|trial|demo))\b/i;
@@ -417,7 +420,8 @@ const ORDER_SUBMIT = [
 	/\/internalapi\/v1\/checkout\/order/i,
 	/api\.stripe\.com\/v1\/payment_intents\/[^/]+\/confirm/i,
 	/api\.stripe\.com\/v1\/payment_pages\/[^/]+\/confirm/i,
-	/paypal\.com\/.*\/(capture|authorize)/i
+	/paypal\.com\/.*\/(capture|authorize)/i,
+	/\/(orders?|payments?|purchases?|charges?)(\/(create|submit|complete|confirm|place))?\/?(\?|$)/i
 ];
 var Driver = class {
 	browser;
@@ -563,7 +567,7 @@ var Driver = class {
 				kind: "payment",
 				label: hit.label
 			};
-			if ((hit.pay || hit.form && !SAFE_SUBMIT.test(hit.label)) && await this.onPaymentPage()) return {
+			if ((hit.pay || (hit.form ? !SAFE_SUBMIT.test(hit.label) : !hit.link && finishesOrder(hit.label))) && await this.onPaymentPage()) return {
 				kind: "payment",
 				label: hit.label || "Submit"
 			};
@@ -741,12 +745,20 @@ var Driver = class {
 				pay: true
 			};
 			const b = a;
-			return /^(submit|image)$/.test(b.type) && b.form ? {
+			if (/^(submit|image)$/.test(b.type) && b.form) return {
 				label: text,
-				pay: false
-			} : null;
+				pay: false,
+				form: true
+			};
+			const href = a.tagName === "A" ? a.getAttribute("href") ?? "" : "";
+			return !!href && !href.startsWith("#") && !/^javascript:/i.test(href) || b.tagName === "INPUT" && !/^(button|reset)$/.test(b.type) ? null : {
+				label: text,
+				pay: false,
+				form: false
+			};
 		}, [PAY_TEXT.source, PAY_IDS]).catch(() => null);
-		const label = hit && (hit.pay ? hit.label : !SAFE_SUBMIT.test(hit.label) && await this.onPaymentPage() ? hit.label || "Submit" : null);
+		const unknown = hit && !hit.pay && (hit.form ? !SAFE_SUBMIT.test(hit.label) : finishesOrder(hit.label));
+		const label = hit && (hit.pay ? hit.label : unknown && await this.onPaymentPage() ? hit.label || "Submit" : null);
 		if (!label && /paypal|shop\.app|pay\.google|apple-pay/i.test(frame.url())) return "Express pay button";
 		if (!label && this.page.frames().some((f) => /paypal|shop\.app|pay\.google|apple-pay/i.test(f.url()))) {
 			if (await this.page.evaluate(() => document.activeElement?.tagName === "IFRAME").catch(() => false)) return "Express pay button";
@@ -1783,6 +1795,9 @@ function cartText(cart, endpoint, codes) {
 	for (const t of cart.totals ?? []) lines.push(`${t.display_text ?? t.type}: ${money(t.amount, cur)}`);
 	if (cart.continue_url) lines.push(`Cart link: ${cart.continue_url}`);
 	return lines.join("\n");
+}
+function appliedCodes(text) {
+	return new Set([...text.matchAll(/^Discount applied: (\S+) "/gm)].map((m) => m[1].toUpperCase()));
 }
 function codesFrom(conditions) {
 	const out = /* @__PURE__ */ new Set();
@@ -3300,4 +3315,4 @@ a{color:inherit}
 `;
 
 //#endregion
-export { CONFIG_DIR as _, listAds as a, runTest as c, agentCheckout as d, adText as f, sparkOpenStatus as g, sparkOpenKey as h, listAdIds as i, acpCheckout as l, overallOf as m, getAd as n, pauseAd as o, containsQuote as p, getLeadForm as r, VERSION$1 as s, writeReport as t, itemFromUrl as u, CONFIG_ENV as v, loadEnv as y };
+export { sparkOpenStatus as _, listAds as a, loadEnv as b, runTest as c, agentCheckout as d, appliedCodes as f, sparkOpenKey as g, overallOf as h, listAdIds as i, acpCheckout as l, containsQuote as m, getAd as n, pauseAd as o, adText as p, getLeadForm as r, VERSION$1 as s, writeReport as t, itemFromUrl as u, CONFIG_DIR as v, CONFIG_ENV as y };

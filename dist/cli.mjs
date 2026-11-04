@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { _ as CONFIG_DIR, c as runTest, d as agentCheckout, f as adText, g as sparkOpenStatus, h as sparkOpenKey, i as listAdIds, l as acpCheckout, m as overallOf, n as getAd, o as pauseAd, p as containsQuote, s as VERSION, t as writeReport, u as itemFromUrl, v as CONFIG_ENV, y as loadEnv } from "./html.mjs";
+import { _ as sparkOpenStatus, b as loadEnv, c as runTest, d as agentCheckout, f as appliedCodes, g as sparkOpenKey, h as overallOf, i as listAdIds, l as acpCheckout, m as containsQuote, n as getAd, o as pauseAd, p as adText, s as VERSION, t as writeReport, u as itemFromUrl, v as CONFIG_DIR, y as CONFIG_ENV } from "./html.mjs";
 import { createRequire } from "node:module";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -872,7 +872,7 @@ ${c.bold("Check options")}
   --mobile              phone viewport and Facebook in-app browser user agent
   --headless            hide the browser (default when not in a terminal)
   --headful             show the browser even when not in a terminal
-  --limit <n>           with --account: test at most n ads (default 5)
+  --limit <n>           with --account: test at most n ads (default 5; ads left out make the exit code 2)
   --max-turns <n>       agent turns per funnel (default 25)
   --max-usd <n>         stop the run's model calls when its cost reaches this amount
   --out <dir>           run folders go here (default ./offertest-runs)
@@ -880,7 +880,7 @@ ${c.bold("Check options")}
   --json                print result.json paths and verdicts as JSON
   --yes                 answer yes to approval prompts (payment, pause)
 
-${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved or blocked · 3 error · 4 usage
+${c.bold("Exit codes")}  0 pass · 1 fail · 2 unresolved, blocked, or ads left out by --limit · 3 error · 4 usage
 ${c.bold("Env")}  META_API_KEY (Meta Model API) · META_ACCESS_TOKEN (Marketing API, ads_read) · META_AD_ACCOUNT_ID
      OFFERTEST_ACP_URL · OFFERTEST_ACP_KEY (your store's ACP checkout) · STRIPE_TEST_KEY (sk_test_, for ACP test payments)`;
 async function agentCheckoutCmd(url, codes) {
@@ -900,7 +900,8 @@ async function agentCheckoutCmd(url, codes) {
 		console.log(c.yellow("\nThe store did not say whether the code works for agents."));
 		process.exit(EXIT.unresolved);
 	}
-	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
+	const applied = appliedCodes(r.text);
+	const failed = codes.filter((code) => !applied.has(code));
 	console.log(failed.length ? c.red(`\nDoes not work in agent checkout: ${failed.join(", ")}`) : c.green("\nThe code works in agent checkout."));
 	process.exit(failed.length ? EXIT.fail : EXIT.pass);
 }
@@ -940,7 +941,8 @@ async function acpCmd(v, codes) {
 		process.exit(EXIT.unresolved);
 	}
 	console.log(r.text);
-	const failed = codes.filter((code) => !r.text.includes(`Discount applied: ${code}`));
+	const applied = appliedCodes(r.text);
+	const failed = codes.filter((code) => !applied.has(code));
 	if (failed.length) console.log(c.red(`\nDoes not work in ACP checkout: ${failed.join(", ")}`));
 	else if (codes.length) console.log(c.green("\nThe code works in ACP checkout."));
 	const bought = /Test purchase: completed/.test(r.text);
@@ -1042,11 +1044,13 @@ async function main() {
 		return /^y(es)?$/i.test(a.trim());
 	};
 	let targets;
+	let skipped = 0;
 	if (values.ad?.length) targets = await Promise.all(values.ad.map(getAd));
 	else if (values.account || !values.url && process.env.META_AD_ACCOUNT_ID) {
 		const ids = await listAdIds(values.account, values.live ? ["ACTIVE"] : void 0);
 		const limit = Number(values.limit ?? 5);
-		if (ids.length > limit && !values.json) console.log(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));
+		skipped = Math.max(0, ids.length - limit);
+		if (skipped) (values.json ? console.error : console.log)(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));
 		const pick = ids.slice(0, limit);
 		if (pick.length > 1 && tty && !values.yes) {
 			for (const a of pick) console.log(c.dim(`  ${a.id}  ${(a.status ?? "").padEnd(16)} ${a.name ?? ""}`));
@@ -1099,15 +1103,17 @@ async function main() {
 				retestOf
 			});
 			const report = writeReport(result, dir);
-			results.push({
+			const entry = {
 				result,
 				report
-			});
+			};
+			results.push(entry);
 			if (!values.json) printResult(result, report);
 			if (result.overall === "fail" && current.source === "meta" && values["pause-failing"] && current.status === "ACTIVE") {
 				if (await ask(`Pause ad ${current.id} in Ads Manager until the offer is fixed?`)) {
 					await pauseAd(current.id);
-					console.log(c.yellow(`  Paused ad ${current.id}.`));
+					entry.paused = true;
+					(values.json ? console.error : console.log)(c.yellow(`  Paused ad ${current.id}.`));
 				}
 			}
 			if (result.overall !== "fail" || !tty || values.yes) break;
@@ -1119,7 +1125,7 @@ async function main() {
 			};
 		}
 	}
-	if (values.json) console.log(JSON.stringify(results.map(({ result, report }) => ({
+	if (values.json) console.log(JSON.stringify(results.map(({ result, report, paused }) => ({
 		id: result.id,
 		ad: result.ad.id ?? result.ad.headline,
 		overall: result.overall ?? "error",
@@ -1127,9 +1133,14 @@ async function main() {
 		report,
 		verdicts: result.verdicts,
 		fix: result.fix,
-		error: result.error
+		error: result.error,
+		paused: !!paused
 	})), null, 2));
 	const codes = results.map(({ result }) => result.error ? EXIT.error : EXIT[result.overall ?? "unresolved"]);
+	if (skipped) {
+		codes.push(EXIT.unresolved);
+		console.error(c.yellow(`${skipped} more ${skipped === 1 ? "ad was" : "ads were"} not tested (--limit). Raise --limit to check every ad.`));
+	}
 	process.exit([
 		EXIT.error,
 		EXIT.fail,
