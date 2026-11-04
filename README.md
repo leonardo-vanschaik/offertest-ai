@@ -4,6 +4,8 @@
 
 <h3 align="center">An AI agent that clicks through your ad's funnel like a customer<br>and proves whether every promise in the ad holds.</h3>
 
+https://github.com/user-attachments/assets/c62a7c75-adb9-404d-a463-c3760daa3916
+
 <p align="center">
   Discount codes, prices, free shipping, free trials, free downloads. OfferTest reads your Meta ad, tests each promise in the real funnel up to the payment step, and backs every verdict with word-for-word quotes and screenshots. Built on Meta's <b>Muse Wonder</b> computer-use model and the open-weight <b>Muse Spark Open</b>.
 </p>
