@@ -103,7 +103,9 @@ test("on a payment page, a script button that finishes the order asks first, by 
   page(
     `<input autocomplete="cc-number"><button type="button" id="b" onclick="fetch('/api/orders',{method:'POST'})">Buy now</button>
 <div role="button" tabindex="0" id="c">Complete checkout</div><button type="button" id="s">Show order summary</button>
-<button type="button" id="q" aria-label="Increase quantity">+</button><button type="button" id="r">Continue to payment</button>`,
+<button type="button" id="q" aria-label="Increase quantity">+</button><button type="button" id="r">Continue to payment</button>
+<button type="button" id="o">Confirm order</button><div role="button" id="p">Pay $96.00</div>
+<button type="button" id="ca">Confirm address</button><button type="button" id="cp">Complete profile</button>`,
     async (d) => {
       assert.equal((await d.guard(await at(d, "#b")))?.kind, "payment", "click Buy now");
       await d.page.locator("#b").focus();
@@ -113,6 +115,10 @@ test("on a payment page, a script button that finishes the order asks first, by 
       assert.equal(await d.guard(await at(d, "#s")), null, "a summary toggle");
       assert.equal(await d.guard(await at(d, "#q")), null, "a quantity button");
       assert.equal(await d.guard(await at(d, "#r")), null, "a next-step button");
+      assert.equal((await d.guard(await at(d, "#o")))?.kind, "payment", "Confirm order");
+      assert.equal((await d.guard(await at(d, "#p")))?.kind, "payment", "Pay $96.00 on a div");
+      assert.equal(await d.guard(await at(d, "#ca")), null, "Confirm address is a step before the order");
+      assert.equal(await d.guard(await at(d, "#cp")), null, "Complete profile");
     },
   ));
 

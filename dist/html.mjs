@@ -406,7 +406,7 @@ const SAFE_SUBMIT = /^(?!.*\b(pay|order|purchase|buy)\b)(apply|redeem|use code|s
 const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|register|log ?in|sign ?in|save|send|submit|get|download|claim|book|request|start|confirm)\b)(apply|redeem|use code|search|go|update|calculate|check|validate|continue|next|review|add|remove|edit|change|close|cancel|back)\b/i;
 const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
 const CODE_STEP = /^(apply|redeem|use code)\b/i;
-const FINISHES = /\b(pay|order|purchase|buy|check ?out|complete|finish|place|confirm)\b/i;
+const FINISHES = /\b(buy( it)? now|order now|pay( now\b|\s*[$€£]|\s+with\b)|(complete|confirm|finish|place|submit)( my| your| the)? (order|purchase|payment|checkout)|confirm and pay|pay and (place|complete))/i;
 const VIEW_ONLY = /^(show|hide|view|see|open|close|toggle|more|less)\b/i;
 const finishesOrder = (label) => FINISHES.test(label) && !SAFE_SUBMIT.test(label) && !VIEW_ONLY.test(label) && !CODE_STEP.test(label);
 const sendsForm = (label, data) => !SAFE_STEP.test(label) || data && !CODE_STEP.test(label);

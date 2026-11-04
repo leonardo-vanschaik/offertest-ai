@@ -173,6 +173,13 @@ async function main() {
     process.exit(EXIT.usage);
   }
 
+  // --limit must select at least one ad, or an account check could pass having tested nothing.
+  const limit = Number(values.limit ?? 5);
+  if (!Number.isInteger(limit) || limit < 1) {
+    console.error(`--limit must be a whole number of ads, 1 or more (got "${values.limit}").`);
+    process.exit(EXIT.usage);
+  }
+
   loadEnv();
   if (!process.env.META_API_KEY) {
     console.error(c.red("OfferTest is not set up yet: no Meta Model API key."));
@@ -195,7 +202,6 @@ async function main() {
   else if (values.account || (!values.url && process.env.META_AD_ACCOUNT_ID)) {
     // Cheap list first; read each creative only for the ads we will test.
     const ids = await listAdIds(values.account, values.live ? ["ACTIVE"] : undefined);
-    const limit = Number(values.limit ?? 5);
     skipped = Math.max(0, ids.length - limit);
     // On stderr in JSON mode, so the JSON on stdout stays valid.
     if (skipped) (values.json ? console.error : console.log)(c.dim(`${ids.length} ads match; testing the first ${limit}. Use --limit to change.`));

@@ -31,9 +31,11 @@ const SAFE_STEP = /^(?!.*\b(pay|order|purchase|buy|sign ?up|subscribe|join|regis
 const CUSTOMER_FIELD = /e-?mail|phone|mobile|\btel\b|\bname\b|first.?name|last.?name|full.?name|street|address|password|message|comment/i;
 const CODE_STEP = /^(apply|redeem|use code)\b/i;
 // On a payment page, a script button (no form, not a link) whose words finish the order counts as payment too:
-// a custom checkout can send the order from a script ("Buy now", "Complete checkout"). Buttons that only show
-// or hide part of the page ("Show order summary") and next-step buttons (SAFE_SUBMIT) stay free.
-const FINISHES = /\b(pay|order|purchase|buy|check ?out|complete|finish|place|confirm)\b/i;
+// a custom checkout can send the order from a script ("Buy now", "Complete checkout", "Confirm order"). Steps
+// before the order ("Confirm address", "Complete profile"), buttons that only show or hide part of the page
+// ("Show order summary"), and next-step buttons (SAFE_SUBMIT) stay free.
+const FINISHES =
+  /\b(buy( it)? now|order now|pay( now\b|\s*[$€£]|\s+with\b)|(complete|confirm|finish|place|submit)( my| your| the)? (order|purchase|payment|checkout)|confirm and pay|pay and (place|complete))/i;
 const VIEW_ONLY = /^(show|hide|view|see|open|close|toggle|more|less)\b/i;
 const finishesOrder = (label: string) => FINISHES.test(label) && !SAFE_SUBMIT.test(label) && !VIEW_ONLY.test(label) && !CODE_STEP.test(label);
 const sendsForm = (label: string, data: boolean) => !SAFE_STEP.test(label) || (data && !CODE_STEP.test(label));

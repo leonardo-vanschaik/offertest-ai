@@ -68,6 +68,12 @@ test("CI: --json prints only JSON, and exit codes tell a broken offer from a bro
   assert.equal(unknown.code, 4, why(unknown));
   const noTarget = await cli(["check", "--json"], { ...meta.env(), META_ACCESS_TOKEN: "" });
   assert.equal(noTarget.code, 4, why(noTarget));
+  // An account check that would test no ads is a usage error, not a pass.
+  for (const limit of ["0", "abc", "2.5"]) {
+    const none = await cli(["check", "--account", "act_1", "--live", "--limit", limit, "--json"], meta.env());
+    assert.equal(none.code, 4, `--limit ${limit}\n${why(none)}`);
+    assert.match(none.stderr, /--limit must be a whole number/);
+  }
 });
 
 test("Meta's API loses the conversation mid-run: the agent carries on in a new one and the verdict still holds", async () => {
