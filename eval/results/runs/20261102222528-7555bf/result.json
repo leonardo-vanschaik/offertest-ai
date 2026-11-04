@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102222528-7555bf",
+  "createdAt": "2026-11-02T22:25:28.998Z",
+  "ad": {
+    "source": "manual",
+    "headline": "20% off the Ridge trail shoe.",
+    "text": "This week only. Use code SAVE20 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe",
+        "time_limit": "This week only"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "discount",
+      "claim": "Code SAVE20 is redeemable at checkout",
+      "adQuote": "Use code SAVE20 at checkout.",
+      "conditions": {
+        "code": "SAVE20"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:25:33.769Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "unresolved",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "pageQuote": null,
+      "evidenceStep": null,
+      "reason": "Only the product page at $120.00 is shown; no checkout or SAVE20 discount application is reached.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": false
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "unresolved",
+      "adQuote": "Use code SAVE20 at checkout.",
+      "pageQuote": null,
+      "evidenceStep": null,
+      "reason": "No checkout page is shown, so redeemability of SAVE20 is not tested.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": false
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2379,
+    "outputTokens": 1297,
+    "images": 2,
+    "usd": 0.0252545
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658329-GtZvT1WRCLM1vHO4ztNj",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 690,
+        "outputTokens": 800,
+        "usd": 0.0035585,
+        "accepted": true
+      }
+    ],
+    "ms": 3424,
+    "inputTokens": 690,
+    "outputTokens": 800,
+    "usd": 0.0035585
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "unresolved",
+  "finishedAt": "2026-11-02T22:25:37.910Z"
+}

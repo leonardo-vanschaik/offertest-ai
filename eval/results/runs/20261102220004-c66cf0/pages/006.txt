@@ -1,0 +1,168 @@
+Free shipping on every order
+Alder Trail Co.
+Shop all
+Footwear
+Outerwear
+Packs
+Cart (1)
+
+NEW FOR FALL
+
+Made for the long way round.
+
+Meet the Ridge trail shoe: light, grippy, and cushioned for long days on mixed ground.
+
+Shop the Ridge
+$120.00
+Shop all
+
+Free shipping on every order
+
+Ridge trail shoe
+
+Slate
+
+$120.00
+
+Summit rain jacket
+
+Moss
+
+$89.00
+
+Basecamp wool socks
+
+Oatmeal
+
+$18.00
+
+Switchback daypack
+
+Charcoal
+
+$64.00
+
+Free repairs
+
+Wear something out? We fix seams, zips, and soles free for two years.
+
+30-day returns
+
+Try it on the trail. If it is not right, send it back within 30 days.
+
+Made to last
+
+Recycled fabrics, replaceable parts, and no throwaway trims.
+
+Alder Trail Co.
+
+Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
+
+Shop
+Ridge trail shoe
+Summit rain jacket
+Basecamp wool socks
+Switchback daypack
+Help
+30-day returns
+Free repairs for 2 years
+help@aldertrail.co
+Trail Club membership
+Free First Thru-Hike Guide
+© 2026 Alder Trail Co. All rights reserved.
+
+[accessibility snapshot]
+- text: Free shipping on every order
+- banner:
+  - link "Alder Trail Co. home":
+    - /url: /store
+    - text: Alder Trail Co.
+  - navigation:
+    - link "Shop all":
+      - /url: /store#shop
+    - link "Footwear":
+      - /url: /store/products/ridge-trail-shoe
+    - link "Outerwear":
+      - /url: /store/products/summit-rain-jacket
+    - link "Packs":
+      - /url: /store/products/switchback-daypack
+    - link "Cart, 1 item":
+      - /url: /store/cart
+      - text: Cart (1)
+- main:
+  - paragraph: New for fall
+  - heading "Made for the long way round." [level=1]
+  - paragraph: "Meet the Ridge trail shoe: light, grippy, and cushioned for long days on mixed ground."
+  - link "Shop the Ridge":
+    - /url: /store/products/ridge-trail-shoe
+  - text: $120.00
+  - link "Ridge trail shoe in Slate":
+    - /url: /store/products/ridge-trail-shoe
+    - img "Ridge trail shoe in Slate"
+  - heading "Shop all" [level=2]
+  - paragraph: Free shipping on every order
+  - list:
+    - listitem:
+      - link "Ridge trail shoe in Slate Ridge trail shoe Slate $120.00":
+        - /url: /store/products/ridge-trail-shoe
+        - img "Ridge trail shoe in Slate"
+        - heading "Ridge trail shoe" [level=3]
+        - paragraph: Slate
+        - paragraph: $120.00
+    - listitem:
+      - link "Summit rain jacket in Moss Summit rain jacket Moss $89.00":
+        - /url: /store/products/summit-rain-jacket
+        - img "Summit rain jacket in Moss"
+        - heading "Summit rain jacket" [level=3]
+        - paragraph: Moss
+        - paragraph: $89.00
+    - listitem:
+      - link "Basecamp wool socks in Oatmeal Basecamp wool socks Oatmeal $18.00":
+        - /url: /store/products/basecamp-wool-socks
+        - img "Basecamp wool socks in Oatmeal"
+        - heading "Basecamp wool socks" [level=3]
+        - paragraph: Oatmeal
+        - paragraph: $18.00
+    - listitem:
+      - link "Switchback daypack in Charcoal Switchback daypack Charcoal $64.00":
+        - /url: /store/products/switchback-daypack
+        - img "Switchback daypack in Charcoal"
+        - heading "Switchback daypack" [level=3]
+        - paragraph: Charcoal
+        - paragraph: $64.00
+  - heading "Free repairs" [level=3]
+  - paragraph: Wear something out? We fix seams, zips, and soles free for two years.
+  - heading "30-day returns" [level=3]
+  - paragraph: Try it on the trail. If it is not right, send it back within 30 days.
+  - heading "Made to last" [level=3]
+  - paragraph: Recycled fabrics, replaceable parts, and no throwaway trims.
+- contentinfo:
+  - text: Alder Trail Co.
+  - paragraph: Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
+  - heading "Shop" [level=3]
+  - list:
+    - listitem:
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+    - listitem:
+      - link "Summit rain jacket":
+        - /url: /store/products/summit-rain-jacket
+    - listitem:
+      - link "Basecamp wool socks":
+        - /url: /store/products/basecamp-wool-socks
+    - listitem:
+      - link "Switchback daypack":
+        - /url: /store/products/switchback-daypack
+  - heading "Help" [level=3]
+  - list:
+    - listitem: 30-day returns
+    - listitem: Free repairs for 2 years
+    - listitem: help@aldertrail.co
+    - listitem:
+      - link "Trail Club membership":
+        - /url: /store/trail-club
+    - listitem:
+      - link "Free First Thru-Hike Guide":
+        - /url: /store/guides/first-thru-hike
+  - text: © 2026 Alder Trail Co. All rights reserved.
+- alert: Made for the long way round.

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102223929-fd645e",
+  "createdAt": "2026-11-02T22:39:29.604Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Meet the Ridge: $120, shipped free.",
+    "text": "Our trail shoe in Slate, made for long days on the trail.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "price",
+      "claim": "The Ridge trail shoe costs $120",
+      "adQuote": "$120",
+      "conditions": {
+        "product": "Ridge",
+        "price": "$120"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "free_shipping",
+      "claim": "The Ridge ships for free",
+      "adQuote": "shipped free",
+      "conditions": {
+        "product": "Ridge"
+      }
+    },
+    {
+      "id": "a3",
+      "kind": "availability",
+      "claim": "The Ridge trail shoe is available in Slate",
+      "adQuote": "in Slate",
+      "conditions": {
+        "product": "Ridge",
+        "variant": "Slate"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:39:33.988Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "$120",
+      "pageQuote": "$120.00",
+      "evidenceStep": 1,
+      "reason": "Product page lists the Ridge trail shoe at $120.00, matching the advertised price.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "contradicted",
+      "adQuote": "shipped free",
+      "pageQuote": "Free shipping on orders of $150.00 or more",
+      "evidenceStep": 1,
+      "reason": "Ad promises free shipping, but the page conditions free shipping on a $150.00 minimum spend; the $120.00 shoe alone does not meet the hidden threshold.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a3",
+      "status": "supported",
+      "adQuote": "in Slate",
+      "pageQuote": "Color: Slate",
+      "evidenceStep": 1,
+      "reason": "Product page shows the Ridge trail shoe in Slate with sizes and Add to cart, with no sold-out indication.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2853,
+    "outputTokens": 4840,
+    "images": 2,
+    "usd": 0.0942325
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793659169-AX79e3ceffegn8TjVGfl",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 695,
+        "outputTokens": 1039,
+        "usd": 0.0045805,
+        "accepted": true
+      }
+    ],
+    "ms": 3017,
+    "inputTokens": 695,
+    "outputTokens": 1039,
+    "usd": 0.0045805
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Lower the free-shipping threshold from $150.00 to $120.00 so the $120 Ridge ships free as advertised.",
+    "rationale": "The ad promises free shipping on the $120 Ridge, but the funnel only gives free shipping at $150 or more, so the funnel's hidden threshold is what is wrong.",
+    "steps": [
+      "Open Store admin > Settings > Shipping and edit the free-shipping rule \"Free shipping on orders of $150.00 or more\".",
+      "Change that rule's Minimum order amount from $150.00 to $120.00 and save.",
+      "Check it: add the Ridge alone ($120) to the cart, go to checkout, and confirm shipping shows Free / $0.00."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:40:02.681Z"
+}

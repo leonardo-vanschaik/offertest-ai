@@ -7,7 +7,8 @@ node_modules/
 
 # Run output
 /offertest-runs
-/eval/results/runs
+# Benchmark run folders are kept (result, log, page text) for the proof; their screenshots are not
+/eval/results/runs/*/shots
 
 # Tool output
 /coverage

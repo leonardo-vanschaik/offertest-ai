@@ -144,7 +144,7 @@ Most broken offers only show up in the cart, at checkout, after a sign-up, or be
 
 **Limits.** All 41 cases run on our sample store, so the right answer is known for each one. Real stores add bot checks, logins, pop-ups, and layouts that this benchmark does not cover. When a page blocks the agent, OfferTest says so and returns `unresolved`, not a guess.
 
-**How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the first scored run on 30 Oct 2026. In that first run, with Muse Spark reading the promises, OfferTest also got 41 of 41, and the landing-page check got 12 of 41 ([eval/results/2026-10-30-muse-spark.json](eval/results/2026-10-30-muse-spark.json)). In the 2 Nov run, one case stopped on a 503 error from the Meta Model API and was run again; `latest.json` keeps both tries. Results: [eval/results/latest.json](eval/results/latest.json). Run it yourself: [eval/README.md](eval/README.md).
+**How we tested.** The 41 cases run against a sample store we built ([examples/demo-store](examples/demo-store)), so the right answer is known for every case. Each case switches on one offer bug. We fixed the labels before the first scored run on 30 Oct 2026. In that first run, with Muse Spark reading the promises, OfferTest also got 41 of 41, and the landing-page check got 12 of 41 ([eval/results/2026-10-30-muse-spark.json](eval/results/2026-10-30-muse-spark.json)). In the 2 Nov run, one case stopped on a 503 error from the Meta Model API and was run again; the run folders keep both tries. Results: [eval/results/latest.json](eval/results/latest.json), with every scored run's verdicts, quotes, models and page text in [eval/results/runs](eval/results/runs). Check the numbers against those folders with no key: `npx tsx eval/verify.ts`. Run it yourself: [eval/README.md](eval/README.md).
 
 ## Open weights
 
@@ -208,7 +208,7 @@ flowchart TD
 
 All commands and options: [docs/CLI.md](docs/CLI.md).
 
-**In CI.** Exit code 0 means every promise holds, 1 means one broke, 2 means unresolved. Re-check live ads every 6 hours with GitHub Actions, and pause any ad whose offer breaks (the token needs `ads_management`):
+**In CI.** Exit code 0 means every promise holds, 1 means one broke, 2 means unresolved (or `--limit` left ads untested). Re-check live ads every 6 hours with GitHub Actions, and pause any ad whose offer breaks (the token needs `ads_management`). Set `--limit` to at least your number of live ads:
 
 ```yaml
 on:
@@ -222,7 +222,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - run: npm ci --prefix offertest
-      - run: node offertest/dist/cli.mjs check --account ${{ vars.META_AD_ACCOUNT_ID }} --live --pause-failing --yes --json
+      - run: node offertest/dist/cli.mjs check --account ${{ vars.META_AD_ACCOUNT_ID }} --live --limit 25 --pause-failing --yes --json
         env:
           META_API_KEY: ${{ secrets.META_API_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}

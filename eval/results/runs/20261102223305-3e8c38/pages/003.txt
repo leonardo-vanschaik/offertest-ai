@@ -1,0 +1,132 @@
+Free shipping on every order
+Alder Trail Co.
+Shop all
+Footwear
+Outerwear
+Packs
+Cart (1)
+Your cart
+Ridge trail shoe
+
+Slate · Size 9
+
+$135.00 each
+
+$135.00
+
+−
+1
++
+Remove
+Order summary
+Discount code
+Apply
+Subtotal
+$135.00
+Discount
+$0.00
+Shipping
+Free
+Total
+$135.00
+Checkout
+Continue shopping
+Alder Trail Co.
+
+Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
+
+Shop
+Ridge trail shoe
+Summit rain jacket
+Basecamp wool socks
+Switchback daypack
+Help
+30-day returns
+Free repairs for 2 years
+help@aldertrail.co
+Trail Club membership
+Free First Thru-Hike Guide
+© 2026 Alder Trail Co. All rights reserved.
+
+[accessibility snapshot]
+- text: Free shipping on every order
+- banner:
+  - link "Alder Trail Co. home":
+    - /url: /store
+    - text: Alder Trail Co.
+  - navigation:
+    - link "Shop all":
+      - /url: /store#shop
+    - link "Footwear":
+      - /url: /store/products/ridge-trail-shoe
+    - link "Outerwear":
+      - /url: /store/products/summit-rain-jacket
+    - link "Packs":
+      - /url: /store/products/switchback-daypack
+    - link "Cart, 1 item":
+      - /url: /store/cart
+      - text: Cart (1)
+- main:
+  - heading "Your cart" [level=1]
+  - list:
+    - listitem:
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+        - img "Ridge trail shoe"
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+      - paragraph: Slate · Size 9
+      - paragraph: $135.00 each
+      - paragraph: $135.00
+      - button "Decrease quantity of Ridge trail shoe": −
+      - text: "1"
+      - button "Increase quantity of Ridge trail shoe": +
+      - button "Remove"
+  - complementary:
+    - heading "Order summary" [level=2]
+    - text: Discount code
+    - textbox "Discount code":
+      - /placeholder: Enter code
+    - button "Apply"
+    - term: Subtotal
+    - definition: $135.00
+    - term: Discount
+    - definition: $0.00
+    - term: Shipping
+    - definition: Free
+    - term: Total
+    - definition: $135.00
+    - link "Checkout":
+      - /url: /store/checkout
+    - link "Continue shopping":
+      - /url: /store#shop
+- contentinfo:
+  - text: Alder Trail Co.
+  - paragraph: Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
+  - heading "Shop" [level=3]
+  - list:
+    - listitem:
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+    - listitem:
+      - link "Summit rain jacket":
+        - /url: /store/products/summit-rain-jacket
+    - listitem:
+      - link "Basecamp wool socks":
+        - /url: /store/products/basecamp-wool-socks
+    - listitem:
+      - link "Switchback daypack":
+        - /url: /store/products/switchback-daypack
+  - heading "Help" [level=3]
+  - list:
+    - listitem: 30-day returns
+    - listitem: Free repairs for 2 years
+    - listitem: help@aldertrail.co
+    - listitem:
+      - link "Trail Club membership":
+        - /url: /store/trail-club
+    - listitem:
+      - link "Free First Thru-Hike Guide":
+        - /url: /store/guides/first-thru-hike
+  - text: © 2026 Alder Trail Co. All rights reserved.
+- alert: Your cart

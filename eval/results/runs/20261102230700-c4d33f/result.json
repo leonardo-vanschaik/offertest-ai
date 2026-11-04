@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102230700-c4d33f",
+  "createdAt": "2026-11-02T23:07:00.046Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free: The First Thru-Hike Guide",
+    "text": "Everything we wish we knew before our first long trail. Instant download.",
+    "cta": "Download",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/guides/first-thru-hike"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "lead_magnet",
+      "claim": "The First Thru-Hike Guide is available for free as an instant download",
+      "adQuote": "Free: The First Thru-Hike Guide",
+      "conditions": {
+        "product": "The First Thru-Hike Guide",
+        "price": "Free",
+        "delivery": "Instant download"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T23:07:04.177Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/guides/first-thru-hike",
+      "url": "http://localhost:3000/store/guides/first-thru-hike",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T23:07:10.360Z",
+      "kind": "action",
+      "summary": "Click (950, 330) · Type \"test@offertest.ai\"",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 950,
+          "y": 330
+        },
+        {
+          "type": "type",
+          "text": "test@offertest.ai"
+        }
+      ],
+      "url": "http://localhost:3000/store/guides/first-thru-hike",
+      "modelText": "Your free thru-hike guide is on this page — I'll enter the test email to verify it downloads instantly as promised.",
+      "click": {
+        "x": 950,
+        "y": 330
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T23:07:20.455Z",
+      "kind": "action",
+      "summary": "Click (950, 402)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 950,
+          "y": 402
+        }
+      ],
+      "url": "http://localhost:3000/store/guides/first-thru-hike/thanks",
+      "click": {
+        "x": 950,
+        "y": 402
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T23:07:30.644Z",
+      "kind": "action",
+      "summary": "Click (227, 393)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 227,
+          "y": 393
+        }
+      ],
+      "url": "http://localhost:3000/store/guides/first-thru-hike/thanks",
+      "click": {
+        "x": 227,
+        "y": 393
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T23:07:43.904Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked a1: Landing page for \"The First Thru-Hike Guide\" labeled FREE GUIDE, says \"Free PDF, instant download\" and \"Enter your email and download the PDF right away.\" Submitted test email test@offertest.ai via \"Get the guide\" — no payment, cart, or credit card required. Immediately reached \"Your guide is ready.\" showing \"The First Thru-Hike Guide - PDF from Alder Trail Co.\" with a \"Download the guide (PDF)\" button; clicking it triggered the download with no charge or error. Promise fulfilled as advertised."
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T23:07:43.968Z",
+      "kind": "note",
+      "summary": "Agent checkout skipped: no catalog item matches the ad's landing page /store/guides/first-thru-hike"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "Free: The First Thru-Hike Guide",
+      "pageQuote": "Downloaded file: first-thru-hike.pdf (1.5 KB) from http://localhost:3000/guides/first-thru-hike.pdf",
+      "evidenceStep": 4,
+      "reason": "After entering only an email, the guide was made ready and the PDF actually downloaded, with no payment requested.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/guides/first-thru-hike/thanks",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 24064,
+    "outputTokens": 2555,
+    "images": 6,
+    "usd": 0.13979225
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793660820-kvcUDBE5izv0QDVFr2DA",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 693,
+        "outputTokens": 632,
+        "usd": 0.00284825,
+        "accepted": true
+      }
+    ],
+    "ms": 2780,
+    "inputTokens": 693,
+    "outputTokens": 632,
+    "usd": 0.00284825
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 737,
+        "top": 375,
+        "right": 1163,
+        "bottom": 431,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 53,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T23:07:50.821Z"
+}

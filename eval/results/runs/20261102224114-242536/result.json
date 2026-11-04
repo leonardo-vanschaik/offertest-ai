@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102224114-242536",
+  "createdAt": "2026-11-02T22:41:14.143Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free shipping on every order.",
+    "text": "Gear up for the trail at Alder Trail Co. Shoes, jackets, socks, and packs.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_shipping",
+      "claim": "Every order qualifies for free shipping",
+      "adQuote": "Free shipping on every order.",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:41:17.679Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Free shipping on every order.",
+      "pageQuote": "Free shipping on orders of $150.00 or more",
+      "evidenceStep": 1,
+      "reason": "The page limits free shipping to orders of $150.00 or more, contradicting free shipping on every order.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2713,
+    "outputTokens": 3223,
+    "images": 2,
+    "usd": 0.0685775
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793659274-etWR4zho9NDa8jFUWzTK",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 695,
+        "outputTokens": 579,
+        "usd": 0.0026255,
+        "accepted": true
+      }
+    ],
+    "ms": 2287,
+    "inputTokens": 695,
+    "outputTokens": 579,
+    "usd": 0.0026255
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "ad",
+    "summary": "Remove the $150.00 minimum from the free-shipping rule so every order ships free, as the ad promises.",
+    "rationale": "The ad promises free shipping on every order but the funnel limits it to $150.00 or more, so the shipping threshold is the hidden condition to fix.",
+    "steps": [
+      "Open Store admin > Shipping settings > Free shipping rule and change Minimum order amount from $150.00 to $0 / No minimum.",
+      "Save the free shipping rule.",
+      "Check: Reload the ridge-trail-shoe page and add an item under $150.00 to the cart; confirm the $150.00 threshold is gone and checkout shows $0 shipping."
+    ],
+    "adCopy": {
+      "headline": "Free shipping on every order.",
+      "text": "Gear up for the trail at Alder Trail Co. Shoes, jackets, socks, and packs."
+    }
+  },
+  "finishedAt": "2026-11-02T22:41:34.367Z"
+}

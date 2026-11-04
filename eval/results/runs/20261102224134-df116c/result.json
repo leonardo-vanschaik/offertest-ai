@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102224134-df116c",
+  "createdAt": "2026-11-02T22:41:34.378Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free shipping on orders over $50.",
+    "text": "Stock up on trail gear at Alder Trail Co.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_shipping",
+      "claim": "Orders over $50 qualify for free shipping",
+      "adQuote": "Free shipping on orders over $50.",
+      "conditions": {
+        "threshold": "$50"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:41:37.093Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:41:40.468Z",
+      "kind": "action",
+      "summary": "Click (899, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 899,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Ad promises free shipping over $50, but the site banner says $150 — I'll add the $120 shoe to cart and check the actual checkout shipping.",
+      "click": {
+        "x": 899,
+        "y": 412
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:41:47.903Z",
+      "kind": "action",
+      "summary": "Click (938, 493)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 938,
+          "y": 493
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 938,
+        "y": 493
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:41:57.271Z",
+      "kind": "action",
+      "summary": "Click (987, 581)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 581
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "modelText": "In the cart the $120 order still charges $8.95 shipping, contradicting the ad. I'll proceed to checkout to confirm the total there.",
+      "click": {
+        "x": 987,
+        "y": 581
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:42:09.694Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked a1 free_shipping: Site banner and product page say \"Free shipping on orders of $150.00 or more\", not $50. Added Ridge trail shoe ($120.00, Slate, Size 9) to cart - an order over $50. Cart order summary: Subtotal $120.00, Shipping $8.95, Total $128.95. Checkout page showed same: Subtotal $120.00, Shipping $8.95, Total $128.95. Free shipping per the ad's $50 threshold was not given."
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:42:09.751Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Free shipping on orders over $50.",
+      "pageQuote": "Free shipping on orders of $150.00 or more",
+      "evidenceStep": 1,
+      "reason": "Ad promises free shipping over $50, but the site requires $150; a $120.00 cart was charged $8.95 shipping.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/checkout",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 25129,
+    "outputTokens": 3858,
+    "images": 6,
+    "usd": 0.17486675
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793659294-r2Gz3nOeZdW6GBeHwgMV",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 688,
+        "outputTokens": 331,
+        "usd": 0.00156275,
+        "accepted": true
+      }
+    ],
+    "ms": 1739,
+    "inputTokens": 688,
+    "outputTokens": 331,
+    "usd": 0.00156275
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Lower the store's free-shipping threshold from $150.00 to $50.00 to match the ad.",
+    "rationale": "The ad promises free shipping over $50, but a $120.00 cart was charged $8.95 shipping because the site requires $150.00, so the funnel threshold is wrong.",
+    "steps": [
+      "Go to Store admin > Settings > Shipping > Free shipping rule.",
+      "Change the Minimum order amount from $150.00 to $50.00 and save.",
+      "Check by placing a $120.00 order and confirming shipping is $0.00 at checkout."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:42:28.427Z"
+}

@@ -1,0 +1,123 @@
+Free shipping on every order
+Alder Trail Co.
+Shop all
+Footwear
+Outerwear
+Packs
+Cart (1)
+
+MEMBERSHIP
+
+Try Trail Club free for 30 days.
+
+Member prices and free returns on every order. After your trial, Trail Club is $9/month. Cancel anytime.
+
+Start free trial
+No credit card required.
+
+TRAIL CLUB
+
+$9
+/ month after your 30-day free trial
+
+Member prices on shoes, shells, and packs
+Free returns on every order
+Early access to new gear
+Cancel anytime from your account
+Member prices
+
+Save on every order, including new arrivals and the Ridge trail shoe.
+
+Free returns
+
+Send anything back free of charge. No restocking fees, no questions.
+
+Cancel anytime
+
+Your first 30 days are free. Cancel before then and you pay nothing.
+
+Alder Trail Co.
+
+Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
+
+Shop
+Ridge trail shoe
+Summit rain jacket
+Basecamp wool socks
+Switchback daypack
+Help
+30-day returns
+Free repairs for 2 years
+help@aldertrail.co
+Trail Club membership
+Free First Thru-Hike Guide
+© 2026 Alder Trail Co. All rights reserved.
+
+[accessibility snapshot]
+- text: Free shipping on every order
+- banner:
+  - link "Alder Trail Co. home":
+    - /url: /store
+    - text: Alder Trail Co.
+  - navigation:
+    - link "Shop all":
+      - /url: /store#shop
+    - link "Footwear":
+      - /url: /store/products/ridge-trail-shoe
+    - link "Outerwear":
+      - /url: /store/products/summit-rain-jacket
+    - link "Packs":
+      - /url: /store/products/switchback-daypack
+    - link "Cart, 1 item":
+      - /url: /store/cart
+      - text: Cart (1)
+- main:
+  - paragraph: Membership
+  - heading "Try Trail Club free for 30 days." [level=1]
+  - paragraph: Member prices and free returns on every order. After your trial, Trail Club is $9/month. Cancel anytime.
+  - link "Start free trial":
+    - /url: /store/trail-club/join
+  - text: No credit card required.
+  - paragraph: Trail Club
+  - paragraph: $9 / month after your 30-day free trial
+  - list:
+    - listitem: Member prices on shoes, shells, and packs
+    - listitem: Free returns on every order
+    - listitem: Early access to new gear
+    - listitem: Cancel anytime from your account
+  - heading "Member prices" [level=2]
+  - paragraph: Save on every order, including new arrivals and the Ridge trail shoe.
+  - heading "Free returns" [level=2]
+  - paragraph: Send anything back free of charge. No restocking fees, no questions.
+  - heading "Cancel anytime" [level=2]
+  - paragraph: Your first 30 days are free. Cancel before then and you pay nothing.
+- contentinfo:
+  - text: Alder Trail Co.
+  - paragraph: Trail gear for long days outside. Designed in Bend, Oregon, and made to be worn, repaired, and worn again.
+  - heading "Shop" [level=3]
+  - list:
+    - listitem:
+      - link "Ridge trail shoe":
+        - /url: /store/products/ridge-trail-shoe
+    - listitem:
+      - link "Summit rain jacket":
+        - /url: /store/products/summit-rain-jacket
+    - listitem:
+      - link "Basecamp wool socks":
+        - /url: /store/products/basecamp-wool-socks
+    - listitem:
+      - link "Switchback daypack":
+        - /url: /store/products/switchback-daypack
+  - heading "Help" [level=3]
+  - list:
+    - listitem: 30-day returns
+    - listitem: Free repairs for 2 years
+    - listitem: help@aldertrail.co
+    - listitem:
+      - link "Trail Club membership":
+        - /url: /store/trail-club
+    - listitem:
+      - link "Free First Thru-Hike Guide":
+        - /url: /store/guides/first-thru-hike
+  - text: © 2026 Alder Trail Co. All rights reserved.
+- alert: Try Trail Club free for 30 days.

@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102220653-547c8a",
+  "createdAt": "2026-11-02T22:06:53.723Z",
+  "ad": {
+    "source": "manual",
+    "headline": "The Ridge trail shoe. $120.",
+    "text": "Light, grippy, built for rocky miles. Free shipping.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "price",
+      "claim": "The Ridge trail shoe costs $120",
+      "adQuote": "$120.",
+      "conditions": {
+        "product": "The Ridge trail shoe",
+        "price": "$120"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "free_shipping",
+      "claim": "The Ridge trail shoe ships for free",
+      "adQuote": "Free shipping.",
+      "conditions": {
+        "product": "The Ridge trail shoe"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:06:57.340Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:07:00.263Z",
+      "kind": "action",
+      "summary": "Click (899, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 899,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Checking the Ridge trail shoe — price and free-shipping promises — starting by adding it to cart.",
+      "click": {
+        "x": 899,
+        "y": 413
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:07:21.448Z",
+      "kind": "action",
+      "summary": "Click (730, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 730,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 730,
+        "y": 412
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:07:33.696Z",
+      "kind": "action",
+      "summary": "Click (813, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 813,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 813,
+        "y": 413
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:07:42.497Z",
+      "kind": "action",
+      "summary": "Click (982, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 982,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 982,
+        "y": 413
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:07:52.292Z",
+      "kind": "action",
+      "summary": "Click (1066, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1066,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1066,
+        "y": 413
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:08:12.374Z",
+      "kind": "action",
+      "summary": "Click (1151, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1151,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1151,
+        "y": 413
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:08:21.616Z",
+      "kind": "action",
+      "summary": "Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "All sizes 7–12 are selectable and the product page shows $120.00 with free shipping. I'll add one pair to the cart and verify the totals at checkout.",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:08:31.758Z",
+      "kind": "action",
+      "summary": "Click (987, 580)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 580
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "click": {
+        "x": 987,
+        "y": 580
+      },
+      "screenshot": "shots/009.jpg"
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:08:59.023Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked both promises for Ridge trail shoe (Slate). Product page showed $120.00 and \"Free shipping on every order\"; sizes 7,8,9,10,11,12 were all selectable. Added size 12 (1 item) to cart: cart showed $120.00 each, Subtotal $120.00, Discount $0.00, Shipping Free, Total $120.00. Checkout confirmed Ridge trail shoe Size 12 Qty 1 $120.00, Subtotal $120.00, Shipping Free, Total $120.00. Both price ($120) and free shipping held; stopped at payment step without entering card details."
+    },
+    {
+      "n": 11,
+      "at": "2026-11-02T22:08:59.085Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "$120.",
+      "pageQuote": "Item: Ridge trail shoe - Size 7 x1: $120.00",
+      "evidenceStep": 11,
+      "reason": "The agent checkout shows the advertised Ridge trail shoe priced at $120.00, matching the ad price.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "supported",
+      "adQuote": "Free shipping.",
+      "pageQuote": "Shipping: $0.00",
+      "evidenceStep": 11,
+      "reason": "The agent checkout for the Ridge trail shoe charges $0.00 shipping, matching the free shipping promise.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/checkout",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 84246,
+    "outputTokens": 3719,
+    "images": 11,
+    "usd": 0.4039475
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793657213-V4smdPRx2mLdGrj2wCy7",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 691,
+        "outputTokens": 623,
+        "usd": 0.0028075,
+        "accepted": true
+      }
+    ],
+    "ms": 2298,
+    "inputTokens": 691,
+    "outputTokens": 623,
+    "usd": 0.0028075
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T22:09:12.393Z"
+}

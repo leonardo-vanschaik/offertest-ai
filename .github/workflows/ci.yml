@@ -20,3 +20,5 @@ jobs:
       - run: test -z "$(git status --porcelain -- dist)" || (git status --short -- dist; exit 1)
       # The built CLI replays the recorded runs, as a judge would run it.
       - run: node dist/cli.mjs demo --json
+      # The benchmark numbers in the README match the saved run folders.
+      - run: npx tsx eval/verify.ts

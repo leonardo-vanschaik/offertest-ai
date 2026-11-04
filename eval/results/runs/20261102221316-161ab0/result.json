@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102221316-161ab0",
+  "createdAt": "2026-11-02T22:13:16.798Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free shipping on every order.",
+    "text": "Gear up for the trail at Alder Trail Co. Shoes, jackets, socks, and packs.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_shipping",
+      "claim": "Every order qualifies for free shipping",
+      "adQuote": "Free shipping on every order.",
+      "conditions": {
+        "threshold": "none"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:13:20.974Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "unresolved",
+      "adQuote": "Free shipping on every order.",
+      "pageQuote": null,
+      "evidenceStep": null,
+      "reason": "Only a product page repeating the claim is shown; no cart or checkout page shows $0 shipping on a tested order.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": false
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2295,
+    "outputTokens": 1771,
+    "images": 2,
+    "usd": 0.038904999999999995
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793657596-28NM6u5PwIZCjF53pdTQ",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 695,
+        "outputTokens": 513,
+        "usd": 0.002345,
+        "accepted": true
+      }
+    ],
+    "ms": 2290,
+    "inputTokens": 695,
+    "outputTokens": 513,
+    "usd": 0.002345
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "unresolved",
+  "finishedAt": "2026-11-02T22:13:27.810Z"
+}

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102230549-be98e1",
+  "createdAt": "2026-11-02T23:05:49.533Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free: The First Thru-Hike Guide",
+    "text": "Everything we wish we knew before our first long trail. Instant download.",
+    "cta": "Download",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/guides/first-thru-hike"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "lead_magnet",
+      "claim": "Free instant download of The First Thru-Hike Guide is available via the Download button",
+      "adQuote": "Free: The First Thru-Hike Guide",
+      "conditions": {
+        "product": "The First Thru-Hike Guide",
+        "price": "Free"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T23:05:53.632Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/guides/first-thru-hike",
+      "url": "http://localhost:3000/store/guides/first-thru-hike",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T23:05:58.155Z",
+      "kind": "action",
+      "summary": "Click (948, 331) · Type \"test@offertest.ai\" · Click (948, 402)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 948,
+          "y": 331
+        },
+        {
+          "type": "type",
+          "text": "test@offertest.ai"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 948,
+          "y": 402
+        }
+      ],
+      "url": "http://localhost:3000/store/guides/first-thru-hike/thanks",
+      "modelText": "Testing the free guide promise — I'll enter the test email to see if the download is truly instant.",
+      "click": {
+        "x": 948,
+        "y": 402
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T23:06:14.416Z",
+      "kind": "note",
+      "summary": "Stopped at payment (\"Unlock for $4.99\"): payment not allowed in this run"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T23:06:14.433Z",
+      "kind": "action",
+      "summary": "Look at the screen",
+      "actions": [],
+      "url": "http://localhost:3000/store/guides/first-thru-hike/thanks",
+      "modelText": "The page isn't free — it demands $4.99 to unlock. I'll check the next step to confirm there's no free download option.",
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T23:06:14.486Z",
+      "kind": "note",
+      "summary": "Agent checkout skipped: no catalog item matches the ad's landing page /store/guides/first-thru-hike"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Free: The First Thru-Hike Guide",
+      "pageQuote": "Your guide is ready. Unlock it for $4.99",
+      "evidenceStep": 2,
+      "reason": "Ad promises a free instant download, but after submitting email the page requires a $4.99 payment to unlock the guide.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed to the payment step, not paid",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 10435,
+    "outputTokens": 3527,
+    "images": 4,
+    "usd": 0.105866
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793660749-eHZrZM0ZvyY6D7Lv4Ef5",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 693,
+        "outputTokens": 559,
+        "usd": 0.002538,
+        "accepted": true
+      }
+    ],
+    "ms": 2724,
+    "inputTokens": 693,
+    "outputTokens": 559,
+    "usd": 0.002538
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 737,
+        "top": 375,
+        "right": 1163,
+        "bottom": 431,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 53,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Set The First Thru-Hike Guide to $0 and remove its $4.99 unlock step so the Download button gives the free instant download the ad promises.",
+    "rationale": "The ad promises a free instant download, but the post-email page says \"Unlock it for $4.99,\" so the funnel paywall breaks the promise.",
+    "steps": [
+      "Store admin > Guides > The First Thru-Hike Guide > Price: change $4.99 to $0 and disable the payment/unlock step.",
+      "Same guide > Delivery settings: set the Download button to deliver the file immediately after email submission.",
+      "Save, then check by opening the ad URL, submitting an email, and confirming the guide downloads free with no $4.99 prompt."
+    ]
+  },
+  "finishedAt": "2026-11-02T23:06:28.097Z"
+}

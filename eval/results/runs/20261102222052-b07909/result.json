@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102222052-b07909",
+  "createdAt": "2026-11-02T22:20:52.730Z",
+  "ad": {
+    "source": "manual",
+    "headline": "20% off the Ridge trail shoe.",
+    "text": "This week only. Use code SAVE20 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe",
+        "validity": "This week only"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:20:55.559Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:20:59.195Z",
+      "kind": "action",
+      "summary": "Click (897, 413) · Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 897,
+          "y": 413
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "Testing your 20% off promise — selecting a size, adding the Ridge trail shoe to cart, and applying SAVE20 at checkout.",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:21:12.303Z",
+      "kind": "action",
+      "summary": "Click (934, 346) · Type \"SAVE20\" · Click (1114, 345)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 934,
+          "y": 346
+        },
+        {
+          "type": "type",
+          "text": "SAVE20"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1114,
+          "y": 345
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 1114,
+        "y": 345
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:21:24.268Z",
+      "kind": "action",
+      "summary": "Click (987, 638)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 638
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "modelText": "SAVE20 applied but took $12 off — only 10% on a $120 shoe, not 20%. I'll confirm the total at checkout before deciding.",
+      "click": {
+        "x": 987,
+        "y": 638
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:21:35.351Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Ridge trail shoe (Slate, size 9, $120.00) added to cart. Code SAVE20 was accepted but applied as 'SAVE20 applied: -$12.00', Discount (SAVE20) -$12.00, Total $108.00 with Free shipping, shown identically in cart and checkout. That is 10% off, not the promised 20% off (should be $24 off, total $96)."
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:21:35.438Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "pageQuote": "SAVE20 applied: -$12.00",
+      "evidenceStep": 3,
+      "reason": "20% of $120.00 is $24.00, but SAVE20 gave only $12.00, a 10% discount.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/checkout",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 25355,
+    "outputTokens": 3611,
+    "images": 6,
+    "usd": 0.16647825
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658052-aw5pFBicVPaoqSNBEJml",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 690,
+        "outputTokens": 607,
+        "usd": 0.00273825,
+        "accepted": true
+      }
+    ],
+    "ms": 1769,
+    "inputTokens": 690,
+    "outputTokens": 607,
+    "usd": 0.00273825
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Change SAVE20 from 10% to 20% off the Ridge trail shoe.",
+    "rationale": "The ad promises 20% off, but checkout shows SAVE20 giving only $12.00 (10%) off the $120.00 shoe instead of $24.00, so the code's discount value is wrong.",
+    "steps": [
+      "Open Store admin > Discounts > SAVE20.",
+      "Change the discount value setting from 10% to 20% and save.",
+      "Add the Ridge trail shoe to the cart, apply SAVE20 at checkout, and confirm it shows -$24.00."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:21:51.060Z"
+}

@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102223049-528ea2",
+  "createdAt": "2026-11-02T22:30:49.944Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Take 20% off the Ridge trail shoe.",
+    "text": "Enter code SAVE20 at checkout. Limited time at Alder Trail Co.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "Take 20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:30:53.480Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:30:56.739Z",
+      "kind": "action",
+      "summary": "Click (980, 414)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 980,
+          "y": 414
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Testing your 20% off code — I'll add the Ridge shoe to cart and apply SAVE20 at checkout.",
+      "click": {
+        "x": 980,
+        "y": 414
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:31:29.773Z",
+      "kind": "action",
+      "summary": "Click (730, 413) · Wait · Click (813, 413) · Wait · Click (897, 413) · Wait · Click (1066, 413) · Wait",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 730,
+          "y": 413
+        },
+        {
+          "type": "wait"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 813,
+          "y": 413
+        },
+        {
+          "type": "wait"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 897,
+          "y": 413
+        },
+        {
+          "type": "wait"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1066,
+          "y": 413
+        },
+        {
+          "type": "wait"
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1066,
+        "y": 413
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:31:37.688Z",
+      "kind": "action",
+      "summary": "Click (1151, 414)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1151,
+          "y": 414
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1151,
+        "y": 414
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:31:47.188Z",
+      "kind": "action",
+      "summary": "Click (982, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 982,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 982,
+        "y": 413
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:32:00.512Z",
+      "kind": "action",
+      "summary": "Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:32:12.829Z",
+      "kind": "action",
+      "summary": "Click (934, 346) · Type \"SAVE20\" · Click (1114, 346)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 934,
+          "y": 346
+        },
+        {
+          "type": "type",
+          "text": "SAVE20"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1114,
+          "y": 346
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "In the cart at $120 with free shipping. Now I'll apply SAVE20 and check if it takes 20% off.",
+      "click": {
+        "x": 1114,
+        "y": 346
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:32:28.811Z",
+      "kind": "action",
+      "summary": "Click (987, 654)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 654
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "modelText": "SAVE20 was rejected — it requires a $150 spend, so no discount on the $120 shoe. I'll check the checkout total to confirm.",
+      "click": {
+        "x": 987,
+        "y": 654
+      },
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:32:36.790Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "a1 discount FAILED: Ridge trail shoe $120.00, sizes 7-12 selectable, added size 10 (1 item). In cart and checkout, code SAVE20 entered exactly was rejected with \"Spend $150.00 or more to use this code.\" Discount $0.00, shipping Free, total $120.00 (no 20% reduction; expected $96). Stopped at payment step without entering card details."
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:32:36.864Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Take 20% off the Ridge trail shoe.",
+      "pageQuote": "Spend $150.00 or more to use this code.",
+      "evidenceStep": 7,
+      "reason": "SAVE20 was entered for the $120.00 Ridge trail shoe, but the discount stayed $0.00 and the total remained $120.00 instead of $96.00 after a $24.00 20% discount, because of an unadvertised $150.00 minimum spend.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/checkout",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 69997,
+    "outputTokens": 5347,
+    "images": 10,
+    "usd": 0.38025925000000005
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658650-g8CAcNt7NjYFAHAZOd2T",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 694,
+        "outputTokens": 575,
+        "usd": 0.00260725,
+        "accepted": true
+      }
+    ],
+    "ms": 2521,
+    "inputTokens": 694,
+    "outputTokens": 575,
+    "usd": 0.00260725
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Remove the $150.00 minimum spend from SAVE20 so it gives 20% off the $120.00 Ridge trail shoe.",
+    "rationale": "The ad promises 20% off the Ridge trail shoe with SAVE20, but checkout blocks the $120.00 shoe with an unadvertised $150.00 minimum, so the code condition is wrong.",
+    "steps": [
+      "Go to Store admin > Discounts > SAVE20.",
+      "Change Minimum purchase amount from $150.00 to No minimum and save.",
+      "Check in checkout: add the $120.00 Ridge trail shoe, enter SAVE20, and confirm a $24.00 discount and $96.00 total."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:32:55.277Z"
+}

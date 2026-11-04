@@ -10,7 +10,14 @@ npx tsx eval/run.ts --mode both                           # terminal 2
 - **hit**: the verdict matches the label. **miss**: a broken offer the tool passed. **false alarm**: a working offer the tool failed.
 - **agent** is OfferTest. **baseline** is one model call on the landing page, no clicking.
 - Accuracy comes with a 95% Wilson interval, because 41 cases is a small sample.
-- Results: `eval/results/latest.json`. Run folders with screenshots: `eval/results/runs/`.
+- Results: `eval/results/latest.json`. Each scored run's folder is in `eval/results/runs/<run id>/`: `result.json` (verdicts with word-for-word quotes, models, the open-weights record with provider, quantization and request ids), `log.jsonl`, and the text of every page the agent saw (`pages/`). Screenshots are left out to keep the clone small. The 2 Nov run has 82 scored folders and one more: a try that stopped on a 503 error from the Meta Model API and was run again (`20261102225150-f946d2`).
+- Check the scored run against its folders, with no key and no store:
+
+```bash
+npx tsx eval/verify.ts
+```
+
+It checks each label against `cases.ts`, each verdict against its run folder, the quote check on the saved pages, that every model is Meta's, and the open-weights record of every run.
 
 ## Reading the promises
 

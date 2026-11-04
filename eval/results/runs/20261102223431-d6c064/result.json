@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102223431-d6c064",
+  "createdAt": "2026-11-02T22:34:31.869Z",
+  "ad": {
+    "source": "manual",
+    "headline": "The Ridge trail shoe. $120.",
+    "text": "Light, grippy, built for rocky miles. Free shipping.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "price",
+      "claim": "The Ridge trail shoe costs $120",
+      "adQuote": "$120.",
+      "conditions": {
+        "product": "The Ridge trail shoe",
+        "amount": "$120"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "free_shipping",
+      "claim": "Free shipping is offered",
+      "adQuote": "Free shipping.",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:34:34.399Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:34:37.998Z",
+      "kind": "action",
+      "summary": "Click (728, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 728,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Checking the advertised $120 price and free-shipping claim — starting by testing the shoe sizes and adding one to cart.",
+      "click": {
+        "x": 728,
+        "y": 412
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:35:02.272Z",
+      "kind": "action",
+      "summary": "Click (813, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 813,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 813,
+        "y": 412
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:35:15.340Z",
+      "kind": "action",
+      "summary": "Click (899, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 899,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 899,
+        "y": 413
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:35:26.656Z",
+      "kind": "action",
+      "summary": "Click (982, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 982,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 982,
+        "y": 412
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:35:34.596Z",
+      "kind": "action",
+      "summary": "Click (1065, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1065,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1065,
+        "y": 413
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:35:42.504Z",
+      "kind": "action",
+      "summary": "Click (1149, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1149,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1149,
+        "y": 412
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:35:54.505Z",
+      "kind": "action",
+      "summary": "Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "Product is $120.00 as advertised, and all sizes 7–12 appear selectable. The site qualifies free shipping at $150+, so I'll add one pair and check the actual shipping charge in the cart and at checkout.",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:36:03.278Z",
+      "kind": "action",
+      "summary": "Click (987, 580)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 580
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "click": {
+        "x": 987,
+        "y": 580
+      },
+      "screenshot": "shots/009.jpg"
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:36:19.840Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "a1 price: Ridge trail shoe listed at $120.00 on product page, cart ($120.00 each, subtotal $120.00), and checkout — matches ad. Checked sizes 7, 8, 9, 10, 11, 12; each selectable (Add to cart remained available). Added one (Size 12) only.\na2 free shipping: NOT unconditional as ad stated \"Free shipping.\" Product page and top banner say \"Free shipping on orders of $150.00 or more\". In cart and at checkout, the single $120 shoe had Shipping $8.95, Total $128.95. Stopped at checkout before payment."
+    },
+    {
+      "n": 11,
+      "at": "2026-11-02T22:36:20.021Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "$120.",
+      "pageQuote": "$120.00",
+      "evidenceStep": 1,
+      "reason": "The Ridge trail shoe product page lists the price as $120.00, matching the advertised $120.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "contradicted",
+      "adQuote": "Free shipping.",
+      "pageQuote": "Shipping: $8.95",
+      "evidenceStep": 11,
+      "reason": "In agent checkout, the $120 Ridge trail shoe order charges $8.95 shipping, contrary to the unconditional free shipping promise.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/checkout",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 84854,
+    "outputTokens": 5652,
+    "images": 11,
+    "usd": 0.45037875
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658872-QRRRghU1IAOrzEK2pK3a",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 691,
+        "outputTokens": 284,
+        "usd": 0.00136675,
+        "accepted": true
+      }
+    ],
+    "ms": 1444,
+    "inputTokens": 691,
+    "outputTokens": 284,
+    "usd": 0.00136675
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Set shipping to $0 for the Ridge trail shoe so checkout delivers the ad's free-shipping promise.",
+    "rationale": "The ad promises free shipping unconditionally, but the funnel charges $8.95, so the checkout shipping rate \\u2014 not the ad \\u2014 is wrong.",
+    "steps": [
+      "In Store admin > Settings > Shipping, open the shipping rate applied to the Ridge trail shoe.",
+      "Change that $8.95 rate to $0.00 free shipping for the Ridge trail shoe, with no minimum or other condition.",
+      "Check in checkout: add the Ridge trail shoe and confirm Shipping shows $0.00 instead of $8.95."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:36:46.485Z"
+}

@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102221815-d86ed5",
+  "createdAt": "2026-11-02T22:18:15.434Z",
+  "ad": {
+    "source": "manual",
+    "headline": "$10 off the Summit rain jacket with code TRAIL10.",
+    "text": "Stay dry on the trail. Enter TRAIL10 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/summit-rain-jacket"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code TRAIL10 gives $10 off the Summit rain jacket",
+      "adQuote": "$10 off the Summit rain jacket with code TRAIL10.",
+      "conditions": {
+        "code": "TRAIL10",
+        "amount": "$10",
+        "product": "Summit rain jacket"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:18:17.923Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/summit-rain-jacket",
+      "url": "http://localhost:3000/store/products/summit-rain-jacket",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:18:21.147Z",
+      "kind": "action",
+      "summary": "Click (813, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 813,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/summit-rain-jacket",
+      "modelText": "Checking your $10-off claim — I'll add the Summit jacket to cart and apply TRAIL10 at checkout.",
+      "click": {
+        "x": 813,
+        "y": 413
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:18:31.581Z",
+      "kind": "action",
+      "summary": "Click (730, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 730,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/summit-rain-jacket",
+      "click": {
+        "x": 730,
+        "y": 413
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:18:42.293Z",
+      "kind": "action",
+      "summary": "Click (899, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 899,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/summit-rain-jacket",
+      "click": {
+        "x": 899,
+        "y": 413
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:18:49.897Z",
+      "kind": "action",
+      "summary": "Click (980, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 980,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/summit-rain-jacket",
+      "click": {
+        "x": 980,
+        "y": 412
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:19:10.596Z",
+      "kind": "action",
+      "summary": "Click (940, 495)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 495
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "All sizes are selectable, so I'll add one jacket to the cart and head to checkout.",
+      "click": {
+        "x": 940,
+        "y": 495
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:19:20.585Z",
+      "kind": "action",
+      "summary": "Click (936, 346) · Type \"TRAIL10\" · Click (1115, 346) · Wait",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 936,
+          "y": 346
+        },
+        {
+          "type": "type",
+          "text": "TRAIL10"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1115,
+          "y": 346
+        },
+        {
+          "type": "wait"
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "modelText": "Cart shows $89.00 with no discount yet — I'll apply code TRAIL10 exactly as advertised.",
+      "click": {
+        "x": 1115,
+        "y": 346
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:19:30.868Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked promise a1: Added Summit rain jacket (Moss, Size XL, $89.00) to cart. Entered code TRAIL10 exactly as advertised and clicked Apply. Site showed 'TRAIL10 applied: -$10.00', Discount (TRAIL10) -$10.00, Subtotal $89.00, Shipping Free, Total $79.00. The $10 discount works as promised."
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:19:30.968Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "$10 off the Summit rain jacket with code TRAIL10.",
+      "pageQuote": "TRAIL10 applied: -$10.00",
+      "evidenceStep": 7,
+      "reason": "Cart shows Summit rain jacket at $89.00 with TRAIL10 applied for -$10.00, total $79.00, matching the promised $10 off.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/cart",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 42778,
+    "outputTokens": 2105,
+    "images": 9,
+    "usd": 0.20899475
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793657895-SsBC5zmo2uAECce4jQqv",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 696,
+        "outputTokens": 419,
+        "usd": 0.00194675,
+        "accepted": true
+      }
+    ],
+    "ms": 1329,
+    "inputTokens": 696,
+    "outputTokens": 419,
+    "usd": 0.00194675
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "jacket",
+        "left": 226,
+        "top": 283,
+        "right": 502,
+        "bottom": 624,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 694,
+        "top": 384,
+        "right": 766,
+        "bottom": 442,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T22:19:35.641Z"
+}

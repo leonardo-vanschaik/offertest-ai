@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102221935-6031b6",
+  "createdAt": "2026-11-02T22:19:35.654Z",
+  "ad": {
+    "source": "manual",
+    "headline": "$10 off the Summit rain jacket with code TRAIL10.",
+    "text": "Stay dry on the trail. Enter TRAIL10 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/summit-rain-jacket"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code TRAIL10 gives $10 off the Summit rain jacket",
+      "adQuote": "$10 off the Summit rain jacket with code TRAIL10.",
+      "conditions": {
+        "code": "TRAIL10",
+        "amount": "$10",
+        "product": "Summit rain jacket"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:19:38.467Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/summit-rain-jacket",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "unresolved",
+      "adQuote": "$10 off the Summit rain jacket with code TRAIL10.",
+      "pageQuote": null,
+      "evidenceStep": null,
+      "reason": "Only the product page is shown; no checkout or application of TRAIL10 is reached, so the $10 discount is not tested.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": false
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/summit-rain-jacket",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2277,
+    "outputTokens": 1447,
+    "images": 2,
+    "usd": 0.03414575
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793657975-wLHfQUnFVE5rKxz7qvW1",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 696,
+        "outputTokens": 399,
+        "usd": 0.00186175,
+        "accepted": true
+      }
+    ],
+    "ms": 1614,
+    "inputTokens": 696,
+    "outputTokens": 399,
+    "usd": 0.00186175
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "jacket",
+        "left": 226,
+        "top": 283,
+        "right": 502,
+        "bottom": 624,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 694,
+        "top": 384,
+        "right": 766,
+        "bottom": 442,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "unresolved",
+  "finishedAt": "2026-11-02T22:19:44.548Z"
+}

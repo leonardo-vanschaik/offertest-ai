@@ -1,0 +1,425 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102224804-763253",
+  "createdAt": "2026-11-02T22:48:04.622Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Try Trail Club free for 30 days.",
+    "text": "Member prices and free returns on every order. No credit card required.",
+    "cta": "Sign up",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/trail-club"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_trial",
+      "claim": "Trail Club can be tried free for 30 days with no credit card required",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "conditions": {
+        "product": "Trail Club",
+        "duration": "30 days",
+        "credit_card_required": "false"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "guarantee",
+      "claim": "Every order qualifies for free returns",
+      "adQuote": "free returns on every order",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:48:10.812Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/trail-club",
+      "url": "http://localhost:3000/store/trail-club",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:48:14.536Z",
+      "kind": "action",
+      "summary": "Click (178, 440)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 178,
+          "y": 440
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "modelText": "Checking your Trail Club trial — starting the free sign-up to verify no card is required and returns are truly free.",
+      "click": {
+        "x": 178,
+        "y": 440
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:48:25.764Z",
+      "kind": "action",
+      "summary": "Click (637, 359) · Type \"Test Shopper\" · Click (637, 447) · Type \"test@offertest.ai\" · Click (637, 534) · Type \"TestPass123\"",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 637,
+          "y": 359
+        },
+        {
+          "type": "type",
+          "text": "Test Shopper"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 637,
+          "y": 447
+        },
+        {
+          "type": "type",
+          "text": "test@offertest.ai"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 637,
+          "y": 534
+        },
+        {
+          "type": "type",
+          "text": "TestPass123"
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "click": {
+        "x": 637,
+        "y": 534
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:48:35.912Z",
+      "kind": "action",
+      "summary": "Click (637, 610)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 637,
+          "y": 610
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/welcome",
+      "click": {
+        "x": 637,
+        "y": 610
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:48:45.081Z",
+      "kind": "action",
+      "summary": "Click (225, 465)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 225,
+          "y": 465
+        }
+      ],
+      "url": "http://localhost:3000/store#shop",
+      "modelText": "Verified your 30-day free trial with no card — now checking whether every order really gets free returns.",
+      "click": {
+        "x": 225,
+        "y": 465
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:48:56.895Z",
+      "kind": "action",
+      "summary": "Click (778, 240)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 778,
+          "y": 240
+        }
+      ],
+      "url": "http://localhost:3000/store/products/basecamp-wool-socks",
+      "click": {
+        "x": 778,
+        "y": 240
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:49:12.614Z",
+      "kind": "action",
+      "summary": "Scroll down",
+      "actions": [
+        {
+          "type": "scroll",
+          "x": 640,
+          "y": 400,
+          "scroll_x": 0,
+          "scroll_y": 400
+        }
+      ],
+      "url": "http://localhost:3000/store/products/basecamp-wool-socks",
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:49:20.746Z",
+      "kind": "action",
+      "summary": "Click (940, 111)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 111
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 940,
+        "y": 111
+      },
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:49:31.981Z",
+      "kind": "action",
+      "summary": "Click (987, 581)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 581
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "click": {
+        "x": 987,
+        "y": 581
+      },
+      "screenshot": "shots/009.jpg"
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:49:55.535Z",
+      "kind": "action",
+      "summary": "Scroll down",
+      "actions": [
+        {
+          "type": "scroll",
+          "x": 640,
+          "y": 400,
+          "scroll_x": 0,
+          "scroll_y": 500
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "screenshot": "shots/010.jpg"
+    },
+    {
+      "n": 11,
+      "at": "2026-11-02T22:50:08.362Z",
+      "kind": "action",
+      "summary": "Click (991, 586)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 991,
+          "y": 586
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "modelText": "Cart is $18 with free shipping and no return info at checkout. Clicking the site's returns details to confirm if returns are actually free.",
+      "click": {
+        "x": 991,
+        "y": 586
+      },
+      "screenshot": "shots/011.jpg"
+    },
+    {
+      "n": 12,
+      "at": "2026-11-02T22:50:19.067Z",
+      "kind": "action",
+      "summary": "Click (1016, 662)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1016,
+          "y": 662
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club",
+      "click": {
+        "x": 1016,
+        "y": 662
+      },
+      "screenshot": "shots/012.jpg"
+    },
+    {
+      "n": 13,
+      "at": "2026-11-02T22:50:36.940Z",
+      "kind": "action",
+      "summary": "Scroll down",
+      "actions": [
+        {
+          "type": "scroll",
+          "x": 640,
+          "y": 400,
+          "scroll_x": 0,
+          "scroll_y": 500
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club",
+      "screenshot": "shots/013.jpg"
+    },
+    {
+      "n": 14,
+      "at": "2026-11-02T22:50:49.266Z",
+      "kind": "action",
+      "summary": "Click (992, 586)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 992,
+          "y": 586
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club",
+      "click": {
+        "x": 992,
+        "y": 586
+      },
+      "screenshot": "shots/014.jpg"
+    },
+    {
+      "n": 15,
+      "at": "2026-11-02T22:50:57.952Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked both promises: Signed up for Trail Club with only name, email and password (no credit card requested). Welcome page confirmed \"Trial length: 30 days\", free trial ends December 2, 2026, $9/month after, cancel before then and pay nothing, and perks include \"member prices and free returns on every order.\" Trail Club page also states \"Free returns on every order\" and \"Send anything back free of charge. No restocking fees, no questions.\" Added Basecamp wool socks ($18.00) to cart; cart/checkout showed $18.00 total with free shipping and stopped before payment."
+    },
+    {
+      "n": 16,
+      "at": "2026-11-02T22:50:58.461Z",
+      "kind": "note",
+      "summary": "Agent checkout skipped: no catalog item matches the ad's landing page /store/trail-club"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "pageQuote": "Trial length: 30 days",
+      "evidenceStep": 4,
+      "reason": "Agent signed up with only name, email, and password—no credit-card field—and the welcome page confirms a 30-day free trial.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "supported",
+      "adQuote": "free returns on every order",
+      "pageQuote": "free returns on every order.",
+      "evidenceStep": 4,
+      "reason": "The welcome page confirms free returns on every order as a Trail Club perk, with no excluded order shown.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/trail-club",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 129798,
+    "outputTokens": 5908,
+    "images": 16,
+    "usd": 0.627095
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793659684-TqyhiZSMwlF3Pg4UOUQ0",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 693,
+        "outputTokens": 803,
+        "usd": 0.003575,
+        "accepted": true
+      }
+    ],
+    "ms": 4876,
+    "inputTokens": 693,
+    "outputTokens": 803,
+    "usd": 0.003575
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 92,
+        "top": 413,
+        "right": 267,
+        "bottom": 469,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 53,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T22:51:17.082Z"
+}

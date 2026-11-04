@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102224228-62b15d",
+  "createdAt": "2026-11-02T22:42:28.461Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free shipping on orders over $50.",
+    "text": "Stock up on trail gear at Alder Trail Co.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_shipping",
+      "claim": "Free shipping on orders over $50",
+      "adQuote": "Free shipping on orders over $50.",
+      "conditions": {
+        "threshold": "$50"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:42:32.373Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Free shipping on orders over $50.",
+      "pageQuote": "Free shipping on orders of $150.00 or more",
+      "evidenceStep": 1,
+      "reason": "The page states free shipping only on orders of $150.00 or more, contradicting the advertised $50 threshold.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2708,
+    "outputTokens": 2466,
+    "images": 2,
+    "usd": 0.054303000000000004
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793659348-K4Ja8ofT61RMLdebRTo8",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 688,
+        "outputTokens": 524,
+        "usd": 0.002383,
+        "accepted": true
+      }
+    ],
+    "ms": 1941,
+    "inputTokens": 688,
+    "outputTokens": 524,
+    "usd": 0.002383
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Lower the store's free shipping threshold from $150 to $50 to match the ad.",
+    "rationale": "The ad promises free shipping over $50 but the funnel states $150.00 or more, so the funnel threshold contradicts the advertised offer.",
+    "steps": [
+      "Go to Store admin > Settings > Shipping and change the free shipping minimum order amount from $150.00 to $50.00.",
+      "In the same shipping settings / product page message, update 'Free shipping on orders of $150.00 or more' to 'Free shipping on orders over $50.'",
+      "Save and publish the change.",
+      "Check by opening the Ridge Trail Shoe product page and adding over $50 to the cart to confirm free shipping applies at checkout."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:42:45.273Z"
+}

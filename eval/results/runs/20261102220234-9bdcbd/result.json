@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102220234-9bdcbd",
+  "createdAt": "2026-11-02T22:02:34.135Z",
+  "ad": {
+    "source": "manual",
+    "headline": "20% off the Ridge trail shoe.",
+    "text": "This week only. Use code SAVE20 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe",
+        "date": "This week only"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:02:37.868Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "unresolved",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "pageQuote": null,
+      "evidenceStep": null,
+      "reason": "The pages show only the Ridge trail shoe product page at $120.00; no checkout step tests code SAVE20, so the discount is neither shown applied nor rejected.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": false
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2319,
+    "outputTokens": 1196,
+    "images": 2,
+    "usd": 0.025057750000000004
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793656954-Z1VBmfaA9SrldyeVcKK5",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 690,
+        "outputTokens": 669,
+        "usd": 0.00300175,
+        "accepted": true
+      }
+    ],
+    "ms": 2557,
+    "inputTokens": 690,
+    "outputTokens": 669,
+    "usd": 0.00300175
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "unresolved",
+  "finishedAt": "2026-11-02T22:02:41.292Z"
+}

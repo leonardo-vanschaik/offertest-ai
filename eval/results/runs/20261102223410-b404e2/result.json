@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102223410-b404e2",
+  "createdAt": "2026-11-02T22:34:10.232Z",
+  "ad": {
+    "source": "manual",
+    "headline": "The Ridge trail shoe. $120.",
+    "text": "Light, grippy, built for rocky miles. Free shipping.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "price",
+      "claim": "The Ridge trail shoe costs $120",
+      "adQuote": "$120.",
+      "conditions": {
+        "product": "The Ridge trail shoe",
+        "amount": "$120"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "free_shipping",
+      "claim": "The Ridge trail shoe has free shipping",
+      "adQuote": "Free shipping.",
+      "conditions": {
+        "product": "The Ridge trail shoe"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:34:13.562Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "$120.",
+      "pageQuote": "$135.00",
+      "evidenceStep": 1,
+      "reason": "Product page lists the Ridge trail shoe at $135.00, not the promised $120.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "unresolved",
+      "adQuote": "Free shipping.",
+      "pageQuote": null,
+      "evidenceStep": null,
+      "reason": "No cart, checkout, or tested order page was reached showing $0 shipping.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": false
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2734,
+    "outputTokens": 3801,
+    "images": 2,
+    "usd": 0.08059475
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658850-kSVbJ1Fm8eq9WrVrC5rO",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 691,
+        "outputTokens": 556,
+        "usd": 0.00252275,
+        "accepted": true
+      }
+    ],
+    "ms": 1966,
+    "inputTokens": 691,
+    "outputTokens": 556,
+    "usd": 0.00252275
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Change the Ridge trail shoe price from $135.00 to $120.00 to match the ad.",
+    "rationale": "The ad promises $120 but the product page shows $135.00, so the funnel price is what drifted.",
+    "steps": [
+      "Store admin > Products > Ridge trail shoe > Price: change $135.00 to $120.00.",
+      "Store admin > Products > Ridge trail shoe: Save the change.",
+      "Open http://localhost:3000/store/products/ridge-trail-shoe and check the price shows $120.00."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:34:31.852Z"
+}

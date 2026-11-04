@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102222537-93a428",
+  "createdAt": "2026-11-02T22:25:37.941Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Take 20% off the Ridge trail shoe.",
+    "text": "Enter code SAVE20 at checkout. Limited time at Alder Trail Co.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "Take 20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:25:41.644Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:25:46.850Z",
+      "kind": "action",
+      "summary": "Click (897, 411)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 897,
+          "y": 411
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Testing your SAVE20 promise — I'll add the Ridge shoe to the cart and apply the code at checkout.",
+      "click": {
+        "x": 897,
+        "y": 411
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:25:58.631Z",
+      "kind": "action",
+      "summary": "Click (938, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 938,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 938,
+        "y": 494
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:26:10.543Z",
+      "kind": "action",
+      "summary": "Click (932, 345) · Type \"SAVE20\" · Click (1115, 346)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 932,
+          "y": 345
+        },
+        {
+          "type": "type",
+          "text": "SAVE20"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1115,
+          "y": 346
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 1115,
+        "y": 346
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:26:18.586Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked a1: Ridge trail shoe (Slate, Size 9) added to cart at $120.00. Entered code SAVE20 exactly and clicked Apply; site returned \"This code has expired.\" Order summary showed Discount $0.00, Shipping Free, Total $120.00 — no 20% discount ($24) was given."
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:26:18.654Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Take 20% off the Ridge trail shoe.",
+      "pageQuote": "This code has expired.",
+      "evidenceStep": 4,
+      "reason": "SAVE20 was entered for the $120.00 Ridge trail shoe but was rejected as expired, leaving a $0.00 discount and $120.00 total instead of the promised $24.00 discount and $96.00 total.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/cart",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 21054,
+    "outputTokens": 4135,
+    "images": 6,
+    "usd": 0.15875099999999998
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658338-mplfCfB8PXzmxigABR53",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 694,
+        "outputTokens": 670,
+        "usd": 0.003011,
+        "accepted": true
+      }
+    ],
+    "ms": 2607,
+    "inputTokens": 694,
+    "outputTokens": 670,
+    "usd": 0.003011
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Reactivate SAVE20 so it applies 20% off the Ridge trail shoe while the ad is live.",
+    "rationale": "The ad states the intended offer, but checkout rejects SAVE20 as expired on the $120.00 Ridge trail shoe, giving $0.00 off instead of the promised $24.00 off.",
+    "steps": [
+      "Open Store admin > Discounts > SAVE20.",
+      "In Active dates, remove or extend the expired end date beyond 2026-11-02 and set Status to Active, keeping 20% off the Ridge trail shoe.",
+      "Save SAVE20.",
+      "Check by adding the Ridge trail shoe at checkout, entering SAVE20, and confirming a $24.00 discount and $96.00 total."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:26:39.276Z"
+}

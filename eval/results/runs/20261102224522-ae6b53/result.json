@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102224522-ae6b53",
+  "createdAt": "2026-11-02T22:45:22.865Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Every size in stock.",
+    "text": "The Ridge trail shoe in Slate. Sizes 7 through 12, all available now.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "availability",
+      "claim": "The Ridge trail shoe in Slate is available in sizes 7 through 12",
+      "adQuote": "Sizes 7 through 12, all available now.",
+      "conditions": {
+        "product": "Ridge trail shoe",
+        "variant": "Slate",
+        "sizes": "7 through 12"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "availability",
+      "claim": "Every size of the Ridge trail shoe in Slate is in stock",
+      "adQuote": "Every size in stock.",
+      "conditions": {
+        "product": "Ridge trail shoe",
+        "variant": "Slate"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:45:26.914Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:45:29.864Z",
+      "kind": "action",
+      "summary": "Click (730, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 730,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Landing page shows size 10 marked sold out — I'll test each size 7–12 to verify availability.",
+      "click": {
+        "x": 730,
+        "y": 412
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:45:38.982Z",
+      "kind": "action",
+      "summary": "Click (813, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 813,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 813,
+        "y": 412
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:45:50.407Z",
+      "kind": "action",
+      "summary": "Click (900, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 900,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 900,
+        "y": 413
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:46:02.428Z",
+      "kind": "action",
+      "summary": "Click (982, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 982,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 982,
+        "y": 413
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:46:11.954Z",
+      "kind": "action",
+      "summary": "Click (1066, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1066,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Size 10 couldn't be selected — it stays on size 9. I'll check sizes 11 and 12, then add an in-stock size to cart to confirm it can be bought.",
+      "click": {
+        "x": 1066,
+        "y": 413
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:46:19.381Z",
+      "kind": "action",
+      "summary": "Click (1149, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1149,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1149,
+        "y": 413
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:46:31.419Z",
+      "kind": "action",
+      "summary": "Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:46:47.484Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Ridge trail shoe in Slate ($120) page showed sizes 7,8,9,11,12 selectable with Add to cart enabled, but size 10 was struck through and labeled \"SOLD OUT\" and could not be selected (clicking left selection on size 9). Added one size 12 to cart successfully ($120 total, free shipping shown in cart). Therefore ad promises a1 \"Sizes 7 through 12, all available now\" and a2 \"Every size in stock\" are both false - size 10 is unavailable."
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:46:47.656Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Sizes 7 through 12, all available now.",
+      "pageQuote": "Size 10, sold out",
+      "evidenceStep": 1,
+      "reason": "Size 10 is shown sold out and disabled, so sizes 7 through 12 are not all available.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "contradicted",
+      "adQuote": "Every size in stock.",
+      "pageQuote": "Size 10, sold out",
+      "evidenceStep": 1,
+      "reason": "Size 10 is shown sold out and disabled, so not every size is in stock.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/cart",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 69486,
+    "outputTokens": 6945,
+    "images": 10,
+    "usd": 0.41102575
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793659523-5StQEm6gWUnWdSpNr7wk",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 694,
+        "outputTokens": 521,
+        "usd": 0.00237775,
+        "accepted": true
+      }
+    ],
+    "ms": 2697,
+    "inputTokens": 694,
+    "outputTokens": 521,
+    "usd": 0.00237775
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 778,
+        "top": 384,
+        "right": 850,
+        "bottom": 442,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Restock the Slate Ridge trail shoe Size 10 so sizes 7 through 12 are all available as advertised.",
+    "rationale": "Only Size 10 is shown sold out and disabled while the ad promises sizes 7 through 12 all in stock, so restoring that variant fixes the mismatch without weakening the offer.",
+    "steps": [
+      "Open Store admin > Products > Ridge trail shoe and select the Slate Size 10 variant.",
+      "Change Size 10 from Sold out / inventory 0 to In stock with inventory of at least 1, then save.",
+      "Reload the product page at /store/products/ridge-trail-shoe and check Size 10 is enabled and selectable alongside sizes 7-9, 11, and 12."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:47:21.724Z"
+}

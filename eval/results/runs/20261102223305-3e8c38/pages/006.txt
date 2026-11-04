@@ -1,0 +1,7 @@
+Agent checkout cart (UCP: the channel AI shopping agents such as Meta Muse buy through)
+Endpoint: http://localhost:3000/api/ucp/mcp
+Item: Ridge trail shoe - Size 7 x1: $135.00
+Subtotal: $135.00
+Shipping: $0.00
+Total: $135.00
+Cart link: http://localhost:3000/store/cart

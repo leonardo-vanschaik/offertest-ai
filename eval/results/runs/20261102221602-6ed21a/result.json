@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102221602-6ed21a",
+  "createdAt": "2026-11-02T22:16:02.770Z",
+  "ad": {
+    "source": "manual",
+    "headline": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+    "text": "Find your fit before trail season starts.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "availability",
+      "claim": "The Ridge shoe in Slate is in stock in every size from 7 to 12",
+      "adQuote": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+      "conditions": {
+        "product": "The Ridge",
+        "variant": "Slate",
+        "sizes": "7 to 12",
+        "availability": "in stock"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:16:05.799Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "The Ridge in Slate, every size from 7 to 12, in stock now.",
+      "pageQuote": "Color: Slate\n\n$120.00\n\nFree shipping on every order\n\nSize\n7\n8\n9\n10\n11\n12\nAdd to cart",
+      "evidenceStep": 1,
+      "reason": "The product page shows the Ridge trail shoe in Slate with selectable size buttons 7 through 12 and an Add to cart button, with no sold-out indication.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2350,
+    "outputTokens": 1756,
+    "images": 2,
+    "usd": 0.038851
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793657763-YjM7khU622trv6T4eo0V",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 697,
+        "outputTokens": 511,
+        "usd": 0.002339,
+        "accepted": true
+      }
+    ],
+    "ms": 1835,
+    "inputTokens": 697,
+    "outputTokens": 511,
+    "usd": 0.002339
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T22:16:15.724Z"
+}

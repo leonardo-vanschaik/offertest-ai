@@ -1,0 +1,366 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102220004-c66cf0",
+  "createdAt": "2026-11-02T22:00:04.551Z",
+  "ad": {
+    "source": "manual",
+    "headline": "20% off the Ridge trail shoe.",
+    "text": "This week only. Use code SAVE20 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe",
+        "date": "This week only"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:00:09.264Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:00:12.299Z",
+      "kind": "action",
+      "summary": "Click (899, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 899,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Testing your SAVE20 promise — adding the Ridge shoe to cart and checking the discount at checkout.",
+      "click": {
+        "x": 899,
+        "y": 413
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:00:21.854Z",
+      "kind": "action",
+      "summary": "Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:00:32.601Z",
+      "kind": "action",
+      "summary": "Click (936, 345) · Type \"SAVE20\"",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 936,
+          "y": 345
+        },
+        {
+          "type": "type",
+          "text": "SAVE20"
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 936,
+        "y": 345
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:00:46.203Z",
+      "kind": "action",
+      "summary": "Click (1115, 345)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1115,
+          "y": 345
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 1115,
+        "y": 345
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:00:58.971Z",
+      "kind": "action",
+      "summary": "Click (987, 690)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 690
+        }
+      ],
+      "url": "http://localhost:3000/store#shop",
+      "modelText": "SAVE20 worked — $24 off ($120 → $96). Now I'll go back to verify the other sizes are selectable before finishing.",
+      "click": {
+        "x": 987,
+        "y": 690
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:01:07.681Z",
+      "kind": "action",
+      "summary": "Click (219, 242)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 219,
+          "y": 242
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 219,
+        "y": 242
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:01:24.935Z",
+      "kind": "action",
+      "summary": "Click (730, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 730,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Discount confirmed. Checking the remaining size options — starting with size 7 to confirm it's selectable.",
+      "click": {
+        "x": 730,
+        "y": 412
+      },
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:01:40.790Z",
+      "kind": "action",
+      "summary": "Click (813, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 813,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 813,
+        "y": 412
+      },
+      "screenshot": "shots/009.jpg"
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:01:53.454Z",
+      "kind": "action",
+      "summary": "Click (982, 414)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 982,
+          "y": 414
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 982,
+        "y": 414
+      },
+      "screenshot": "shots/010.jpg"
+    },
+    {
+      "n": 11,
+      "at": "2026-11-02T22:02:06.413Z",
+      "kind": "action",
+      "summary": "Click (1066, 411)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1066,
+          "y": 411
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1066,
+        "y": 411
+      },
+      "screenshot": "shots/011.jpg"
+    },
+    {
+      "n": 12,
+      "at": "2026-11-02T22:02:17.114Z",
+      "kind": "action",
+      "summary": "Click (1149, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1149,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 1149,
+        "y": 412
+      },
+      "screenshot": "shots/012.jpg"
+    },
+    {
+      "n": 13,
+      "at": "2026-11-02T22:02:29.214Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "a1 discount VERIFIED: Ridge trail shoe $120.00 on product page (Slate). Selected size 9, added to cart. In cart entered code SAVE20 exactly and clicked Apply — showed \"SAVE20 applied: -$24.00\", Discount (SAVE20) -$24.00, Subtotal $120.00, Shipping Free, Total $96.00 (20% off). Also checked sizes 7,8,9,10,11,12 — each was selectable with Add to cart enabled."
+    },
+    {
+      "n": 14,
+      "at": "2026-11-02T22:02:29.426Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "pageQuote": "SAVE20 applied: -$24.00",
+      "evidenceStep": 5,
+      "reason": "On the $120.00 Ridge trail shoe, SAVE20 applied -$24.00, which is exactly 20%, for a $96.00 total.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/products/ridge-trail-shoe",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 136880,
+    "outputTokens": 3654,
+    "images": 14,
+    "usd": 0.609433
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793656804-yWRnOwZKMIZ82vNiTME2",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 690,
+        "outputTokens": 906,
+        "usd": 0.004713,
+        "accepted": true
+      }
+    ],
+    "ms": 3248,
+    "inputTokens": 690,
+    "outputTokens": 906,
+    "usd": 0.004713
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T22:02:34.122Z"
+}

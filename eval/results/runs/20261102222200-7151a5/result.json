@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102222200-7151a5",
+  "createdAt": "2026-11-02T22:22:00.390Z",
+  "ad": {
+    "source": "manual",
+    "headline": "20% off the Ridge trail shoe.",
+    "text": "This week only. Use code SAVE20 at checkout.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "discount",
+      "claim": "Code SAVE20 gives 20% off the Ridge trail shoe",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "conditions": {
+        "code": "SAVE20",
+        "percent": "20%",
+        "product": "Ridge trail shoe",
+        "availability": "This week only"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:22:03.679Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:22:07.129Z",
+      "kind": "action",
+      "summary": "Click (896, 413)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 896,
+          "y": 413
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Checking the advertised 20% discount — selecting the Ridge trail shoe and applying code SAVE20 at checkout.",
+      "click": {
+        "x": 896,
+        "y": 413
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:22:19.625Z",
+      "kind": "action",
+      "summary": "Click (938, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 938,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 938,
+        "y": 494
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:22:29.631Z",
+      "kind": "action",
+      "summary": "Click (936, 345) · Type \"SAVE20\" · Click (1114, 346)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 936,
+          "y": 345
+        },
+        {
+          "type": "type",
+          "text": "SAVE20"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1114,
+          "y": 346
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 1114,
+        "y": 346
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:22:38.585Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked a1: Ridge trail shoe ($120.00, Slate, Size 9) added to cart. Entered discount code SAVE20 exactly and clicked Apply. Site showed \"This code is not valid.\" Order summary remained Subtotal $120.00, Discount $0.00, Shipping Free, Total $120.00 — no 20% discount applied."
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:22:38.659Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "20% off the Ridge trail shoe.",
+      "pageQuote": "This code is not valid.",
+      "evidenceStep": 4,
+      "reason": "SAVE20 was entered for the $120.00 Ridge trail shoe but rejected, leaving a $0.00 discount instead of the promised $24.00 (20%) discount.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/cart",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 25058,
+    "outputTokens": 4956,
+    "images": 6,
+    "usd": 0.19453225000000002
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793658120-feXFvSlttXTj5E2WaiOH",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 690,
+        "outputTokens": 503,
+        "usd": 0.00300025,
+        "accepted": true
+      }
+    ],
+    "ms": 2168,
+    "inputTokens": 690,
+    "outputTokens": 503,
+    "usd": 0.00300025
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "shoe",
+        "left": 186,
+        "top": 361,
+        "right": 577,
+        "bottom": 564,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Activate SAVE20 for 20% off the Ridge trail shoe so checkout honors the ad.",
+    "rationale": "The ad promises SAVE20, but checkout rejects it as not valid and gives $0 instead of the $24 discount on the $120 shoe, so the code is what is broken.",
+    "steps": [
+      "Go to Store admin > Discounts and open or create code SAVE20.",
+      "Set SAVE20 to Active at 20% off and eligible for the Ridge trail shoe.",
+      "Add the Ridge trail shoe to the cart, apply SAVE20 at checkout, and confirm a $24.00 discount appears with no 'not valid' error."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:23:08.394Z"
+}

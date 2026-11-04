@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102231217-11c9ec",
+  "createdAt": "2026-11-02T23:12:17.103Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Try Trail Club free for 30 days.",
+    "text": "Member prices and free returns on every order. No credit card required.",
+    "cta": "Sign up",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/trail-club"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_trial",
+      "claim": "Trail Club is free for 30 days with no credit card required",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "conditions": {
+        "product": "Trail Club",
+        "duration": "30 days",
+        "credit_card_required": "false"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "other",
+      "claim": "Every order has free returns",
+      "adQuote": "free returns on every order",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T23:12:21.855Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/trail-club",
+      "url": "http://localhost:3000/store/trail-club",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T23:12:25.801Z",
+      "kind": "action",
+      "summary": "Click (179, 440)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 179,
+          "y": 440
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "modelText": "Starting your Trail Club check — landing page confirms the 30-day free offer, so I'll run through sign-up to verify no card is required and returns are truly free.",
+      "click": {
+        "x": 179,
+        "y": 440
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T23:12:46.211Z",
+      "kind": "action",
+      "summary": "Click (637, 359) · Type \"Test Shopper\" · Click (639, 446) · Type \"test@offertest.ai\" · Click (637, 534) · Type \"TestPass123\"",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 637,
+          "y": 359
+        },
+        {
+          "type": "type",
+          "text": "Test Shopper"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 639,
+          "y": 446
+        },
+        {
+          "type": "type",
+          "text": "test@offertest.ai"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 637,
+          "y": 534
+        },
+        {
+          "type": "type",
+          "text": "TestPass123"
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "click": {
+        "x": 637,
+        "y": 534
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T23:13:00.475Z",
+      "kind": "note",
+      "summary": "Stopped at payment (\"Start free trial\"): payment not allowed in this run"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T23:13:00.494Z",
+      "kind": "action",
+      "summary": "Look at the screen",
+      "actions": [],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T23:13:00.537Z",
+      "kind": "note",
+      "summary": "Agent checkout skipped: no catalog item matches the ad's landing page /store/trail-club"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "pageQuote": "A card is required to start your trial.",
+      "evidenceStep": 2,
+      "reason": "The join page requires payment card details to start the trial, contradicting the promised free trial with no credit card required.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "supported",
+      "adQuote": "free returns on every order",
+      "pageQuote": "Free returns on every order",
+      "evidenceStep": 1,
+      "reason": "The Trail Club page confirms free returns on every order, with no contradicting condition shown.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed to the payment step, not paid",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 17279,
+    "outputTokens": 6064,
+    "images": 5,
+    "usd": 0.18202425
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793661137-znJJpIMsLjeHIm7wRRC8",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 693,
+        "outputTokens": 728,
+        "usd": 0.00396025,
+        "accepted": true
+      }
+    ],
+    "ms": 3359,
+    "inputTokens": 693,
+    "outputTokens": 728,
+    "usd": 0.00396025
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 92,
+        "top": 413,
+        "right": 267,
+        "bottom": 469,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 53,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Remove the card requirement from the Trail Club 30-day trial signup so customers can join with no credit card, as the ad promises.",
+    "rationale": "The ad explicitly promises 'No credit card required,' but the join page says 'A card is required to start your trial,' so the funnel's card requirement is the hidden condition to remove.",
+    "steps": [
+      "Go to Store admin > Trail Club > Trial settings for the /store/trail-club join page.",
+      "Set 'Require payment card to start trial' to Off so the trial can start with account details only.",
+      "In Join form > Payment step, delete the text 'A card is required to start your trial' and remove the mandatory card fields.",
+      "Check by opening http://localhost:3000/store/trail-club in a private window and confirming you can start the 30-day trial without entering a card."
+    ]
+  },
+  "finishedAt": "2026-11-02T23:13:27.283Z"
+}

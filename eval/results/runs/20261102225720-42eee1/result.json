@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102225720-42eee1",
+  "createdAt": "2026-11-02T22:57:20.171Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Try Trail Club free for 30 days.",
+    "text": "Member prices and free returns on every order. No credit card required.",
+    "cta": "Sign up",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/trail-club"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_trial",
+      "claim": "Trail Club can be tried free for 30 days with no credit card required",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "conditions": {
+        "product": "Trail Club",
+        "duration": "30 days",
+        "credit_card_required": "false"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "guarantee",
+      "claim": "Every order includes free returns",
+      "adQuote": "free returns on every order",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:57:25.981Z",
+      "kind": "action",
+      "summary": "Read the landing page only (baseline)",
+      "url": "http://localhost:3000/store/trail-club",
+      "screenshot": "shots/001.jpg"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "pageQuote": "Try Trail Club free for 14 days.",
+      "evidenceStep": 1,
+      "reason": "Page offers a 14-day free trial, not the promised 30 days.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "supported",
+      "adQuote": "free returns on every order",
+      "pageQuote": "Free returns on every order",
+      "evidenceStep": 1,
+      "reason": "Page confirms free returns on every order.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/trail-club",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 2829,
+    "outputTokens": 3651,
+    "images": 2,
+    "usd": 0.07582725
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793660240-BTbrxXdfMj470VUXDXTX",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 693,
+        "outputTokens": 692,
+        "usd": 0.00310325,
+        "accepted": true
+      }
+    ],
+    "ms": 3734,
+    "inputTokens": 693,
+    "outputTokens": 692,
+    "usd": 0.00310325
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 92,
+        "top": 413,
+        "right": 267,
+        "bottom": 469,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 53,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Change the Trail Club free trial on the landing page from 14 days to 30 days.",
+    "rationale": "The ad promises 30 days but the destination page offers only 14 days, so the funnel's trial length is the mismatch.",
+    "steps": [
+      "Open the editor/admin for /store/trail-club > Trail Club membership settings > Free trial period.",
+      "Change the free trial period from 14 days to 30 days and save.",
+      "Reload http://localhost:3000/store/trail-club and confirm it reads 'Try Trail Club free for 30 days' and starts without a credit card."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:57:44.382Z"
+}

@@ -1,0 +1,439 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102225335-702dc2",
+  "createdAt": "2026-11-02T22:53:35.708Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Try Trail Club free for 30 days.",
+    "text": "Member prices and free returns on every order. No credit card required.",
+    "cta": "Sign up",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/trail-club"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_trial",
+      "claim": "Trail Club can be tried free for 30 days with no credit card required",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "conditions": {
+        "product": "Trail Club",
+        "duration": "30 days",
+        "credit_card_required": "no"
+      }
+    },
+    {
+      "id": "a2",
+      "kind": "price",
+      "claim": "Members get member prices",
+      "adQuote": "Member prices",
+      "conditions": {
+        "product": "Trail Club"
+      }
+    },
+    {
+      "id": "a3",
+      "kind": "guarantee",
+      "claim": "Every order has free returns",
+      "adQuote": "free returns on every order",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:53:41.566Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/trail-club",
+      "url": "http://localhost:3000/store/trail-club",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:53:46.457Z",
+      "kind": "action",
+      "summary": "Click (179, 440)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 179,
+          "y": 440
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "modelText": "Ad promises a 30-day free Trail Club trial — the landing page says 14 days. I'll start the trial signup to verify the terms and check member pricing and returns.",
+      "click": {
+        "x": 179,
+        "y": 440
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:53:58.657Z",
+      "kind": "action",
+      "summary": "Click (640, 360) · Type \"Test Shopper\" · Click (639, 447) · Type \"test@offertest.ai\" · Click (639, 533) · Type \"TestPass123\"",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 640,
+          "y": 360
+        },
+        {
+          "type": "type",
+          "text": "Test Shopper"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 639,
+          "y": 447
+        },
+        {
+          "type": "type",
+          "text": "test@offertest.ai"
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 639,
+          "y": 533
+        },
+        {
+          "type": "type",
+          "text": "TestPass123"
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/join",
+      "click": {
+        "x": 639,
+        "y": 533
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:54:08.526Z",
+      "kind": "action",
+      "summary": "Click (639, 608)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 639,
+          "y": 608
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club/welcome",
+      "click": {
+        "x": 639,
+        "y": 608
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:54:17.469Z",
+      "kind": "action",
+      "summary": "Click (224, 466)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 224,
+          "y": 466
+        }
+      ],
+      "url": "http://localhost:3000/store#shop",
+      "modelText": "Trial started with no card required, but confirmed as only 14 days ending Nov 16, 2026. Now I'll shop with member prices to test that claim.",
+      "click": {
+        "x": 224,
+        "y": 466
+      },
+      "screenshot": "shots/005.jpg"
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:54:28.722Z",
+      "kind": "action",
+      "summary": "Click (219, 242)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 219,
+          "y": 242
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 219,
+        "y": 242
+      },
+      "screenshot": "shots/006.jpg"
+    },
+    {
+      "n": 7,
+      "at": "2026-11-02T22:54:49.851Z",
+      "kind": "action",
+      "summary": "Click (899, 411) · Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 899,
+          "y": 411
+        },
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/007.jpg"
+    },
+    {
+      "n": 8,
+      "at": "2026-11-02T22:55:02.315Z",
+      "kind": "action",
+      "summary": "Wait",
+      "actions": [
+        {
+          "type": "wait"
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "screenshot": "shots/008.jpg"
+    },
+    {
+      "n": 9,
+      "at": "2026-11-02T22:55:15.403Z",
+      "kind": "action",
+      "summary": "Click (987, 581)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 581
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "modelText": "In the cart the Ridge shoe is still $120.00 with $0 discount — no member price applied despite being logged in on the trial. I'll proceed to checkout to confirm the total and look for returns information.",
+      "click": {
+        "x": 987,
+        "y": 581
+      },
+      "screenshot": "shots/009.jpg"
+    },
+    {
+      "n": 10,
+      "at": "2026-11-02T22:55:26.034Z",
+      "kind": "action",
+      "summary": "Scroll down",
+      "actions": [
+        {
+          "type": "scroll",
+          "x": 640,
+          "y": 400,
+          "scroll_x": 0,
+          "scroll_y": 600
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "screenshot": "shots/010.jpg"
+    },
+    {
+      "n": 11,
+      "at": "2026-11-02T22:55:39.109Z",
+      "kind": "action",
+      "summary": "Click (1016, 662)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 1016,
+          "y": 662
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club",
+      "click": {
+        "x": 1016,
+        "y": 662
+      },
+      "screenshot": "shots/011.jpg"
+    },
+    {
+      "n": 12,
+      "at": "2026-11-02T22:55:55.055Z",
+      "kind": "action",
+      "summary": "Scroll down",
+      "actions": [
+        {
+          "type": "scroll",
+          "x": 640,
+          "y": 400,
+          "scroll_x": 0,
+          "scroll_y": 600
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club",
+      "modelText": "Checkout confirms $120 total, $0 discount, free shipping. The returns claim has been repeated in site copy on the landing/welcome pages; I'll check the 30-day returns footer link for any fee or condition before finishing.",
+      "screenshot": "shots/012.jpg"
+    },
+    {
+      "n": 13,
+      "at": "2026-11-02T22:56:07.108Z",
+      "kind": "action",
+      "summary": "Click (992, 586)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 992,
+          "y": 586
+        }
+      ],
+      "url": "http://localhost:3000/store/trail-club",
+      "click": {
+        "x": 992,
+        "y": 586
+      },
+      "screenshot": "shots/013.jpg"
+    },
+    {
+      "n": 14,
+      "at": "2026-11-02T22:56:34.558Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "Checked all promises: a1 Trial — Ad promised 30 days free, no card. Landing/signup/confirmation all say 14 days only ('$9/month after your 14-day free trial', 'Trial length: 14 days', ends Nov 16, 2026). No credit card was required (name/email/password only), but 30-day length was NOT honored. a2 Member prices — Landing says 'Save on every order, including...the Ridge trail shoe', but after activating trial and clicking 'Shop with member prices', Ridge trail shoe (size 9) was $120.00 in shop, product page, cart and checkout, with Discount $0.00 and Total $120.00 (shipping Free) — no member price applied. a3 Free returns — Site consistently states 'Free returns on every order' / 'Send anything back free of charge. No restocking fees, no questions' on landing and welcome ('Your perks: member prices and free returns on every order'); no return fee/condition contradicting this was shown in cart/checkout (did not place order, payment not allowed)."
+    },
+    {
+      "n": 15,
+      "at": "2026-11-02T22:56:34.703Z",
+      "kind": "note",
+      "summary": "Agent checkout skipped: no catalog item matches the ad's landing page /store/trail-club"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "contradicted",
+      "adQuote": "Try Trail Club free for 30 days.",
+      "pageQuote": "Trial length: 14 days",
+      "evidenceStep": 4,
+      "reason": "After signup the welcome page confirms a 14-day trial, not the advertised 30 days.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a2",
+      "status": "contradicted",
+      "adQuote": "Member prices",
+      "pageQuote": "Discount\n$0.00",
+      "evidenceStep": 8,
+      "reason": "After joining Trail Club, the cart shows the Ridge trail shoe at full price with a $0.00 discount, so no member price was applied.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    },
+    {
+      "assertionId": "a3",
+      "status": "supported",
+      "adQuote": "free returns on every order",
+      "pageQuote": "Send anything back free of charge.",
+      "evidenceStep": 1,
+      "reason": "The Trail Club page confirms returns are free of charge, matching the advertised free returns.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/trail-club",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 156391,
+    "outputTokens": 9591,
+    "images": 15,
+    "usd": 0.8039297499999999
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793660015-qkUEDqmkKx4WBWZTXRQt",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 693,
+        "outputTokens": 1006,
+        "usd": 0.00443775,
+        "accepted": true
+      }
+    ],
+    "ms": 4432,
+    "inputTokens": 693,
+    "outputTokens": 1006,
+    "usd": 0.00443775
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 92,
+        "top": 413,
+        "right": 267,
+        "bottom": 469,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 53,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "fail",
+  "fix": {
+    "target": "funnel",
+    "summary": "Change Trail Club's trial length from 14 to 30 days in the membership settings.",
+    "rationale": "The ad promises a 30-day free trial, but the post-signup welcome page confirms a 14-day trial, so the funnel setting does not deliver the advertised offer.",
+    "steps": [
+      "Open Store admin > Trail Club > Membership settings > Trial length.",
+      "Change Trial length from 14 days to 30 days and save.",
+      "Check it: complete a test signup at /store/trail-club and confirm the welcome page shows 'Trial length: 30 days'."
+    ]
+  },
+  "finishedAt": "2026-11-02T22:57:20.114Z"
+}

@@ -1,0 +1,7 @@
+404
+This page could not be found.
+
+[accessibility snapshot]
+- heading "404" [level=1]
+- heading "This page could not be found." [level=2]
+- alert

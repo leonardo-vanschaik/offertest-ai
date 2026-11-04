@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "offertest",
+    "version": "0.1.0"
+  },
+  "id": "20261102221228-1a4fc5",
+  "createdAt": "2026-11-02T22:12:28.089Z",
+  "ad": {
+    "source": "manual",
+    "headline": "Free shipping on every order.",
+    "text": "Gear up for the trail at Alder Trail Co. Shoes, jackets, socks, and packs.",
+    "cta": "Shop now",
+    "destination": {
+      "type": "website",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe"
+    }
+  },
+  "assertions": [
+    {
+      "id": "a1",
+      "kind": "free_shipping",
+      "claim": "Free shipping is available on every order",
+      "adQuote": "Free shipping on every order.",
+      "conditions": {}
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "at": "2026-11-02T22:12:31.925Z",
+      "kind": "action",
+      "summary": "Open localhost:3000/store/products/ridge-trail-shoe",
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "screenshot": "shots/001.jpg"
+    },
+    {
+      "n": 2,
+      "at": "2026-11-02T22:12:34.347Z",
+      "kind": "action",
+      "summary": "Click (982, 412)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 982,
+          "y": 412
+        }
+      ],
+      "url": "http://localhost:3000/store/products/ridge-trail-shoe",
+      "modelText": "Testing your “free shipping on every order” claim — I’ll add the Ridge trail shoe to the cart and check the shipping at checkout.",
+      "click": {
+        "x": 982,
+        "y": 412
+      },
+      "screenshot": "shots/002.jpg"
+    },
+    {
+      "n": 3,
+      "at": "2026-11-02T22:12:42.961Z",
+      "kind": "action",
+      "summary": "Click (940, 494)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 940,
+          "y": 494
+        }
+      ],
+      "url": "http://localhost:3000/store/cart",
+      "click": {
+        "x": 940,
+        "y": 494
+      },
+      "screenshot": "shots/003.jpg"
+    },
+    {
+      "n": 4,
+      "at": "2026-11-02T22:12:55.319Z",
+      "kind": "action",
+      "summary": "Click (987, 579)",
+      "actions": [
+        {
+          "type": "click",
+          "button": "left",
+          "x": 987,
+          "y": 579
+        }
+      ],
+      "url": "http://localhost:3000/store/checkout",
+      "modelText": "Cart shows $120 with shipping listed as Free. I’ll proceed to checkout to confirm that total holds up to the payment step.",
+      "click": {
+        "x": 987,
+        "y": 579
+      },
+      "screenshot": "shots/004.jpg"
+    },
+    {
+      "n": 5,
+      "at": "2026-11-02T22:13:09.777Z",
+      "kind": "model",
+      "summary": "Agent's note",
+      "modelText": "a1 (free_shipping) CONFIRMED: Ridge trail shoe $120.00 product page and header state \"Free shipping on every order.\" Added Size 10, 1 item to cart. Cart order summary: Subtotal $120.00, Discount $0.00, Shipping Free, Total $120.00. Checkout order summary confirms same: Subtotal $120.00, Discount $0.00, Shipping Free, Total $120.00. No minimum, code, or extra shipping charge appeared. Stopped at payment step without entering card details."
+    },
+    {
+      "n": 6,
+      "at": "2026-11-02T22:13:10.095Z",
+      "kind": "source",
+      "summary": "Built a cart in the store's agent checkout (UCP) with the ad's codes",
+      "url": "ucp://localhost:3000/cart"
+    }
+  ],
+  "verdicts": [
+    {
+      "assertionId": "a1",
+      "status": "supported",
+      "adQuote": "Free shipping on every order.",
+      "pageQuote": "Shipping: $0.00",
+      "evidenceStep": 6,
+      "reason": "The tested order shows $0.00 shipping with a $120.00 total, consistent with the website cart and checkout also showing free shipping.",
+      "quoteCheck": {
+        "adQuoteFound": true,
+        "pageQuoteFound": true
+      }
+    }
+  ],
+  "boundary": "Followed the funnel to localhost:3000/store/checkout",
+  "models": {
+    "computer use, judge, fix": "muse-wonder-1.0",
+    "ad to promises": "meta/muse-spark-open",
+    "product boxes": "sam-3.1"
+  },
+  "usage": {
+    "inputTokens": 24644,
+    "outputTokens": 2354,
+    "images": 6,
+    "usd": 0.13673225
+  },
+  "openWeights": {
+    "job": "ad to promises",
+    "model": "meta/muse-spark-open",
+    "route": "OpenRouter",
+    "provider": "BaseTen",
+    "quantization": "fp4",
+    "requests": [
+      {
+        "id": "gen-1793657548-iGN8twaToBAtGMg7fhpK",
+        "provider": "BaseTen",
+        "quantization": "fp4",
+        "inputTokens": 695,
+        "outputTokens": 718,
+        "usd": 0.00321625,
+        "accepted": true
+      }
+    ],
+    "ms": 2510,
+    "inputTokens": 695,
+    "outputTokens": 718,
+    "usd": 0.00321625
+  },
+  "sam": {
+    "screenshot": "shots/001.jpg",
+    "boxes": [
+      {
+        "label": "button",
+        "left": 1066,
+        "top": 52,
+        "right": 1188,
+        "bottom": 96,
+        "w": 1280,
+        "h": 800
+      },
+      {
+        "label": "button",
+        "left": 693,
+        "top": 467,
+        "right": 1188,
+        "bottom": 523,
+        "w": 1280,
+        "h": 800
+      }
+    ]
+  },
+  "overall": "pass",
+  "finishedAt": "2026-11-02T22:13:16.751Z"
+}

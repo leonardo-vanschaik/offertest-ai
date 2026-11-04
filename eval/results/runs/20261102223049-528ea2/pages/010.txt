@@ -1,0 +1,10 @@
+Agent checkout cart (UCP: the channel AI shopping agents such as Meta Muse buy through)
+Endpoint: http://localhost:3000/api/ucp/mcp
+Item: Ridge trail shoe - Size 7 x1: $120.00
+Discount codes sent: SAVE20
+Discounts applied: none
+Store message (warning discount_code_user_ineligible): Spend $150.00 or more to use this code.
+Subtotal: $120.00
+Shipping: $0.00
+Total: $120.00
+Cart link: http://localhost:3000/store/cart
